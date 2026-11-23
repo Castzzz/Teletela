@@ -1791,7 +1791,8 @@ function updateVoiceLounge() {
       const timerBadge = ch?.callStartedAt
         ? ` <span class="lounge-call-timer" data-call-timer="${Number(ch.callStartedAt)}" title="Tempo ativo desta call">⏱ ${formatCallClock(ch.callStartedAt)}</span>`
         : '';
-      title.innerHTML = terminal ? `${escapeHtml(name)}${timerBadge}` : `Canal de Voz: ${escapeHtml(name)}${timerBadge}`;
+      // Só o nome: o ícone ao lado e a barra lateral já dizem que é canal de voz.
+      title.innerHTML = `${escapeHtml(name)}${timerBadge}`;
     } else {
       title.textContent = 'Escolha um canal para começar';
     }

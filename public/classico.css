@@ -1,0 +1,107 @@
+/* ==========================================================================
+   VISUAL PADRÃO (Clássico)
+   Junta o que o Roda e o Aconchego tinham de melhor em cima do Clássico.
+   Vem depois de style.css e redesign.css e só vale com data-visual="classico".
+   ========================================================================== */
+
+/* ---------- Call: cabeçalho compacto ---------- */
+/* Um ícone pequeno e o nome do canal na mesma linha; antes eram um fone gigante e
+   "Canal de Voz: Geral" centralizados, que empurravam os cartões pra baixo. */
+[data-visual="classico"] .voice-lounge {
+  align-items: stretch; justify-content: flex-start; gap: 22px;
+  padding: clamp(18px, 2.6vw, 48px); overflow-y: auto; container-type: inline-size;
+}
+[data-visual="classico"] .lounge-header {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);
+}
+[data-visual="classico"] .lounge-header .lounge-icon {
+  display: grid; place-items: center; flex: none; width: 40px; height: 40px; margin: 0;
+  border-radius: 12px; background: var(--interface-tint, var(--bg-secondary)); font-size: 0;
+}
+[data-visual="classico"] .lounge-header .lounge-icon > .icon-svg { width: 22px; height: 22px; color: var(--interface-ink, var(--accent-brand)); }
+[data-visual="classico"] .lounge-header h2 {
+  display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0;
+  font-size: clamp(20px, 2.2cqw, 28px); letter-spacing: -.02em; line-height: 1.2; overflow-wrap: anywhere;
+}
+[data-visual="classico"] .lounge-call-timer { font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---------- Call: grade de cartões do mesmo tamanho (vinda do Roda) ---------- */
+/* A largura vem da área da call, que muda ao abrir o chat ou a lista de membros:
+   cabem quantas colunas der, todas iguais, e a última linha fica centralizada. */
+[data-visual="classico"] .lounge-users-grid {
+  --cartao-min: 210px;
+  --intervalo: 14px;
+  display: flex; flex-flow: row wrap; justify-content: center; align-content: flex-start;
+  gap: var(--intervalo); max-width: none; width: 100%; margin: 0;
+}
+[data-visual="classico"] .lounge-users-grid > .lounge-user-card {
+  min-width: 0; width: auto; flex: 0 0 min(100%, var(--cartao-min));
+  min-height: clamp(180px, 26vh, 320px); justify-content: center; padding: 20px 14px 16px;
+}
+@supports (width: calc(1px * round(down, 10px / 2px, 1))) {
+  [data-visual="classico"] .lounge-users-grid > .lounge-user-card {
+    --colunas: max(1, round(down, (100cqw + var(--intervalo)) / (var(--cartao-min) + var(--intervalo)), 1));
+    /* Com pouca gente o cartão não estica até virar um painel: 320px no máximo. */
+    flex-basis: min(320px, round(down, (100% + var(--intervalo)) / var(--colunas) - var(--intervalo), 1px));
+  }
+}
+@media (max-width: 760px) and (orientation: portrait) {
+  [data-visual="classico"] .lounge-users-grid > .lounge-user-card { flex-basis: calc((100% - var(--intervalo)) / 2); min-height: 0; }
+}
+[data-visual="classico"] .lounge-users-grid .lounge-user-card :is(.user-avatar-wrap, .user-avatar) {
+  width: clamp(72px, 6.5vw, 104px); height: clamp(72px, 6.5vw, 104px);
+}
+[data-visual="classico"] .lounge-users-grid .lounge-user-card .user-avatar { font-size: clamp(24px, 2.2vw, 34px); }
+[data-visual="classico"] .lounge-users-grid .lounge-user-name { font-size: 15.5px; word-break: normal; overflow-wrap: anywhere; }
+[data-visual="classico"] .lounge-user-card {
+  border: 1px solid var(--border-subtle);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+[data-visual="classico"] .lounge-user-card:hover { transform: none; border-color: var(--border-medium); }
+
+/* ---------- Quem fala: dá pra ver de canto de olho ---------- */
+/* O cartão inteiro acende em verde, não só um anel de 2px na foto. */
+[data-visual="classico"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) {
+  border-color: var(--accent-green);
+  background: color-mix(in srgb, var(--accent-green) 11%, var(--bg-secondary));
+  box-shadow: 0 0 0 1px var(--accent-green), 0 10px 24px -14px color-mix(in srgb, var(--accent-green) 70%, transparent);
+}
+[data-visual="classico"] .lounge-user-card .user-avatar-wrap.is-speaking .speaking-halo {
+  inset: -5px; box-shadow: 0 0 0 3px var(--accent-green);
+}
+/* Na barra lateral, o nome de quem fala também fica verde. */
+[data-visual="classico"] .channel-user.is-speaking :is(.channel-user-name, .user-name-text:not([style])) { color: var(--accent-green); }
+[data-visual="classico"] .channel-user.is-speaking .speaking-halo { inset: -3px; box-shadow: 0 0 0 2px var(--accent-green); }
+
+/* ---------- Controles da call ---------- */
+/* O clipe ficava duplicado (no pé da barra e no palco). Fica só no palco, com nome;
+   assim o "Voz conectada" ganha espaço e não quebra em duas linhas. */
+[data-visual="classico"] .user-dock.in-call #btn-dock-clip { display: none; }
+[data-visual="classico"] .user-dock.in-call { grid-template-columns: minmax(0, 1fr) repeat(3, 30px); grid-template-areas: "info share cam leave" "profile mic deaf gear"; }
+[data-visual="classico"] .user-dock.in-call .dock-btn { width: 30px; }
+[data-visual="classico"] .voice-panel-status { white-space: nowrap; }
+[data-visual="classico"] .stage-controls-right .btn-control-icon:has(.control-label) { width: auto; gap: 7px; padding: 0 12px; }
+[data-visual="classico"] .stage-controls-right .control-label { display: inline; font-size: 13.5px; font-weight: 600; }
+
+/* O botão de transmitir continua sendo o principal, mas sem degradê e sem brilho aceso o tempo todo. */
+[data-visual="classico"] .btn-share-primary { background: var(--accent-brand); box-shadow: none; }
+[data-visual="classico"] .btn-share-primary:hover { background: var(--accent-brand-hover); filter: none; transform: none; }
+[data-visual="classico"] .lounge-cta { align-self: center; }
+
+/* ---------- Movimento ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* Quem fala "respira": a foto cresce um pouco no ritmo da fala. */
+  @keyframes classico-respiro { 50% { scale: 1.045; } }
+  [data-visual="classico"] .lounge-user-card .user-avatar-wrap.is-speaking { animation: classico-respiro 1.1s ease-in-out infinite; }
+
+  /* Chegada na call (vinda do Aconchego): cresce de leve a partir do cartão visível.
+     Começar visível importa: com o app em segundo plano a animação pausa no 1º quadro. */
+  @keyframes classico-chegada { from { scale: .94; } to { scale: 1; } }
+  [data-visual="classico"] #lounge-users-grid > .lounge-user-card[data-user-id] { animation: none; }
+  [data-visual="classico"] #lounge-users-grid > .lounge-user-card.acabou-de-entrar { animation: classico-chegada 300ms cubic-bezier(.22, 1, .36, 1); }
+  :root[data-visual="classico"]:is(.app-unfocused, .app-hidden) #lounge-users-grid > .lounge-user-card.acabou-de-entrar { animation: none; }
+}
+
+/* No claro, o verde-neon do relógio some no fundo verde-claro: usa um verde escuro. */
+:root[data-visual="classico"][data-theme="claro"] :is(.lounge-call-timer, .channel-call-timer) { color: #1a7f45; background: rgb(26 127 69 / .1); border-color: rgb(26 127 69 / .25); }

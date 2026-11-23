@@ -2563,6 +2563,9 @@ html.light-mode #dock-avatar-wrap.is-speaking .user-avatar.has-frozen > canvas.a
   cursor: pointer;
 }
 
+/* Nome escrito ao lado do ícone: só o visual padrão mostra (classico.css). */
+.control-label { display: none; }
+
 .btn-control-icon {
   width: 34px;
   height: 34px;
