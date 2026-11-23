@@ -1,5 +1,18 @@
 # Pendências atuais
 
+## 22/11/2026, 23h — 4.9.0 enfileirada na VM
+
+O pedido `ambos` para o commit `73a8692` está em `/var/lib/teletela-agenda/pendente`
+desde 23h de Brasília, com o pacote do servidor e o rascunho `v4.9.0` (9 arquivos,
+SHA-256 registrados). O pacote foi conferido arquivo por arquivo contra o commit.
+O timer tenta das 03h00 às 03h50 de 23/11; a VM ainda roda a 4.8, então a liberação
+depende de `totalUsers: 0`. A credencial do GitHub está na VM.
+
+O executor instalado na VM publica o rascunho mandando também a tag e o commit, porque
+o GitHub pode restaurar a tag provisória se o PATCH tiver só `draft: false`. Essa
+correção foi copiada para `deploy/oracle/madrugada/executar.py`. Depois da janela,
+confira `journalctl -u teletela-madrugada.service` e se `pendente/` sumiu.
+
 ## 22/11/2026 — preparação da 4.9.0
 
 O dono aprovou as mudanças para a madrugada de 23/11, das 03h às 04h de Brasília.

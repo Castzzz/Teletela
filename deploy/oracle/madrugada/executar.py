@@ -53,14 +53,14 @@ def rodar(*args):
     subprocess.run(args, check=True)
 
 
-def github(identificador, publicar=False):
+def github(identificador, dados=None):
     token = (BASE / 'github.token').read_text().strip()
     req = Request(API + str(int(identificador)), headers={
         'Authorization': 'Bearer ' + token,
         'Accept': 'application/vnd.github+json',
         'Content-Type': 'application/json',
         'User-Agent': 'teletela-agenda',
-    }, method='PATCH' if publicar else 'GET', data=b'{"draft":false}' if publicar else None)
+    }, method='PATCH' if dados else 'GET', data=json.dumps(dados).encode() if dados else None)
     with urlopen(req, timeout=20) as resposta:
         return json.load(resposta)
 
@@ -167,7 +167,12 @@ def executar():
     if pedido.get('release') and conferir_rascunho(pedido)['draft']:
         saudavel()
         conferir()
-        github(pedido['release'], publicar=True)
+        # O GitHub pode restaurar a tag provisória se o PATCH omitir a tag do rascunho.
+        publicado = github(pedido['release'], {
+            'tag_name': pedido['tag'], 'target_commitish': pedido['commit'], 'draft': False,
+        })
+        if publicado['draft'] or publicado['tag_name'] != pedido['tag']:
+            raise RuntimeError('O GitHub não confirmou a publicação da versão aprovada.')
     if (FILA / 'backup.tar.gz').exists():
         (FILA / 'backup.tar.gz').replace(BASE / 'ultimo-backup.tar.gz')
     # Desarma a fila antes de remover arquivos grandes.
