@@ -1849,7 +1849,7 @@ function updateVoiceLounge() {
           <span class="speaking-halo"></span>${userPresenceHtml(u)}
         </${avatarTag}>
         <span class="lounge-user-name"><span class="user-name-text"${nameStyle(u)}>${escapeHtml(u.name)}</span>${ownershipBadge(u)}${isMe ? ' (Você)' : ''}</span>
-        ${terminal ? `<span class="terminal-fala"><i aria-hidden="true"></i><span class="terminal-silencio">Pausa</span><span class="terminal-falando">Falando</span></span>
+        ${terminal ? `<span class="terminal-fala"><i aria-hidden="true"></i><span class="terminal-silencio">Quieto</span><span class="terminal-falando">Falando</span></span>
           <span class="terminal-mic">${u.isMicOn ? 'Aberto' : 'Mutado'}${muteIndicatorsHtml(u)}</span>
           <span class="terminal-video">${transmissoes || '—'}</span>` : ''}
         ${userCallTimerHtml(u)}

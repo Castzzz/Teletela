@@ -117,7 +117,11 @@
 /* O clipe ficava duplicado (no pé da barra e no palco). Fica só no palco, com nome;
    assim o "Voz conectada" ganha espaço e não quebra em duas linhas. */
 [data-visual="classico"] .user-dock.in-call #btn-dock-clip { display: none; }
-[data-visual="classico"] .user-dock.in-call { grid-template-columns: minmax(0, 1fr) repeat(3, 30px); grid-template-areas: "info share cam leave" "profile mic deaf gear"; }
+[data-visual="classico"] .user-dock.in-call { grid-template-columns: minmax(0, 1fr) 30px 30px auto; grid-template-areas: "info share cam leave" "profile mic deaf gear"; }
+/* Sair com nome: o ícone vermelho sozinho ficava colado na câmera e parecia mais um botão de mídia. */
+[data-visual="classico"] .user-dock.in-call #btn-dock-leave { width: auto; padding: 0 7px; }
+[data-visual="classico"] .user-dock.in-call #btn-dock-leave .dock-icon { display: none; }
+[data-visual="classico"] .user-dock.in-call #btn-dock-leave .control-label { display: inline; font-size: 12.5px; font-weight: 700; }
 [data-visual="classico"] .user-dock.in-call .dock-btn { width: 30px; }
 [data-visual="classico"] .voice-panel-status { white-space: nowrap; }
 [data-visual="classico"] .stage-controls-right .btn-control-icon:has(.control-label) { width: auto; gap: 7px; padding: 0 12px; }

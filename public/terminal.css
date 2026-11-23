@@ -470,8 +470,16 @@
     linear-gradient(currentColor, currentColor) 16px 100% / 3px var(--b5) no-repeat;
 }
 /* Quem fala ganha o nome na cor da fala: dá pra achar a pessoa sem ler a coluna. */
-[data-visual="terminal"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) .lounge-user-name { color: var(--term-fala); }
-[data-visual="terminal"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) { background: var(--term-papel); }
+[data-visual="terminal"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) .lounge-user-name { color: var(--term-fala); font-weight: 600; }
+/* Quem fala é o estado mais forte da tabela: linha selecionada com barra na cor da fala.
+   Antes perdia pra linha de quem acabou de entrar. */
+[data-visual="terminal"] #lounge-users-grid > .lounge-user-card[data-user-id]:has(.user-avatar-wrap.is-speaking) {
+  background: color-mix(in srgb, var(--term-fala) 14%, var(--bg-primary)); box-shadow: inset 3px 0 var(--term-fala);
+}
+[data-visual="terminal"] .user-avatar-wrap.is-speaking ~ .terminal-fala { font-weight: 600; }
+[data-visual="terminal"] .terminal-fala i { scale: 1.25; transform-origin: left center; margin-inline-end: 4px; }
+/* Na barra lateral, o nome de quem fala também acende. */
+[data-visual="terminal"] .channel-user.is-speaking :is(.channel-user-name, .user-name-text:not([style])) { color: var(--term-fala); }
 
 /* Barra fina embaixo do cabeçalho da call, no lugar da linha cheia: o prompt tem chão. */
 [data-visual="terminal"] .lounge-header h2::after {
@@ -494,14 +502,17 @@
   @keyframes terminal-digitar { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
   [data-visual="terminal"] .voice-lounge:not(.hidden) .lounge-header h2 { animation: terminal-digitar 260ms steps(10, end); }
 
-  /* Quem acabou de chegar aparece com a linha acesa e apaga devagar. Se o app estiver sem foco,
-     a animação pausa no começo: a linha fica acesa até você voltar e ver quem entrou. */
+  /* Quem acabou de chegar aparece com a linha levemente acesa e apaga devagar. Mais fraca que a
+     fala, pra não competir com quem está falando. */
   @keyframes terminal-linha-nova {
-    from { background-color: var(--term-selecao); box-shadow: inset 2px 0 var(--term-destaque); }
+    from { background-color: var(--term-fundo); box-shadow: inset 2px 0 var(--term-destaque); }
     to   { background-color: var(--bg-primary); box-shadow: inset 2px 0 transparent; }
   }
   [data-visual="terminal"] #lounge-users-grid > .lounge-user-card[data-user-id] { animation: none; }
   [data-visual="terminal"] #lounge-users-grid > .lounge-user-card.acabou-de-entrar { animation: terminal-linha-nova 1600ms var(--term-saida); }
+  /* Com o app sem foco a animação congelaria acesa (e ganharia de quem fala): aí ela nem toca. */
+  :root[data-visual="terminal"]:is(.app-unfocused, .app-hidden) #lounge-users-grid > .lounge-user-card.acabou-de-entrar { animation: none; }
+  [data-visual="terminal"] #lounge-users-grid > .lounge-user-card.acabou-de-entrar:has(.is-speaking) { animation: none; }
 
   /* Linha de log nova no chat também chega acesa, por pouco tempo. */
   @keyframes terminal-log-novo { from { color: var(--term-destaque); } to { color: var(--text-muted); } }
@@ -527,3 +538,17 @@
 [data-visual="terminal"] .cs-person input:checked ~ .cs-check { background-image: none; }
 [data-visual="terminal"] .cs-person input:checked ~ .cs-check::before { content: 'x'; display: grid; place-items: center; height: 100%; color: var(--bg-primary); font-weight: 700; font-size: 12px; }
 [data-visual="terminal"] :is(.cs-section h4, .cs-mode-option strong, .cs-picker-label, .cs-count) { font-family: var(--term-fonte); }
+
+/* ---------- Controles da call (os mesmos do Clássico, no jeito do Terminal) ---------- */
+/* Clipe só no palco; o pé da barra fica com status, tela, câmera e [sair] escrito. */
+[data-visual="terminal"] .user-dock.in-call #btn-dock-clip { display: none; }
+[data-visual="terminal"] .user-dock.in-call { grid-template-columns: minmax(0, 1fr) 30px 30px auto; grid-template-areas: "info share cam leave" "profile mic deaf gear"; }
+[data-visual="terminal"] .user-dock.in-call .dock-btn { width: 30px; }
+[data-visual="terminal"] .voice-panel-status { white-space: nowrap; font-size: 11px; gap: 4px; letter-spacing: 0; }
+[data-visual="terminal"] .voice-panel-status .icon-svg { width: 12px; height: 12px; }
+[data-visual="terminal"] .user-dock.in-call #btn-dock-leave { width: auto; padding: 0 5px; }
+[data-visual="terminal"] :is(.user-dock.in-call #btn-dock-leave, .stage-controls-right) .control-label { display: inline; font: 600 12.5px var(--term-fonte); }
+[data-visual="terminal"] .stage-controls-right .control-label::before { content: '['; color: var(--text-muted); }
+[data-visual="terminal"] .stage-controls-right .control-label::after { content: ']'; color: var(--text-muted); }
+[data-visual="terminal"] .user-dock.in-call #btn-dock-leave .dock-icon { display: none; }
+[data-visual="terminal"] .stage-controls-right .btn-control-icon:has(.control-label) { width: auto; gap: 6px; padding: 0 10px; }
