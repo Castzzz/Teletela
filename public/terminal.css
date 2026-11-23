@@ -224,13 +224,13 @@
 }
 [data-visual="terminal"] :is(.modal-header, .mobile-sheet-header, .friends-heading) :is(h2, h3),
 [data-visual="terminal"] :is(.settings-block-title, .profile-preview-label, .mobile-section-label,
-  .dm-person strong, .music-queue-title, .server-members-group h3, .soundboard-section-title,
+  .music-queue-title, .server-members-group h3, .soundboard-section-title,
   .personalization-controls h5, .settings-section h5, .server-card-head strong, .brand-identity) {
   font-family: var(--term-fonte); letter-spacing: -.04em;
 }
 [data-visual="terminal"] :is(.modal-close-btn, .btn-primary, .btn-secondary, .profile-file-btn,
   .form-input, .form-select, .theme-btn, .primary-button, .server-members-search input,
-  .dm-person, .soundboard-tile, .account-modes button, .dice-presets button, .screen-picker-item,
+  .soundboard-tile, .account-modes button, .dice-presets button, .screen-picker-item,
   .popover-menu-item, .toast, .server-member, .room-icon, .watch-connect, .dice-result,
   .music-current, .music-result, .diagnostic-card, .search-result, .profile-card-big,
   .btn-topbar-action, .btn-topbar-tool, .dock-btn, .stream-tab-chip, .stage-cinema-strip,
@@ -238,7 +238,7 @@
   .settings-presence-row, .account-recovery-result, .mobile-settings-group, .mobile-row-icon,
   .visual-picker .visual-choice, .personalization-controls input[type="color"]) { border-radius: 2px; }
 [data-visual="terminal"] :is(.btn-primary, .btn-secondary, .primary-button, .form-input,
-  .form-select, .theme-btn, .dm-person small, .music-volume output, .settings-help summary,
+  .form-select, .theme-btn, .music-volume output, .settings-help summary,
   .server-status, .chat-file small, .master-volume-text, .dice-result, .hotkey-btn) {
   font-family: var(--term-fonte); font-variant-numeric: tabular-nums;
 }
@@ -315,7 +315,6 @@
 
 /* As conversas privadas e as listas usam a mesma margem de leitura da sala. */
 [data-visual="terminal"] #dm-dialog .modal-header { background: var(--term-fundo); border-radius: 0; }
-[data-visual="terminal"] .dm-person { margin: 0; border-bottom: 1px solid var(--border-subtle); }
 [data-visual="terminal"] .dm-message { border-radius: 0; border-inline-start: 2px solid var(--border-medium); }
 [data-visual="terminal"] .dm-message.dm-own { background: var(--term-fundo); border-inline-start-color: var(--term-destaque); }
 [data-visual="terminal"] .dm-message time { font: 11px var(--term-fonte); }

@@ -1,7 +1,6 @@
 :root[data-look="novo"] { --panel-radius: 10px; --panel-gap: 5px; --panel-shadow: none; }
 [data-look="novo"] .brand-text { font-weight: 750; letter-spacing: -.04em; }
 [data-look="novo"] :is(.sidebar-header, .chat-header, .app-topbar) { border-bottom: 1px solid var(--border-subtle); }
-[data-look="novo"] #dm-open { text-align: left; justify-content: start; padding: 10px 12px; }
 [data-look="novo"] .server-home { container-type: inline-size; padding: clamp(18px, 2.8vw, 64px); }
 [data-look="novo"] .home-content { max-width: none; margin: 0; }
 [data-look="novo"] .home-header {

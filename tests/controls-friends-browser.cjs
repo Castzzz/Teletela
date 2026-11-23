@@ -2,13 +2,17 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('node:fs'), path = require('node:path'), os = require('node:os'), assert = require('node:assert/strict');
 const { registerAppScheme, handleAppProtocol, roomUrl } = require('../electron/app-protocol.cjs');
 registerAppScheme(); app.disableHardwareAcceleration();
+app.commandLine.appendSwitch('use-fake-device-for-media-stream');
+app.commandLine.appendSwitch('use-fake-ui-for-media-stream');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.on('window-all-closed', () => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'teletela-controles-amigos-ui-'));
 app.setPath('userData', path.join(dir, 'electron'));
-process.env.TELINHA_DATA_DIR = path.join(dir, 'data'); process.env.TELINHA_MUSIC = '0'; process.env.SFU_SECRET = '';
+process.env.TELINHA_DATA_DIR = path.join(dir, 'data'); process.env.TELINHA_MUSIC = '0'; if (!process.env.PRIVATE_CALL_TEST) process.env.SFU_SECRET = '';
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-const js = (win, code) => win.webContents.executeJavaScript(code, true);
+const js = (win, code) => win.webContents.executeJavaScript(code, true).catch(error => {
+  throw new Error('Falha no Electron: ' + code.slice(0, 180), { cause: error });
+});
 const click = (win, selector) => js(win, `document.querySelector(${JSON.stringify(selector)}).click();void 0`);
 async function until(win, code) { for (let i = 0; i < 160; i++) { if (await js(win, code)) return; await pause(50); } throw new Error('Estado esperado: ' + code); }
 const windows = [], prefs = new Map(); let backend, failPrefs = false;
@@ -34,13 +38,29 @@ app.whenReady().then(async () => {
     await until(win, "document.querySelector('#account-status').textContent.includes('vinculado')");
     const loaded = new Promise(resolve => win.webContents.once('did-finish-load', resolve)); await click(win, '#account-continue'); await loaded;
     await until(win, 'Boolean(window.appState?.myId)');
-    await click(win, '#btn-open-settings'); await click(win, '[data-settings-tab=amigos]');
+    await click(win, '#friends-open');
     await until(win, "!document.querySelector('#friends-content').classList.contains('hidden')");
   }
   const a = await open('Cast'), b = await open('Amigo'); await account(a, 'cast_teste'); await account(b, 'amigo_teste');
+  await click(a, '[data-filter=add]'); await click(b, '[data-filter=requests]');
   await js(a, "document.querySelector('#friend-username').value='@amigo_teste';document.querySelector('#friends-form').requestSubmit();void 0");
   await until(b, 'Boolean(document.querySelector("#friends-incoming button"))');
   await click(b, '#friends-incoming button'); await until(a, "document.querySelector('#friends-list').textContent.includes('Online')");
+  await click(a, '[data-filter=friends]'); await click(b, '[data-filter=friends]');
+  if (process.env.PRIVATE_CALL_TEST) {
+    await click(a, '#friends-list [aria-label^="Ligar"]');
+    await until(b, "document.querySelector('#private-dialog').open");
+    await click(b, '#private-end');
+    await until(a, "!document.querySelector('#private-dialog').open");
+    await click(a, '#friends-list [aria-label^="Ligar"]');
+    await until(b, "document.querySelector('#private-dialog').open");
+    await click(b, '#private-answer');
+    for (const win of [a, b]) await until(win, "document.querySelector('#private-audio').currentTime > 0.2");
+    await click(a, '#private-mute');
+    assert.equal(await js(a, "document.querySelector('#private-mute').getAttribute('aria-pressed')"), 'true');
+    await click(b, '#private-end'); await until(a, "!document.querySelector('#private-dialog').open");
+    console.log('Voz recebida nos dois sentidos pelo SFU, recusa, mute e desligamento conferidos.');
+  }
   const friendAvatar = await js(b, `(()=>{
     const canvas=document.createElement('canvas');canvas.width=80;canvas.height=80;
     const ctx=canvas.getContext('2d');ctx.fillStyle='#44bb55';ctx.fillRect(0,0,80,80);
@@ -59,26 +79,90 @@ app.whenReady().then(async () => {
     await js(a, `document.documentElement.dataset.theme='${theme}';void 0`); await pause(100);
     fs.writeFileSync(`/tmp/teletela-amigos-${theme}.png`, (await a.webContents.capturePage()).toPNG());
   }
-  b.setSize(390, 844); await pause(200);
+  b.setSize(390, 844); await pause(200); await click(b, '.mobile-nav [data-mobile-view="amigos"]');
+  await until(b, "document.body.dataset.mobileView === 'amigos' && document.querySelector('#friends-page').offsetWidth > 0"); await pause(150);
   assert(await js(b, 'document.documentElement.scrollWidth <= innerWidth'));
   fs.writeFileSync('/tmp/teletela-amigos-celular.png', (await b.webContents.capturePage()).toPNG());
   await click(a, '#friends-list .friend-actions button');
   await until(a, "document.querySelector('#dm-dialog').open && !document.querySelector('#dm-thread').hidden");
+  a.setSize(2560, 1440); await pause(150);
+  assert(await js(a, "document.querySelector('#dm-dialog').getBoundingClientRect().width >= 1000"));
+  async function pasteImage(win) {
+    await js(win, `(async()=>{
+      const blob=await (await fetch('${friendAvatar}')).blob();
+      const data=new DataTransfer();data.items.add(new File([blob],'foto.png',{type:'image/png'}));
+      document.querySelector('#dm-input').dispatchEvent(new ClipboardEvent('paste',{bubbles:true,clipboardData:data}));
+    })()`);
+  }
+  await pasteImage(a);
+  await until(a, "Boolean(document.querySelector('#dm-attachment-draft img')?.naturalWidth)");
+  assert.equal(await js(b, "document.querySelector('#friends-open .friends-unread-dot').hidden"), true);
+  await click(a, '#dm-attachment-draft button');
+  assert(await js(a, "document.querySelector('#dm-attachment-draft').hidden"));
+  await pasteImage(a);
+  await js(a, "document.querySelector('#dm-input').focus()");
+  a.webContents.sendInputEvent({type:'keyDown',keyCode:'Enter'}); a.webContents.sendInputEvent({type:'char',keyCode:'\r'}); a.webContents.sendInputEvent({type:'keyUp',keyCode:'Enter'});
+  await until(a, "Boolean(document.querySelector('#dm-log img')?.naturalWidth) && document.querySelector('#dm-attachment-draft').hidden").catch(async error => {
+    throw new Error(await js(a, "JSON.stringify({status:document.querySelector('#dm-status').textContent,log:document.querySelector('#dm-log').textContent,preview:!document.querySelector('#dm-attachment-draft').hidden})"), {cause:error});
+  });
+  await fs.promises.writeFile('/tmp/teletela-dm-1440p.png', (await a.webContents.capturePage()).toPNG());
+  a.setSize(1180, 900);
   await js(a, "document.querySelector('#dm-input').value='Só entre nós';document.querySelector('#dm-compose').requestSubmit();void 0");
-  await until(b, "document.querySelector('#dm-badge').textContent==='1'");
+  const aviso = "Array.from(document.querySelectorAll('.friends-unread-dot')).every(dot => !dot.hidden)";
+  await until(b, aviso);
   await b.loadURL(roomUrl(url));
-  await until(b, "document.querySelector('#dm-badge').textContent==='1' && !document.querySelector('#dm-badge').hidden");
-  await click(b, '#dm-open');
-  await click(b, '#dm-friends button');
+  await until(b, aviso);
+  await click(b, '.mobile-nav [data-mobile-view="amigos"]');
+  await until(b, "document.querySelector('#friends-list .friend-unread-label')?.checkVisibility()");
+  await pause(150);
+  fs.writeFileSync('/tmp/teletela-amigos-aviso-mobile.png', (await b.webContents.capturePage()).toPNG());
+  b.setSize(1180, 900); await pause(200);
+  await click(b, '#friends-open'); await pause(150);
+  fs.writeFileSync('/tmp/teletela-amigos-aviso-desktop.png', (await b.webContents.capturePage()).toPNG());
+  b.setSize(390, 844); await pause(200);
+  await click(b, '.mobile-nav [data-mobile-view="amigos"]');
+  await click(b, '#friends-list [aria-label^="Conversar"]');
   await until(b, "document.querySelector('#dm-log').textContent.includes('Só entre nós')");
+  await until(b, "Boolean(document.querySelector('#dm-log img')?.naturalWidth)");
+  await until(b, "document.querySelector('#friends-list .friend-unread-label').hidden && Array.from(document.querySelectorAll('.friends-unread-dot')).every(dot => dot.hidden)");
   assert.equal(await js(b, "document.querySelector('#dm-dialog').getBoundingClientRect().width<=innerWidth"), true);
   fs.writeFileSync('/tmp/teletela-conversa-celular.png', (await b.webContents.capturePage()).toPNG());
+  await js(a, `(async()=>{
+    const canvas=document.createElement('canvas');canvas.width=96;canvas.height=64;
+    const ctx=canvas.getContext('2d'),stream=canvas.captureStream(10);
+    const recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp8'}), chunks=[];
+    recorder.ondataavailable=e=>chunks.push(e.data);
+    const stopped=new Promise(resolve=>recorder.onstop=resolve);recorder.start();
+    for(const color of ['red','blue','green','orange']) {
+      ctx.fillStyle=color;ctx.fillRect(0,0,96,64);await new Promise(resolve=>setTimeout(resolve,125));
+    }
+    recorder.stop();await stopped;stream.getTracks().forEach(track=>track.stop());
+    const picker=document.querySelector('#dm-picker'), transfer=new DataTransfer();
+    transfer.items.add(new File(chunks,'teste.webm',{type:'video/webm'}));
+    picker.files=transfer.files;picker.dispatchEvent(new Event('change'));
+  })()`);
+  await click(a, '#dm-compose [type=submit]');
+  await until(b, "document.querySelector('#dm-log video')?.readyState >= 1");
+  await js(b, "document.querySelector('#dm-log video').play()");
+  await until(b, "document.querySelector('#dm-log video').currentTime > 0");
+  await js(a, `(()=>{
+    const data=new DataTransfer();data.items.add(new File(['conteúdo particular'],'nota.txt',{type:'text/plain'}));
+    document.querySelector('#dm-dialog').dispatchEvent(new DragEvent('drop',{bubbles:true,dataTransfer:data}));
+    document.querySelector('#dm-compose').requestSubmit();
+  })()`);
+  await until(b, "Boolean(document.querySelector('#dm-log a[download=\"nota.txt\"]'))");
+  const saved = path.join(dir,'nota-baixada.txt');
+  const received = new Promise((resolve,reject)=>b.webContents.session.once('will-download',(_event,item)=>{
+    item.setSavePath(saved);item.once('done',(_event,state)=>state==='completed'?resolve():reject(new Error(state)));
+  }));
+  await click(b,'#dm-log a[download="nota.txt"]'); await received;
+  assert.equal(fs.readFileSync(saved,'utf8'),'conteúdo particular');
   await click(a, '#dm-close'); await click(b, '#dm-close');
-  await click(a, '[data-settings-tab=conta]'); failPrefs = true; await click(a, '#account-logout');
+  await click(a, '#btn-open-settings'); await click(a, '[data-settings-tab=conta]'); failPrefs = true; await click(a, '#account-logout');
   await until(a, "document.querySelector('#account-feedback').textContent.includes('Não foi possível salvar')"); failPrefs = false;
   assert(prefs.get(a.webContents.id).accountSessions[url]?.token);
-  await click(a, '[data-settings-tab=amigos]');
-  await click(a, '#friends-list button[aria-label^="Remover"]'); await until(b, "document.querySelector('#friends-list').textContent.includes('Nenhum amigo')");
+  await click(a, '#btn-settings-done'); await click(a, '#friends-open');
+  await click(a, '#friends-list summary'); await click(a, '#friends-list button[aria-label^="Remover"]'); await until(b, "document.querySelector('#friends-list').textContent.includes('Nenhum amigo')");
   // Reabrir preserva conta e perfil, sem publicar o visitante salvo no aparelho.
   await a.webContents.reload(); await until(a, 'Boolean(window.appState?.myId)');
   await click(a, '#btn-open-settings'); await click(a, '[data-settings-tab=conta]'); await until(a, "document.querySelector('#account-username').textContent === '@cast_teste'");

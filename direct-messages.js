@@ -15,7 +15,7 @@ function savePage(file, messages) {
   fs.renameSync(file + '.tmp', file);
 }
 
-export function installDirectMessages({ socket, accounts, directory, io, limit }) {
+export function installDirectMessages({ socket, accounts, directory, io, limit, saveFile, removeFile }) {
   function participant(client) {
     if (!client.connected || client.data.accountEnding || !client.data.accountSession) return null;
     return accounts.resolveSessionMeta(client.handshake.auth?.accountToken)?.account.id;
@@ -53,7 +53,7 @@ export function installDirectMessages({ socket, accounts, directory, io, limit }
     finally { readingInbox = false; }
   });
 
-  for (const action of ['history', 'send']) {
+  for (const action of ['history', 'send', 'send-file']) {
     socket.on('dm-' + action, (payload, ack) => {
       if (typeof ack !== 'function') return;
       const me = participant(socket);
@@ -62,11 +62,12 @@ export function installDirectMessages({ socket, accounts, directory, io, limit }
           !friendsOf(me).includes(peer)) {
         return ack({ success: false, error: 'Esta conversa exige uma amizade aceita.' });
       }
-      if (limit('dm-' + action + ':' + me, action === 'send' ? 45 : 120)) {
+      if (limit('dm-' + action + ':' + me, action === 'history' ? 120 : action === 'send-file' ? 8 : 45)) {
         return ack({ success: false, error: 'Aguarde um pouco antes de tentar de novo.' });
       }
       const folder = folderFor(me, peer);
       const head = path.join(folder, 'recentes.json');
+      let stored;
       try {
         if (action === 'history') {
           const before = payload.before;
@@ -77,7 +78,7 @@ export function installDirectMessages({ socket, accounts, directory, io, limit }
           return ack({ success: true, messages, before: messages[0]?.id > 1 ? messages[0].id : null });
         }
         const text = typeof payload.text === 'string' ? payload.text.trim() : '';
-        if (!text || text.length > 2000) return ack({ success: false, error: 'Escreva uma mensagem de até 2000 caracteres.' });
+        if ((!text && action !== 'send-file') || text.length > 2000) return ack({ success: false, error: 'Escreva uma mensagem de até 2000 caracteres.' });
         let messages = readPage(head);
         const last = messages.at(-1)?.id || 0;
         fs.mkdirSync(folder, { recursive: true, mode: 0o700 });
@@ -86,14 +87,21 @@ export function installDirectMessages({ socket, accounts, directory, io, limit }
           messages = [];
         }
         const message = { id: last + 1, from: me, to: peer, text, timestamp: Date.now() };
+        if (action === 'send-file') {
+          try { stored = saveFile(me, peer, payload); }
+          catch (err) { return ack({ success: false, error: err.code ? 'Não foi possível guardar o arquivo.' : err.message }); }
+          message.attachment = stored;
+        }
         messages.push(message);
         savePage(head, messages);
+        stored = null;
         for (const client of io.sockets.sockets.values()) {
           const id = client.data.accountSession?.account.id;
           if ((id === me || id === peer) && participant(client) === id) client.emit('dm-message', message);
         }
         ack({ success: true, message });
       } catch {
+        if (stored) removeFile(stored.file);
         ack({ success: false, error: 'O servidor não conseguiu acessar a conversa.' });
       }
     });

@@ -57,7 +57,7 @@ test('servidor autentica amigos, sincroniza aparelhos e só anuncia presença a 
   async function until(predicate) { for (let i = 0; i < 150; i++) { if (predicate()) return; await wait(20); } assert.ok(predicate()); }
   async function connect(token) {
     const socket = io(url, { autoConnect: false, reconnection: false, transports: ['websocket'], auth: { accountToken: token } });
-    clients.push(socket); socket.on('friends-state', state => { socket.friends = state; });
+    clients.push(socket); socket.on('room-info', info => { if (info.assetKey) socket.assetKey = info.assetKey; }); socket.on('friends-state', state => { socket.friends = state; });
     const connected = once(socket, 'connect'); socket.connect(); await connected; await until(() => socket.friends); return socket;
   }
   const emit = (socket, event, payload = {}) => socket.timeout(5000).emitWithAck(event, payload);
@@ -106,8 +106,27 @@ test('servidor autentica amigos, sincroniza aparelhos e só anuncia presença a 
   assert.deepEqual(foreign, []);
   await until(() => a.friends.friends[0]?.online === true);
   await emit(returnedB, 'update-profile', { name: 'Outro apelido' }); await until(() => a.friends.friends[0]?.name === 'Outro apelido');
+  const data = Buffer.from('Arquivo particular');
+  const upload = await emit(a, 'dm-send-file', { accountId: bb.account.id, name: 'leia-me.txt', mime: 'text/plain', data });
+  assert.equal(upload.success, true);
+  const attachment = upload.message.attachment;
+  const mediaUrl = url + '/api/dm-file/' + attachment.file;
+  for (const outsider of [guest, c]) assert.equal((await fetch(mediaUrl + '?access=' + outsider.assetKey)).status, 404);
+  assert.equal((await fetch(mediaUrl)).status, 404);
+  const download = await fetch(mediaUrl + '?access=' + returnedB.assetKey);
+  assert.match(download.headers.get('content-disposition'), /attachment/);
+  assert.deepEqual(Buffer.from(await download.arrayBuffer()), data);
+  const recovered = await emit(returnedB, 'dm-history', { accountId: aa.account.id });
+  assert.deepEqual(recovered.messages.at(-1).attachment, attachment);
+  for (const [mime, bytes] of [['video/webm', Buffer.from([26,69,223,163])], ['image/gif', Buffer.from('GIF89a')]]) {
+    const result = await emit(a, 'dm-send-file', { accountId: bb.account.id, name: 'midia', mime, data: bytes });
+    assert.equal(result.message.attachment.mime, mime);
+    const range = await fetch(url + '/api/dm-file/' + result.message.attachment.file + '?access=' + a.assetKey, { headers: { Range: 'bytes=0-1' } });
+    assert.equal(range.status, 206); assert.deepEqual(Buffer.from(await range.arrayBuffer()), bytes.subarray(0, 2));
+  }
   assert.equal((await emit(a, 'friend-remove', { accountId: bb.account.id })).success, true);
   await until(() => returnedB.friends.friends.length === 0);
+  assert.equal((await fetch(mediaUrl + '?access=' + returnedB.assetKey)).status, 404);
   assert.equal((await emit(a, 'dm-history', { accountId: bb.account.id })).success, false);
   assert.equal((await emit(a, 'friend-list')).friends.length, 0);
 });

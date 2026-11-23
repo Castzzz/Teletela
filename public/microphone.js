@@ -3,10 +3,16 @@ let rnnoiseBinary;
 
 const safeGain = value => Number.isFinite(value) ? Math.max(0, Math.min(3, value)) : 1;
 
+export function microphoneFilter(mode) {
+  if (mode === 'ia') return 'rnnoise';
+  if (mode === 'pausa-leve' || mode === 'pausa-forte') return mode;
+  return 'off';
+}
+
 // RNNoise opcional → ganho manual → saída mono, sem reforço automático.
 export async function createMicrophonePipeline(raw, { noiseFilter = 'off', gain = 1, onStop } = {}) {
   let rnnoise;
-  if (noiseFilter === 'rnnoise') {
+  if (['rnnoise', 'pausa-leve', 'pausa-forte'].includes(noiseFilter)) {
     rnnoise = await import(`${RNNOISE_DIR}/index.js`);
     rnnoiseBinary ||= await rnnoise.loadRnnoise({
       url: `${RNNOISE_DIR}/rnnoise.wasm`, simdUrl: `${RNNOISE_DIR}/rnnoise_simd.wasm`
@@ -22,7 +28,7 @@ export async function createMicrophonePipeline(raw, { noiseFilter = 'off', gain 
     manual.gain.value = safeGain(gain);
     if (rnnoise) {
       await ctx.audioWorklet.addModule(`${RNNOISE_DIR}/rnnoise/workletProcessor.js`);
-      denoiser = new rnnoise.RnnoiseWorkletNode(ctx, { maxChannels: 1, wasmBinary: rnnoiseBinary });
+      denoiser = new rnnoise.RnnoiseWorkletNode(ctx, { maxChannels: 1, wasmBinary: rnnoiseBinary, profile: noiseFilter });
       // O filtro processa só um canal; saída estéreo deixava o outro vazio e perdia 6 dB.
       denoiser.channelCount = 1;
       denoiser.channelCountMode = 'explicit';

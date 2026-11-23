@@ -26,7 +26,7 @@
 .friend-row span { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 .friend-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .friend-actions button { min-height: 40px; }
-[data-settings-section="amigos"] h5 { font-size: 15px; margin: 24px 0 8px; }
+
 
 .friend-row .friend-initials { position: relative; display: grid; place-items: center; margin: 0; color: var(--text-normal); overflow: visible; }
 .friend-row .friend-avatar-img { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
@@ -34,19 +34,25 @@
 
 .friend-row .friend-avatar-frame { margin: 0; position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
 
-#dm-open { display: flex; align-items: center; gap: 8px; width: calc(100% - 16px); margin: 4px 8px; padding: 8px; border: 0; background: transparent; color: var(--text-normal); cursor: pointer; text-align: left; }
-#dm-open:hover, .dm-person:hover { background: var(--bg-hover); }
-#dm-badge { margin-left: auto; padding: 2px 7px; border-radius: 12px; background: var(--accent-brand); color: white; }
-#dm-dialog { margin: auto; width: min(490px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); color: var(--text-normal); }
+/* O mesmo sinal acompanha a aba e o remetente. */
+.friends-unread-dot, .friend-unread-label::before {
+  display: inline-block; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--text-header);
+}
+.friends-unread-dot[hidden] { display: none; }
+#friends-open .friends-unread-dot { margin-inline-start: auto; }
+.mobile-nav .friends-unread-dot { position: absolute; top: 5px; left: calc(50% + 11px); }
+.friend-unread-label { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--text-header); font-size: 12px; font-weight: 600; }
+.friend-unread-label::before { content: ''; width: 6px; height: 6px; }
+#dm-dialog { margin: auto; width: min(92vw, clamp(700px, 70vw, 1200px)); max-width: calc(100vw - 20px); max-height: calc(100dvh - 32px); color: var(--text-normal); }
+#dm-dialog:has(#dm-thread:not([hidden])) { height: min(80dvh, 1000px); }
 #dm-dialog:not([open]), #dm-dialog [hidden] { display: none; }
 #dm-dialog::backdrop { background: rgb(0 0 0 / 60%); }
 #dm-dialog .modal-header { align-items: center; gap: 10px; }
 #dm-title { flex: 1; overflow-wrap: anywhere; }
-#dm-thread { display: flex; flex-direction: column; gap: 12px; min-height: 0; }
-#dm-log, #dm-friends { overflow-y: auto; overscroll-behavior: contain; }
-#dm-log { height: min(46dvh, 380px); min-height: 5em; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; color: var(--text-muted); }
-.dm-person { display: flex; flex-direction: column; gap: 2px; padding: 10px; width: 100%; text-align: left; color: var(--text-normal); background: var(--bg-secondary); border: 0; border-radius: 8px; cursor: pointer; margin-bottom: 4px; }
-.dm-person small, .dm-message time, #dm-status { color: var(--text-muted); }
+#dm-thread { flex: 1; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+#dm-log { overflow-y: auto; overscroll-behavior: contain; }
+#dm-log { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; color: var(--text-muted); }
+.dm-message time, #dm-status { color: var(--text-muted); }
 .dm-message { padding: 8px 12px; max-width: 88%; background: var(--bg-secondary); border-radius: 10px; overflow-wrap: anywhere; color: var(--text-normal); }
 .dm-message.dm-own { align-self: flex-end; background: var(--accent-soft); }
 .dm-message time { margin-left: 8px; font-size: 11px; }
@@ -54,3 +60,67 @@
 #dm-compose { display: flex; gap: 8px; }
 #dm-input { min-width: 0; flex: 1; }
 #dm-status:empty { display: none; }
+
+#friends-page { display: none; min-width: 0; flex: 1; overflow-y: auto; background: var(--bg-primary); color: var(--text-normal); }
+body.friends-open #friends-page { display: block; }
+body.friends-open :is(#stage-section, #chat-drawer) { display: none !important; }
+.friends-inner { width: min(100%, 840px); padding: clamp(20px, 4vw, 54px); margin-inline: auto; box-sizing: border-box; }
+#friends-heading { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; color: var(--text-header); }
+#friends-status, #private-dialog p { color: var(--text-muted); margin: 8px 0 20px; }
+.friends-filters { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px; padding-bottom: 8px; }
+.friends-filters button, #friends-open { background: transparent; color: var(--text-muted); padding: 9px 12px; border: 0; border-radius: 6px; font: inherit; cursor: pointer; }
+.friends-filters button[aria-pressed=true], #friends-open[aria-current] { background: var(--accent-soft); color: var(--text-header); }
+.friends-filters button:hover, #friends-open:hover { background: var(--bg-hover); color: var(--text-header); }
+#friends-page h2 { font-size: 16px; color: var(--text-header); }
+#friends-page [hidden], #private-dialog [hidden] { display: none; }
+#friends-open { display: flex; align-items: center; gap: 8px; margin: 4px 8px; width: calc(100% - 16px); }
+#friends-page .friend-row { justify-content: flex-start; }
+#friends-page .friend-initials { flex: 0 0 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); }
+#friends-page .friend-actions { flex: 0 0 auto; margin-left: auto; }
+#friends-page .friend-actions .icon-svg { width: 19px; height: 19px; }
+#private-dialog { margin: auto; padding: 24px; width: min(360px, 90vw); border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-secondary); color: var(--text-header); }
+#private-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+#private-dialog h2 { overflow-wrap: anywhere; }
+#private-dialog div { display: flex; flex-wrap: wrap; gap: 8px; }
+#private-dialog p:first-child { margin-top: 0; }
+@media (max-width: 760px), (max-width: 1100px) and (max-height: 540px) and (pointer: coarse) {
+  #friends-open, #friends-heading, body.friends-open #friends-page { display: none; }
+  body[data-mobile-view=amigos] #friends-page { display: block; width: 100%; }
+  #friends-status { margin-top: 0; }
+  #friends-page .friend-actions { gap: 2px; padding-left: 0; }
+  .friends-filters button, #friends-page .friend-actions button { min-height: 44px; }
+}
+
+#friends-page { border-radius: var(--panel-radius); }
+.friend-actions { align-items: center; }
+.friend-actions > button:has(svg), .friend-actions summary {
+  display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 0;
+  background: var(--bg-secondary); color: var(--text-normal); border-radius: 50%; cursor: pointer;
+}
+.friend-actions > button:disabled { opacity: .5; cursor: default; }
+.friend-actions > button:not(:disabled):hover, .friend-actions summary:hover { background: var(--bg-hover); }
+.friend-actions summary { font-size: 20px; list-style: none; }
+.friend-actions details { position: relative; }
+.friend-actions details button { position: absolute; right: 0; z-index: 2; white-space: nowrap; background: var(--bg-secondary); color: var(--text-normal); border: 1px solid var(--border-subtle); }
+.friends-filters [data-filter="add"] { margin-left: auto; color: var(--text-header); }
+@media (max-width: 600px) {
+  .friends-filters { gap: 2px; }
+  .friends-filters button { padding-inline: 7px; font-size: 13px; }
+}
+
+.attachment-draft { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: 8px; background: var(--bg-secondary); color: var(--text-normal); }
+.attachment-draft[hidden] { display: none; }
+.attachment-draft :is(img, video) { width: 64px; height: 52px; object-fit: contain; border-radius: 4px; }
+.attachment-draft span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#chat-attachment-draft { margin-inline: 12px; }
+#dm-dialog .dm-image, #dm-dialog .dm-message video { display: block; max-width: 100%; max-height: min(44dvh, 480px); margin-block: 6px; object-fit: contain; }
+.dm-message audio { max-width: 100%; }
+.dm-file { display: flex; flex-direction: column; gap: 3px; margin-top: 6px; color: var(--text-normal); text-decoration: none; }
+.dm-file small { color: var(--text-muted); }
+.dm-file:hover strong { text-decoration: underline; }
+#dm-log { padding: 12px 4px; }
+#dm-attach { flex: none; min-width: 42px; }
+@media (max-width: 600px) {
+  #dm-dialog { width: calc(100vw - 16px); padding: 12px; gap: 8px; }
+  #dm-dialog:has(#dm-thread:not([hidden])) { height: min(92dvh, var(--mobile-height, 92dvh)); }
+}

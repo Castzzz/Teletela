@@ -36,8 +36,8 @@ function renderChrome(state) {
   document.body.classList.toggle('mobile-in-call', inCall);
   const count = [...state.channels.values()].reduce((sum, ch) => sum + ch.users.size, 0);
   text('#mobile-room-summary', count ? `${count} ${count === 1 ? 'pessoa na voz agora' : 'pessoas na voz agora'}` : 'A sala está aberta. Chega mais!');
-  text('#mobile-page-title', view === 'sala' ? name : view === 'chat' ? $('#chat-channel-label')?.textContent || 'Conversa' : view === 'voce' ? 'Você' : 'Teletela');
-  text('#mobile-page-subtitle', view === 'sala' ? `${channel?.users.size || 0} na call · fique à vontade` : view === 'chat' ? state.textView ? 'Conversa por texto' : 'Chat da call' : view === 'voce' ? 'Seu perfil, do seu jeito' : 'Seu ponto de encontro');
+  text('#mobile-page-title', view === 'sala' ? name : view === 'chat' ? $('#chat-channel-label')?.textContent || 'Conversa' : view === 'amigos' ? 'Amigos' : view === 'voce' ? 'Você' : 'Teletela');
+  text('#mobile-page-subtitle', view === 'sala' ? `${channel?.users.size || 0} na call · fique à vontade` : view === 'chat' ? state.textView ? 'Conversa por texto' : 'Chat da call' : view === 'amigos' ? 'Contatos e pedidos' : view === 'voce' ? 'Seu perfil, do seu jeito' : 'Seu ponto de encontro');
   $('#mobile-back')?.classList.toggle('hidden', !['sala', 'chat'].includes(view));
   $('#mobile-create-channel')?.classList.toggle('hidden', view !== 'canais');
   $('#mobile-open-chat')?.classList.toggle('hidden', view !== 'sala' || !inCall);
@@ -90,8 +90,10 @@ function renderChrome(state) {
 }
 
 export function setMobileView(view) {
-  if (!smallScreen.matches || !['canais', 'sala', 'chat', 'voce'].includes(view)) return;
+  if (!smallScreen.matches || !['canais', 'sala', 'chat', 'amigos', 'voce'].includes(view)) return;
   const previous = document.body.dataset.mobileView || 'canais';
+  document.body.classList.remove('friends-open');
+  $('#friends-open').removeAttribute('aria-current');
   if (view !== previous) hooks?.closeMusic?.();
   if (view === 'chat' && previous !== 'chat') chatReturnView = previous === 'sala' ? 'sala' : 'canais';
   if (view !== 'sala') $('#mobile-call-options')?.close();
@@ -106,7 +108,7 @@ export function syncMobileState(state) {
   if ((!state.currentChannelId && view === 'sala') || (!state.currentChannelId && !state.textView && view === 'chat')) setMobileView('canais');
   renderChrome(state);
   // Mudar de tela não interfere na captura nem no serviço da call.
-  const detail = { inCall: Boolean(state.currentChannelId), microphone: Boolean(state.localMicStream), name: state.channels.get(state.currentChannelId)?.name || 'Call' };
+  const detail = { inCall: Boolean(state.currentChannelId || state.privateVoice), microphone: Boolean(state.privateVoice || state.localMicStream), name: state.privateVoice ? 'Ligação privada' : state.channels.get(state.currentChannelId)?.name || 'Call' };
   const signature = JSON.stringify(detail);
   if (signature !== syncMobileState.lastState) {
     syncMobileState.lastState = signature;
@@ -115,6 +117,7 @@ export function syncMobileState(state) {
 }
 
 function back() {
+  if ($('#private-dialog')?.open) return true;
   const profile = $('#profile-quick-menu');
   if (profile?.matches(':popover-open')) { profile.hidePopover(); return true; }
   if (window.teletelaExitFullscreen?.()) return true;

@@ -1,3 +1,5 @@
+import { attachmentDraft, attachmentPayload } from './chat-attachments.js';
+import { festaDoDia } from './decoracoes.js';
 import { setupStreamAccess } from './stream-access.js';
 import { setupScreenPreviews } from './screen-previews.js';
 import { setupSoundTrim } from './sound-trim.js';
@@ -38,7 +40,7 @@ import {
 } from './audio-manager.js';
 import { normalizeImageCrop, imageCropRect, imageCropStyle } from './image-crop.js';
 import { activityElapsed, activityLabel, manualActivityFor } from './game-activity.js';
-import { createMicrophonePipeline } from './microphone.js';
+import { createMicrophonePipeline, microphoneFilter } from './microphone.js';
 import { CameraSource } from './camera-source.js';
 import { MobileScreenSource } from './mobile-screen.js';
 import { setupMobileUI, setMobileView, syncMobileState } from './mobile.js';
@@ -55,6 +57,7 @@ import { setupChannelOrganization } from './channel-organization.js';
 import { setupChatExtras } from './chat-extras.js';
 import { createDailyCallClocks, formatCallDuration } from './call-time.js';
 import { setupMessageSearch } from './message-search.js';
+import { setupPrivateCalls } from './private-calls.js';
 import { setupAccounts, accountSession, initialAccountProfile, accountProfileSnapshot } from './accounts.js';
 
 let channelOrganizer = null;
@@ -140,6 +143,25 @@ function applyTheme(theme) {
   document.documentElement.dataset.theme = THEMES.includes(theme) ? theme : 'escuro';
 }
 applyTheme(prefs.theme);
+
+// A decoração acompanha o calendário local, inclusive com a sala aberta na virada.
+let viradaDecoracao;
+function atualizarDecoracaoSazonal() {
+  const agora = new Date();
+  const mes = agora.getMonth();
+  const controle = document.getElementById('decoracoes-de-epoca');
+  controle.checked = prefs.festaLocal !== 'sem';
+  const tema = controle.checked && festaDoDia(agora);
+  if (tema) document.documentElement.dataset.festa = tema;
+  else delete document.documentElement.dataset.festa;
+  clearTimeout(viradaDecoracao);
+  const meiaNoite = new Date(agora.getFullYear(), mes, agora.getDate() + 1);
+  viradaDecoracao = setTimeout(atualizarDecoracaoSazonal, meiaNoite - agora);
+}
+atualizarDecoracaoSazonal();
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) atualizarDecoracaoSazonal();
+});
 window.aplicarVisual(prefs.visual);
 document.documentElement.dataset.terminalCursor = ['piscar', 'fixo'].includes(prefs.terminalCursor) ? prefs.terminalCursor : 'suave';
 applyAppearance(prefs.appearanceExperiment);
@@ -540,7 +562,12 @@ appState.isOwner = false;
 appState.legacyAdmin = false;
 appState.ownershipSupported = false;
 appState.serverHasAdmin = false;
+const privateCalls = setupPrivateCalls({ socket, showToast, mic: openMicrophone,
+  ring: () => { if (savedPresence(prefs) !== 'dnd') playMentionPing(); },
+  mobileState: active => { appState.privateVoice = active; syncMobileState(appState); },
+  output: () => appState.audioManager.selectedOutputId, createSession: options => new SfuSession(options) });
 const accountUI = setupAccounts({
+  calls: privateCalls, openSettings,
   socket, prefs, savePrefs, serverUrl: SERVER_URL, assetKey: () => appState.assetKey || '',
   getProfile: () => ({ ...myProfile }), getMemberId: () => appState.memberId, showToast, selectSettingsTab,
   onProfile: profile => {
@@ -871,7 +898,8 @@ socket.on('user-joined', handleUserJoined);
 // mesmo com o ensurdecer ligado.
 const CALL_SOUNDS = Array.from({ length: 9 }, (_, i) => `/sounds/amigo-${i + 1}.ogg`);
 const callSoundBuffers = new Map();
-let lastCallSoundAt = 0;
+const STREAM_SOUNDS = { live: 'avisos/transmissao-iniciada.wav', viewer: 'avisos/espectador-entrou.wav', viewerLeft: 'avisos/espectador-saiu.wav' };
+const lastCallSoundAt = { join: 0, leave: 0, live: 0, viewer: 0, viewerLeft: 0 };
 
 // Som de entrada próprio de quem entrou (perfil), senão um dos áudios dos amigos
 function joinSoundUrl(u) {
@@ -942,17 +970,18 @@ async function loadSoundBuffer(ctx, url) {
 }
 
 async function playCallSound(soundSeed, customUrl = '', { force = false, kind = 'join' } = {}) {
-  if (!force && (prefs.callSounds === false || savedPresence(prefs) === 'dnd')) return;
+  const enabled = STREAM_SOUNDS[kind] ? prefs.streamSounds : prefs.callSounds;
+  if (!force && (enabled === false || savedPresence(prefs) === 'dnd')) return;
   const callVolPct = typeof prefs.callSoundsVolume === 'number' ? prefs.callSoundsVolume : 100;
   if (!force && callVolPct <= 0) return;
   const callVolGain = Math.max(0, callVolPct / 100);
 
   // Muita gente entrando junto (servidor reiniciou): um som só
-  const now = Date.now();
-  if (!force && now - lastCallSoundAt < 1500) return;
-  if (!force) lastCallSoundAt = now;
-  const url = customUrl || callSoundChoiceUrl(kind, soundSeed);
+  const url = customUrl || STREAM_SOUNDS[kind] || callSoundChoiceUrl(kind, soundSeed);
   if (!url) return;
+  const now = Date.now();
+  if (!force && now - lastCallSoundAt[kind] < 1500) return;
+  if (!force) lastCallSoundAt[kind] = now;
   const mixer = appState.mixerManager;
   try {
     const ctx = mixer?.audioContext;
@@ -962,6 +991,7 @@ async function playCallSound(soundSeed, customUrl = '', { force = false, kind = 
       await audio.play();
       return;
     }
+    if (ctx.state !== 'running') await ctx.resume();
     let buffer;
     {
       try {
@@ -970,7 +1000,7 @@ async function playCallSound(soundSeed, customUrl = '', { force = false, kind = 
         // Som de entrada de alguém que não veio: toca um dos áudios dos amigos no lugar
         if (customUrl && !force) {
           console.warn('[Som] Som de entrada personalizado não veio, tocando o padrão:', err);
-          lastCallSoundAt = 0;
+          lastCallSoundAt[kind] = 0;
           return playCallSound(soundSeed, '', { kind });
         }
         throw err;
@@ -984,7 +1014,7 @@ async function playCallSound(soundSeed, customUrl = '', { force = false, kind = 
     source.connect(gainNode).connect(mixer.outputGain);
     source.start();
   } catch (err) {
-    console.warn('[Som] Não tocou o som de entrada/saída:', err);
+    console.warn('[Som] Não tocou o aviso da call:', err);
   }
 }
 
@@ -1028,12 +1058,17 @@ async function playControlSound(kind) {
   }
 }
 
+function isOwnActiveStream(key) {
+  return streamOwner(key) === appState.myId && Boolean(localStreamFor(streamKind(key)));
+}
+
 const handleUserLeft = (data) => {
   const channelId = data.channelId;
   const userId = data.userId;
   const userName = data.userName || data.name || 'Alguém';
 
   const ch = appState.channels.get(channelId);
+  const wasWatching = ch?.users.get(userId)?.watching?.some(isOwnActiveStream);
   if (ch) {
     ch.users.delete(userId);
     ch.userCount = ch.users.size;
@@ -1043,7 +1078,7 @@ const handleUserLeft = (data) => {
 
   if (channelId === appState.currentChannelId) {
     addSystemChatMessage(`${userName} saiu do canal.`, channelId);
-    playCallSound(data.soundSeed, '', { kind: 'leave' });
+    playCallSound(data.soundSeed, '', { kind: wasWatching && prefs.streamSounds !== false ? 'viewerLeft' : 'leave' });
     updateTopBar();
     updateVoiceLounge();
     cleanupUserConnections(userId);
@@ -1062,6 +1097,18 @@ const handleUserStateChanged = (state) => {
   let visualChanged = true;
   if (ch && ch.users.has(userId)) {
     const u = ch.users.get(userId);
+    // A lista inicial é silenciosa. Só uma mudança ao vivo na nossa call toca.
+    if (channelId === appState.currentChannelId && userId !== appState.myId) {
+      const novaTela = state.isSharing && !u.isSharing;
+      const novaCamera = state.isCameraOn && !u.isCameraOn;
+      const novaExtra = state.extraScreens?.some(n => !u.extraScreens?.includes(n));
+      if (novaTela || novaCamera || novaExtra) playCallSound(undefined, '', { kind: 'live' });
+      if (Array.isArray(state.watching)) {
+        const entrou = state.watching.some(key => !u.watching?.includes(key) && isOwnActiveStream(key));
+        const saiu = u.watching?.some(key => !state.watching.includes(key) && isOwnActiveStream(key));
+        if (entrou || saiu) playCallSound(undefined, '', { kind: entrou ? 'viewer' : 'viewerLeft' });
+      }
+    }
     const sigBefore = visualSig(u);
     if (typeof state.isCameraOn === 'boolean') {
       const wasOn = u.isCameraOn;
@@ -1231,6 +1278,7 @@ function requestChannelJoin(channelId, password = '', streamKey = null) {
 }
 
 function switchChannel(targetChannelId, password, streamKey = null) {
+  closeFriendsPage();
   if (!targetChannelId) return;
   const cleanId = targetChannelId.toLowerCase();
   if (cleanId === appState.currentChannelId) {
@@ -1276,6 +1324,7 @@ function activateVoiceChannel(cleanId) {
 // Sair da call sem fechar o app: desliga voz e transmissões e fica fora de todos os canais.
 // Clicar num canal da lista entra de novo.
 function leaveCall() {
+  if (privateCalls.hangup()) return;
   if (!appState.currentChannelId) return;
   // Eu saí: o servidor responde com o áudio que tocou pros outros
   socket.emit('leave-channel', {}, (res) => playCallSound(res?.soundSeed, '', { kind: 'leave' }));
@@ -1588,6 +1637,7 @@ function renderChannelsTree() {
 }
 
 function updateTopBar() {
+  channelDraft?.sync();
   diceUI?.sync();
   watchTogetherUI?.syncChannel();
   syncConnectionMonitor();
@@ -1682,7 +1732,13 @@ function renderServerHome() {
 }
 
 // Navegar pelo início não altera a participação na call nem as conexões de mídia.
+function closeFriendsPage() {
+  document.body.classList.remove('friends-open');
+  $('#friends-open').removeAttribute('aria-current');
+}
+
 function setBrowsingHome(open) {
+  closeFriendsPage();
   if (open) musicUI?.fecharConversa();
   if (appState.browsingHome === open) return;
   appState.browsingHome = open;
@@ -2944,49 +3000,7 @@ function chatAttachmentHtml(attachment) {
     </a>`;
 }
 
-// Prepara a imagem pro chat: foto parada é reduzida (lado maior até 1920 px, WebP);
-// GIF vai como está pra continuar animado. Máximo 15 MB.
-const MAX_CHAT_IMAGE_BYTES = 15 * 1024 * 1024;
-const CHAT_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
-const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
-
-async function prepareChatImage(file) {
-  if (!CHAT_IMAGE_TYPES.includes(file.type)) throw new Error('Só dá pra mandar PNG, JPG, WebP ou GIF.');
-  const url = URL.createObjectURL(file);
-  try {
-    const img = await new Promise((resolve, reject) => {
-      const el = new Image();
-      el.onload = () => resolve(el);
-      el.onerror = () => reject(new Error('Não consegui abrir essa imagem.'));
-      el.src = url;
-    });
-    const width = img.naturalWidth;
-    const height = img.naturalHeight;
-    if (file.type === 'image/gif') {
-      if (file.size > MAX_CHAT_IMAGE_BYTES) throw new Error('GIF grande demais (máximo 15 MB).');
-      return { data: await file.arrayBuffer(), mime: file.type, width, height };
-    }
-    const scale = Math.min(1, 1920 / Math.max(width, height));
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(width * scale);
-    canvas.height = Math.round(height * scale);
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.85));
-    // Ficou maior que o original (print pequeno, PNG simples)? Manda o original
-    const useOriginal = !blob || (scale === 1 && file.size <= blob.size);
-    const out = useOriginal ? file : blob;
-    if (out.size > MAX_CHAT_IMAGE_BYTES) throw new Error('Imagem grande demais (máximo 15 MB).');
-    return {
-      data: await out.arrayBuffer(),
-      mime: useOriginal ? file.type : 'image/webp',
-      width: useOriginal ? width : canvas.width,
-      height: useOriginal ? height : canvas.height
-    };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
+let channelDraft;
 let sendingChatImage = false;
 async function sendChatImage(file) {
   if (!file) return;
@@ -3002,17 +3016,16 @@ async function sendChatImage(file) {
   const text = input?.value.trim() || '';
   const replyTo = appState.replyingTo?.id;
   try {
-    const isImage = CHAT_IMAGE_TYPES.includes(file.type);
-    if (!isImage && file.size > MAX_ATTACHMENT_BYTES) throw new Error('Arquivo grande demais (máximo 20 MB).');
-    if (!file.size) throw new Error('Escolha um arquivo que não esteja vazio.');
-    const attachment = isImage ? await prepareChatImage(file) : { data: await file.arrayBuffer(), mime: file.type, name: file.name };
-    if (!textChannelId && appState.currentChannelId !== callChannelId) throw new Error('A call mudou durante a preparação. Escolha o arquivo novamente.');
+    const attachment = await attachmentPayload(file);
+    const isImage = Boolean(attachment.width);
+    if (!socket.connected || channelDraft.file !== file || appState.textView !== textChannelId || (!textChannelId && appState.currentChannelId !== callChannelId)) return;
     showToast('📎 Enviando anexo...');
     const event = `${textChannelId ? 'text' : 'chat'}-${isImage ? 'image' : 'file'}`;
-    const res = await socket.timeout(60000).emitWithAck(event, { ...attachment, text, ...(textChannelId ? { channelId: textChannelId } : {}), replyTo });
+    const res = await socket.timeout(60000).emitWithAck(event, { ...attachment, text, channelId: textChannelId || callChannelId, replyTo });
     if (res?.success) {
       // Quem trocou de canal ou continuou digitando durante o envio mantém seu rascunho.
-      if (appState.textView === textChannelId && (textChannelId || appState.currentChannelId === callChannelId)) {
+      if (channelDraft.file === file && appState.textView === textChannelId && (textChannelId || appState.currentChannelId === callChannelId)) {
+        channelDraft.clear();
         if (input?.value.trim() === text) input.value = '';
         if (appState.replyingTo?.id === replyTo) setReplyTo(null);
       }
@@ -3027,36 +3040,12 @@ async function sendChatImage(file) {
 }
 
 function setupChatImages() {
-  const fileInput = $('#input-chat-image');
-  fileInput?.addEventListener('change', () => {
-    sendChatImage(fileInput.files?.[0]);
-    fileInput.value = '';
+  channelDraft = attachmentDraft({
+    picker: $('#input-chat-image'), input: $('#chat-input'), preview: $('#chat-attachment-draft'), dropZone: $('#chat-drawer'),
+    destination: () => appState.textView ? 'text/' + appState.textView : appState.currentChannelId,
+    report: message => showToast(message, 'error')
   });
-  // Ctrl+V com arquivo no campo do chat (texto normal continua sendo colado).
-  $('#chat-input')?.addEventListener('paste', (e) => {
-    const file = e.clipboardData?.files?.[0];
-    if (!file) return;
-    e.preventDefault();
-    sendChatImage(file);
-  });
-  // Arrastar arquivo pro chat
-  const drawer = $('#chat-drawer');
-  drawer?.addEventListener('dragover', (e) => {
-    if ([...(e.dataTransfer?.items || [])].some((i) => i.kind === 'file')) {
-      e.preventDefault();
-      drawer.classList.add('drag-over');
-    }
-  });
-  drawer?.addEventListener('dragleave', (e) => {
-    if (!drawer.contains(e.relatedTarget)) drawer.classList.remove('drag-over');
-  });
-  drawer?.addEventListener('drop', (e) => {
-    drawer.classList.remove('drag-over');
-    const file = e.dataTransfer?.files?.[0];
-    if (!file) return;
-    e.preventDefault();
-    sendChatImage(file);
-  });
+  socket.on('disconnect', channelDraft.clear);
 
   // Clique na imagem: abre grande
   const viewer = $('#image-viewer');
@@ -3723,6 +3712,8 @@ function setupChatAndReactions() {
 
   chatForm?.addEventListener('submit', (e) => {
     e.preventDefault();
+    channelDraft?.sync();
+    if (channelDraft?.file) { sendChatImage(channelDraft.file); return; }
     const text = chatInput?.value?.trim();
     if (!text) return;
 
@@ -3952,18 +3943,12 @@ async function populateSettingsDevices() {
     }
 
     if (outputSelect) {
-      outputSelect.innerHTML = '';
-      if (detected.audioOutputs.length === 0) {
-        outputSelect.innerHTML = '<option value="">Dispositivo padrão</option>';
-      } else {
-        detected.audioOutputs.forEach((d) => {
-          const opt = document.createElement('option');
-          opt.value = d.deviceId;
-          opt.textContent = d.label || `Saída (${d.deviceId.slice(0, 8)})`;
-          if (d.deviceId === appState.audioManager?.selectedOutputId) opt.selected = true;
-          outputSelect.appendChild(opt);
-        });
+      outputSelect.replaceChildren(new Option('Dispositivo padrão', 'default'));
+      for (const d of detected.audioOutputs) {
+        if (d.deviceId === 'default') continue;
+        outputSelect.add(new Option(d.label || `Saída (${d.deviceId.slice(0, 8)})`, d.deviceId));
       }
+      outputSelect.value = appState.mixerManager?.audioContext?.sinkId || 'default';
     }
 
     if (systemSelect) {
@@ -4036,6 +4021,10 @@ function openSettings(name = $('.settings-tab.active')?.dataset.settingsTab || '
 }
 
 function setupModals() {
+  $('#decoracoes-de-epoca').addEventListener('change', (evento) => {
+    savePrefs({ festaLocal: evento.target.checked ? 'auto' : 'sem' });
+    atualizarDecoracaoSazonal();
+  });
   const syncChannelPasswordField = () => {
     const isVoice = document.querySelector('input[name="channel-type"]:checked')?.value === 'voice';
     $('#channel-password-field').classList.toggle('hidden', !isVoice);
@@ -4155,10 +4144,17 @@ function setupModals() {
     });
   }
 
-  $('#select-audio-output')?.addEventListener('change', (e) => {
-    const outId = e.target.value;
-    appState.audioManager?.savePreferences(null, null, outId);
-    showToast('Dispositivo de saída selecionado');
+  $('#select-audio-output')?.addEventListener('change', async (e) => {
+    const select = e.target;
+    const outId = select.value;
+    try {
+      await applyMixerOutput(outId);
+      appState.audioManager.savePreferences(null, null, outId);
+      showToast('Dispositivo de saída selecionado');
+    } catch {
+      select.value = appState.mixerManager?.audioContext?.sinkId || 'default';
+      showToast('Não foi possível usar essa saída de áudio');
+    }
   });
 
   $('#select-audio-system')?.addEventListener('change', (e) => {
@@ -5625,14 +5621,14 @@ function setupPerformanceSelect() {
 }
 
 // Novidades da versão: mostra uma vez só (quem abre o app pela primeira vez vê o perfil, não isso)
-const WHATS_NEW_VERSION = '4.8.0';
+const WHATS_NEW_VERSION = '4.9.0';
 let whatsNewReturnFocus = null;
 
 function openWhatsNew(seen = 0, returnFocus = document.activeElement) {
   closeUserPopover();
   whatsNewReturnFocus = returnFocus;
   const seenParts = String(seen).split('.').map(Number);
-  for (const version of ['4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
+  for (const version of ['4-8-0', '4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
     const parts = version.split('-').map(Number);
     // Compara também a correção: quem viu 3.4.0 ainda precisa das novidades de 3.4.1.
     const difference = parts.findIndex((part, index) => part !== (seenParts[index] || 0));
@@ -6748,7 +6744,8 @@ function cleanupUserConnections(userId) {
 // Sinalização num WebSocket próprio (/sfu/ws), com senha temporária do server.js.
 // -----------------------------------------------------------------------------
 class SfuSession {
-  constructor({ ownerId, role, kind = 'screen', stream = null, onStream = null, onClose = null }) {
+  constructor({ ownerId, role, privateId = null, kind = 'screen', stream = null, onStream = null, onClose = null }) {
+    this.privateId = privateId;
     this.ownerId = ownerId;
     this.role = role; // 'host' (eu transmito) ou 'viewer'
     this.kind = kind; // 'screen' (tela/câmera) ou 'voice' (microfone)
@@ -6764,7 +6761,7 @@ class SfuSession {
 
   async start() {
     if (this.closed) return;
-    const auth = await socket.timeout(5000).emitWithAck('sfu-token', { ownerId: this.ownerId, role: this.role, kind: this.kind }).catch(() => null);
+    const auth = await socket.timeout(5000).emitWithAck(this.privateId ? 'private-token' : 'sfu-token', { id: this.privateId, ownerId: this.ownerId, role: this.role, kind: this.kind }).catch(() => null);
     if (this.closed) return;
     if (!auth?.ok) {
       this.retryLater();
@@ -7280,7 +7277,7 @@ function onWebRTCChannelChange(oldChannelId, newChannelId) {
 // 'basico': o filtro do próprio Chromium · 'off': microfone cru
 // -----------------------------------------------------------------------------
 function noiseMode() {
-  return ['ia', 'basico', 'off'].includes(prefs.noiseSuppression) ? prefs.noiseSuppression : 'ia';
+  return ['ia', 'pausa-leve', 'pausa-forte', 'basico', 'off'].includes(prefs.noiseSuppression) ? prefs.noiseSuppression : 'ia';
 }
 
 // Ganho do microfone (Configurações): 0–300%, aplicado pelo próprio Telinha. Serve pra quem
@@ -7306,9 +7303,10 @@ async function openMicrophone(deviceId) {
   const raw = await manager.acquireMicrophoneStream(deviceId ?? manager.selectedMicrophoneId, {
     noiseSuppression: mode === 'basico'
   });
-  if (mode === 'ia') {
+  const filter = microphoneFilter(mode);
+  if (filter !== 'off') {
     try {
-      return await processMicrophone(raw, 'rnnoise');
+      return await processMicrophone(raw, filter);
     } catch (err) {
       console.warn('[Mic] IA indisponível, usando o filtro básico:', err);
       showToast('⚠️ Cancelamento de ruído com IA indisponível; usando o básico.', 'error');
@@ -8585,6 +8583,12 @@ function setupWebRTCSignaling(sock) {
 // 11. INITIALIZATION & AUDIO SUBSYSTEM SETUP
 // -----------------------------------------------------------------------------
 
+async function applyMixerOutput(id) {
+  const ctx = appState.mixerManager?.audioContext;
+  const sink = id === 'default' ? '' : id;
+  if ((ctx?.sinkId || '') !== sink) await ctx.setSinkId(sink);
+}
+
 function initAudioSystem() {
   const AudioContextClass = typeof window !== 'undefined'
     ? (window.AudioContext || window.webkitAudioContext)
@@ -8600,6 +8604,10 @@ function initAudioSystem() {
   appState.mixerManager.setMasterVolume(prefs.masterVolume ?? 100);
   appState.mixerManager.setDeafenStreams(prefs.deafenStreams === true);
   appState.audioManager = new AudioManager({ volumeMixer: appState.mixerManager });
+  if (appState.audioManager.selectedOutputId) {
+    applyMixerOutput(appState.audioManager.selectedOutputId).catch(err =>
+      console.warn('[Som] Saída salva indisponível. Usando a saída padrão.', err));
+  }
   appState.deafenController = new DeafenController({
     appState,
     mixerManager: appState.mixerManager,
@@ -8728,6 +8736,9 @@ function initApp() {
       savePrefs({ controlSoundSet: controlSoundSetInput.value });
     });
   }
+  const streamSoundsInput = $('#input-stream-sounds');
+  streamSoundsInput.checked = prefs.streamSounds !== false;
+  streamSoundsInput.addEventListener('change', () => savePrefs({ streamSounds: streamSoundsInput.checked }));
   const callSoundsInput = $('#input-call-sounds');
   if (callSoundsInput) {
     callSoundsInput.checked = prefs.callSounds !== false;

@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process';
 import { EventEmitter, once } from 'node:events';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
-import { startMusicDownload, formatToolError } from './source.mjs';
+import { startMusicDownload, formatToolError, MAX_TRACK_SECONDS } from './source.mjs';
 
 const binary = fileURLToPath(new URL('../.cache/music-lab/music-publisher', import.meta.url));
 
@@ -61,7 +61,7 @@ export class MusicTransport extends EventEmitter {
     }
     // A ponte controla o relógio; o encoder só produz dados conforme a conexão aceita.
     const ffmpeg = spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-nostdin', ...inputOptions,
-      '-analyzeduration', '100000', '-probesize', '32768', '-i', input, '-t', '1200', '-vn', '-map_metadata', '-1', '-c:a', 'libopus', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-frame_duration', '20',
+      '-analyzeduration', '100000', '-probesize', '32768', '-i', input, '-t', String(MAX_TRACK_SECONDS), '-vn', '-map_metadata', '-1', '-c:a', 'libopus', '-b:a', '160k', '-ar', '48000', '-ac', '2', '-frame_duration', '20',
       '-f', 'opus', '-page_duration', '20000', '-flush_packets', '1', `tcp://127.0.0.1:${port}`], { stdio: [streamed ? 'pipe' : 'ignore', 'ignore', 'pipe'] });
     this.ffmpeg = ffmpeg;
     this.children.push(ffmpeg);

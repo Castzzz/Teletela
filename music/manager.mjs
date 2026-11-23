@@ -100,7 +100,10 @@ export class MusicManager extends EventEmitter {
         session.phase = 'playing';
         session.failures = 0;
         const metadata = typeof file === 'object' ? file : prefetched?.stream;
-        if (metadata && typeof metadata === 'object') Object.assign(session.track, { resolvedTitle: metadata.title, resolvedUrl: metadata.sourceUrl });
+        if (metadata && typeof metadata === 'object') {
+          Object.assign(session.track, { resolvedTitle: metadata.title, resolvedUrl: metadata.sourceUrl });
+          if (Number.isFinite(metadata.duration) && metadata.duration > 0) session.track.duration = metadata.duration;
+        }
         this.publish(session);
         this.prefetch(session);
       } catch (error) {

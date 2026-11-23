@@ -6,6 +6,7 @@
 import express from 'express';
 import { createStreamAccess } from './stream-access.js';
 import { getLinkPreview } from './link-previews.js';
+import { createPrivateCalls } from './private-calls.js';
 import { installDirectMessages } from './direct-messages.js';
 import { ChannelExtras } from './channel-extras.js';
 import { DailyCallStore } from './daily-call-store.js';
@@ -78,6 +79,7 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
   maxHttpBufferSize: 3e7 // 30MB (acomoda GIFs de 10MB em base64)
 });
+const privateCalls = createPrivateCalls({ io, accounts, secret: SFU_SECRET, path: SFU_PATH, revoke: revokeSfuMedia, limit: accountLimit });
 const streamAccess = createStreamAccess({ io, revoke: revokeSfuMedia, limit: accountLimit, changed: broadcastChannels });
 app.get('/api/identity', (_req, res) => {
   const challenge = `${Date.now() + 60000}.${randomBytes(16).toString('hex')}`;
@@ -840,10 +842,12 @@ function saveChatImage(data, mime) {
 // Arquivos ficam fora da pasta pública; só vídeos reconhecidos podem abrir no player.
 const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 const ATTACHMENT_FILE_RE = /^[a-f0-9-]{36}\.(bin|mp4|webm|wav)$/;
-function attachmentStorage(directory, maxBytes, temporary = false) {
+const DM_FILE_RE = /^([a-f0-9-]{36})_([a-f0-9-]{36})_[a-f0-9-]{36}\.(?:png|jpg|gif|webp|mp4|webm|wav|bin)$/;
+function attachmentStorage(directory, maxBytes, temporary = false, privateFiles = false) {
   if (temporary) fs.rmSync(directory, { recursive: true, force: true });
-  fs.mkdirSync(directory, { recursive: true });
-  const files = fs.readdirSync(directory).filter((file) => ATTACHMENT_FILE_RE.test(file)).map((file) => {
+  fs.mkdirSync(directory, { recursive: true, mode: privateFiles ? 0o700 : 0o777 });
+  const pattern = privateFiles ? DM_FILE_RE : ATTACHMENT_FILE_RE;
+  const files = fs.readdirSync(directory).filter((file) => pattern.test(file)).map((file) => {
     const st = fs.statSync(path.join(directory, file));
     return { file, size: st.size, time: st.mtimeMs };
   }).sort((a, b) => a.time - b.time);
@@ -856,21 +860,40 @@ function attachmentStorage(directory, maxBytes, temporary = false) {
     files.splice(i, 1);
   };
   const trim = () => { while (bytes > maxBytes && files.length) remove(files[0].file); };
-  trim();
+  if (!privateFiles) trim();
   return {
     directory, remove,
-    save(data, ext) {
-      const file = `${randomUUID()}.${ext}`;
-      fs.writeFileSync(path.join(directory, file), data, { flag: 'wx' });
+    save(data, ext, prefix = '') {
+      if (privateFiles && bytes + data.length > maxBytes) throw new Error('O espaço para anexos privados está cheio.');
+      const file = `${prefix}${randomUUID()}.${ext}`;
+      const dest = path.join(directory, file);
+      const fd = fs.openSync(dest, 'wx', privateFiles ? 0o600 : 0o666);
+      try { fs.writeFileSync(fd, data); }
+      catch (err) { fs.unlinkSync(dest); throw err; }
+      finally { fs.closeSync(fd); }
       files.push({ file, size: data.length, time: Date.now() });
       bytes += data.length;
-      trim();
+      if (!privateFiles) trim();
       return file;
     }
   };
 }
 const textAttachments = attachmentStorage(path.join(TEXT_DIR, 'files'), 5 * 1024 ** 3);
 const chatAttachments = attachmentStorage(DATA_DIR ? path.join(DATA_DIR, 'chat-files') : path.join(os.tmpdir(), `teletela-files-${process.pid}`), 1024 ** 3, true);
+
+const dmFiles = DATA_DIR && attachmentStorage(path.join(DATA_DIR, 'conversas', 'anexos'), 5 * 1024 ** 3, false, true);
+
+function saveDmFile(a, b, payload) {
+  const prepared = prepareAttachment(payload);
+  if (Object.hasOwn(CHAT_IMAGE_TYPES, payload.mime)) {
+    if (prepared.data.length > MAX_CHAT_IMAGE_BYTES || !imageMatchesType(prepared.data, payload.mime))
+      throw new Error('Escolha uma imagem válida de até 15 MB.');
+    prepared.ext = CHAT_IMAGE_TYPES[payload.mime];
+    prepared.mime = payload.mime;
+  }
+  const file = dmFiles.save(prepared.data, prepared.ext, [a, b].sort().join('_') + '_');
+  return { file, name: prepared.name, mime: prepared.mime, size: prepared.data.length };
+}
 
 function attachmentName(raw) {
   return (typeof raw === 'string' ? raw : '').replace(/[\\/\x00-\x1f\x7f]/g, '_').trim().slice(0, 160).replace(/[\uD800-\uDFFF]/gu, '_') || 'arquivo';
@@ -932,6 +955,7 @@ function applyServerModeration(user) {
   user.serverDeafened = serverDeafenedMembers.has(user.accessId);
   // Voz tem identidades próprias para revogar sem interromper tela, câmera ou música.
   if (SFU_SECRET && !wasMuted && (user.serverMuted || user.serverDeafened)) {
+    privateCalls.validate();
     revokeSfuMedia(user.voiceHostId);
     user.voiceHostId = randomBytes(16).toString('hex');
   }
@@ -1408,6 +1432,23 @@ app.get('/api/friend-avatar/:accountId', (req, res) => {
   res.send(avatar.data);
 });
 
+app.get('/api/dm-file/:file', (req, res) => {
+  const match = DM_FILE_RE.exec(req.params.file);
+  const access = req.query.access;
+  if (!dmFiles || !match || typeof access !== 'string' || !/^[a-f0-9]{64}$/.test(access)) return res.sendStatus(404);
+  const client = [...io.sockets.sockets.values()].find(s => s.data.user?.assetKey === access && !s.data.accountEnding);
+  const me = client && accounts.resolveSessionMeta(client.handshake.auth?.accountToken)?.account.id;
+  const other = me === match[1] ? match[2] : me === match[2] ? match[1] : null;
+  if (!other || !accounts.friends(me).friends.some(person => person.id === other)) return res.sendStatus(404);
+  res.set({ 'Access-Control-Allow-Origin': '*', 'X-Content-Type-Options': 'nosniff', 'Cache-Control': 'private, no-store',
+    'Content-Security-Policy': "default-src 'none'; sandbox" });
+  if (req.query.download === '1' || req.params.file.endsWith('.bin')) {
+    res.attachment(attachmentName(req.query.name));
+    res.type('application/octet-stream');
+  }
+  res.sendFile(path.join(dmFiles.directory, req.params.file), err => { if (err && !res.headersSent) res.sendStatus(404); });
+});
+
 app.get('/api/chat-image/:file', (req, res) => {
   const file = req.params.file;
   if (!CHAT_IMAGE_ID_RE.test(file) || !canReadAsset(req)) return res.status(404).end();
@@ -1512,6 +1553,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     uptime: process.uptime(),
     channelsCount: [...channels.values()].filter(channel => permissions.visible(null, channel)).length,
+    voiceOccupied: privateCalls.count > 0 || [...channels.values()].some(channel => channel.users.size > 0),
     totalUsers: io.engine.clientsCount
   });
 });
@@ -1693,6 +1735,7 @@ function friendState(accountId) {
   return state;
 }
 function broadcastFriends() {
+  privateCalls.validate();
   for (const client of io.sockets.sockets.values()) {
     const session = accounts.resolveSessionMeta(client.handshake.auth?.accountToken);
     if (session && !client.data.accountEnding) client.emit('friends-state', { supported: true, ...friendState(session.account.id) });
@@ -1798,8 +1841,8 @@ io.on('connection', (socket) => {
     profileId: null,
     isAdmin: false,
     assetKey: randomBytes(32).toString('hex'),
-    serverMuted: false,
-    serverDeafened: false,
+    serverMuted: serverMutedMembers.has(accessIdentity.id),
+    serverDeafened: serverDeafenedMembers.has(accessIdentity.id),
     avatar: null,
     avatarV: 0,
     channelId: null,
@@ -1842,7 +1885,8 @@ io.on('connection', (socket) => {
   });
   installAccountHandlers({ socket, store: accounts, user, getProfile: storedAccountProfile,
     limit: accountLimit, onRevoke: revokeAccountSockets, onFriendsChanged: broadcastFriends, isOnline: friendOnline, getFriendState: friendState });
-  installDirectMessages({ socket, accounts, directory: DATA_DIR, io, limit: accountLimit });
+  privateCalls.setup(socket);
+  installDirectMessages({ socket, accounts, directory: DATA_DIR, io, limit: accountLimit, saveFile: saveDmFile, removeFile: file => dmFiles.remove(file) });
   if (accountSession) queueMicrotask(broadcastFriends);
   const previewAddress = accountClientAddress(socket.handshake.address, socket.handshake.headers['x-forwarded-for']);
   socket.on('link-preview', safeHandler(async (url, callback) => {
@@ -2054,7 +2098,7 @@ io.on('connection', (socket) => {
   sendMemberKey(socket);
 
   // Admin: define ou tira a senha da sala. Quem está conectado recebe a nova e guarda.
-  socket.emit('room-info', { hasPassword: Boolean(roomPassword), connectionPing: true, linkPreviews: true, streamAccess: true, diceVersion: 2, accounts: accounts.available, membersVersion: 1, presenceVersion: 2, brandingVersion: 1, server: publicServerInfo(), assetKey: user.assetKey });
+  socket.emit('room-info', { hasPassword: Boolean(roomPassword), connectionPing: true, linkPreviews: true, streamAccess: true, diceVersion: 2, accounts: accounts.available, dmFiles: Boolean(dmFiles), membersVersion: 1, presenceVersion: 2, brandingVersion: 1, server: publicServerInfo(), assetKey: user.assetKey });
   refreshPresence(user, true);
   socket.on('admin-reset-members', safeHandler((_rawPayload, maybeCallback) => {
     const cb = safeCallback(maybeCallback);
@@ -2275,6 +2319,7 @@ io.on('connection', (socket) => {
   socket.on('join-channel', safeHandler((rawPayload, maybeCallback) => {
     const payload = safeObject(rawPayload);
     const cb = safeCallback(maybeCallback);
+    if (privateCalls.busy(socket)) return cb({ success: false, error: 'Encerre a ligação privada antes de entrar no canal.' });
     const rawChanId = typeof payload.channelId === 'string' ? payload.channelId.trim().toLowerCase() : '';
     const cleanChannelId = rawChanId.slice(0, 64).replace(/[^a-z0-9_-]/g, '') || 'geral';
 
@@ -3260,6 +3305,7 @@ io.on('connection', (socket) => {
       const isText = scope === 'text';
       const channel = isText ? textChannels.get(payload.channelId) : channels.get(user.channelId);
       if (!channel || !permissions.canWrite(user, channel)) return cb({ success: false, error: isText ? 'Esse canal não existe mais.' : 'Entre numa call pra enviar arquivos.' });
+      if (!isText && payload.channelId !== undefined && payload.channelId !== channel.id) return cb({ success: false, error: 'A call mudou. Confira o destino do anexo.' });
       let prepared;
       try { prepared = prepareAttachment(payload); }
       catch (err) { return cb({ success: false, error: err.message }); }
@@ -3308,6 +3354,7 @@ io.on('connection', (socket) => {
     const payload = safeObject(rawPayload);
     const channel = user.channelId ? channels.get(user.channelId) : null;
     if (!channel || !permissions.canWrite(user, channel)) return cb({ success: false, error: 'Você não pode enviar imagens neste canal.' });
+    if (payload.channelId !== undefined && payload.channelId !== channel.id) return cb({ success: false, error: 'A call mudou. Confira o destino da imagem.' });
     const now = Date.now();
     if (now - lastChatImageAt < 2000) return cb({ success: false, error: 'Calma, uma imagem de cada vez.' });
     const mime = typeof payload.mime === 'string' ? payload.mime.toLowerCase() : '';

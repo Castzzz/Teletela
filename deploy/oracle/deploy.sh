@@ -39,11 +39,18 @@ fi
 
 echo "== Empacotando o servidor (sem as dependências do app desktop)"
 mkdir -p "$stage/app"
-cp -r server.js stream-access.js link-previews.js channel-extras.js daily-call-store.js permission-store.js member-avatar-store.js account-store.js direct-messages.js accounts-protocol.js dice-store.js watch-together.js package.json package-lock.json public music "$stage/app/"
+cp -r server.js stream-access.js link-previews.js channel-extras.js daily-call-store.js permission-store.js member-avatar-store.js account-store.js private-calls.js direct-messages.js accounts-protocol.js dice-store.js watch-together.js package.json package-lock.json public music "$stage/app/"
 mkdir -p "$stage/app/scripts"
 cp scripts/configurar-dono.mjs "$stage/app/scripts/"
 (cd "$stage/app" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund --silent)
 tar -czf "$stage/app.tar.gz" -C "$stage/app" .
+
+# A agenda recebe o pacote já compilado e preserva os serviços instalados na VM.
+if [ -n "${TELETELA_PREPARAR_EM:-}" ]; then
+  mkdir -p "$TELETELA_PREPARAR_EM"
+  cp "$stage"/{app.tar.gz,telinha-sfu,telinha-music-publisher,yt-dlp} "$TELETELA_PREPARAR_EM/"
+  exit 0
+fi
 
 echo "== Versões mais novas do Node (LTS) e do Caddy"
 NODE_VERSION=${NODE_VERSION:-$(curl -fsSL https://nodejs.org/dist/index.json | python3 -c "import json,sys; print(next(r['version'] for r in json.load(sys.stdin) if r['lts']))")}

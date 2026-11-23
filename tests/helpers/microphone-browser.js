@@ -56,7 +56,9 @@ async function fixture({ noise = false, speech = false, useRnnoise = false, nois
     for (let i = 0; i < samples.length; i++) {
       seed = (1664525 * seed + 1013904223) >>> 0;
       previous = .97 * previous + .03 * (seed / 2 ** 31 - 1);
-      samples[i] = previous; energy += previous * previous;
+      // Rajadas curtas de banda larga simulam batidas de tecla junto ao ventilador.
+      const click = 0.8 * Math.exp(-(i % 7200) / 90) * (seed / 2 ** 31 - 1);
+      samples[i] = previous + click; energy += samples[i] ** 2;
     }
     const rms = Math.sqrt(energy / samples.length);
     for (let i = 0; i < samples.length; i++) samples[i] /= rms;
@@ -114,6 +116,41 @@ async function previousPipeline(raw, useRnnoise) {
   gain.connect(dest);
   await ctx.resume();
   return { stream: dest.stream, async close() { denoiser?.destroy(); source.disconnect(); gain.disconnect(); dest.stream.getTracks().forEach(t => t.stop()); await ctx.close(); } };
+}
+
+async function comparePauseProfiles(reference, speech) {
+  const modes = ['pausa-leve', 'pausa-forte'];
+  const ctx = reference.ctx;
+  const rnnoise = await import('/vendor/noise-suppressor/index.js');
+  const wasmBinary = await rnnoise.loadRnnoise({ url: '/vendor/noise-suppressor/rnnoise.wasm', simdUrl: '/vendor/noise-suppressor/rnnoise_simd.wasm' });
+  await ctx.audioWorklet.addModule('/vendor/noise-suppressor/rnnoise/workletProcessor.js');
+  // Mesmo relógio e mesmos quadros nos três filtros: até a fase de um clique afeta o RNNoise.
+  const source = ctx.createMediaStreamSource(reference.raw);
+  const nodes = [undefined, ...modes].map(profile => new rnnoise.RnnoiseWorkletNode(ctx, { maxChannels: 1, wasmBinary, profile }));
+  const outputs = nodes.map(node => {
+    node.channelCount = 1; node.channelCountMode = 'explicit';
+    const dest = ctx.createMediaStreamDestination(); dest.channelCount = 1;
+    node.connect(dest); return dest;
+  });
+  try {
+    await pause(500);
+    const input = ctx.createGain();
+    for (const node of nodes) input.connect(node);
+    source.connect(input);
+    await pause(1500);
+    const levels = await Promise.all(outputs.map(dest => measure(ctx, dest.stream, 1800)));
+    console.log('Níveis de referência e perfis:', levels.map(level => level.db.toFixed(2)).join(', '));
+    for (const [index, mode] of modes.entries()) {
+      const reduction = levels[0].db - levels[index + 1].db;
+      console.log(mode, speech ? 'voz' : 'ruído', reduction.toFixed(2), 'dB de diferença');
+      if (speech) check(Math.abs(reduction) < 1, mode + ' precisa preservar o nível da voz');
+      else check(reduction > (index === 0 ? 8 : 16), mode + ' precisa reduzir o ruído nas pausas');
+    }
+  } finally {
+    source.disconnect();
+    nodes.forEach(node => { node.disconnect(); node.destroy(); });
+    outputs.forEach(dest => dest.stream.getTracks().forEach(track => track.stop()));
+  }
 }
 
 export async function run() {
@@ -189,11 +226,13 @@ export async function run() {
         check(Math.abs(results.rnnoiseReceived.db - newLevel.db) < 2, 'Opus deve preservar o nível corrigido também com RNNoise');
       } finally { peer.close(); }
     } finally { await previous.close(); }
+    await comparePauseProfiles(filtered, true);
     filtered.raw.getAudioTracks()[0].dispatchEvent(new Event('ended'));
     check(filtered.pipeline.stream.getAudioTracks()[0].readyState === 'ended', 'Perder a captura deve encerrar a saída');
   } finally { await filtered.close(); }
   const noisy = await fixture({ noise: true, useRnnoise: true, level: -20 });
   try {
+    await comparePauseProfiles(noisy, false);
     results.noiseRaw = await measure(noisy.ctx, noisy.raw);
     results.noiseFiltered = await measure(noisy.ctx, noisy.pipeline.stream);
     check(results.noiseRaw.db - results.noiseFiltered.db > 15, 'RNNoise deve reduzir o ruído grave de referência');

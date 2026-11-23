@@ -3329,6 +3329,32 @@ chat-link-preview:not(.link-preview-video) .link-preview-media:not([hidden]) ~ .
   cursor: zoom-in;
 }
 
+/* A foto tem seu próprio recorte. O acessório passa pela borda e deixa o status livre. */
+html[data-festa="ano-novo"] { --acessorio-sazonal: url("decoracoes/ano-novo.svg"); }
+html[data-festa="carnaval"] { --acessorio-sazonal: url("decoracoes/carnaval.svg"); }
+html[data-festa="pascoa"] { --acessorio-sazonal: url("decoracoes/pascoa.svg"); }
+html[data-festa="natal"] { --acessorio-sazonal: url("decoracoes/natal.svg"); }
+html[data-festa="halloween"] { --acessorio-sazonal: url("decoracoes/halloween.svg"); }
+
+html[data-festa] :is(.user-avatar:not(.music-bot-avatar, .profile-frame-sample, .mention-avatar),
+  .mention-avatar:has(.avatar-photo), .mention-avatar:has(> span), .chat-msg-avatar,
+  .server-member-avatar, .friend-initials, .mobile-self-avatar, .stream-tab-avatar,
+  .tile-badge-avatar, .tile-viewer-avatar, .stage-cinema-participant:not(.stage-cinema-music-bot) .stage-cinema-avatar) {
+  position: relative;
+  overflow: visible;
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    width: 92%;
+    aspect-ratio: 10 / 7;
+    top: -32%;
+    left: 5%;
+    background: var(--acessorio-sazonal) center / contain no-repeat;
+    pointer-events: none;
+  }
+}
+
 /* ==================== PERFIL: MOLDURA, BANNER, NOME EM GRADIENTE ==================== */
 @property --frame-angle {
   syntax: '<angle>';

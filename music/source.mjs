@@ -10,6 +10,11 @@ const cachedTool = fileURLToPath(new URL('../.cache/music-lab/yt-dlp', import.me
 const videoId = /^[\w-]{11}$/;
 const spotifyId = /^[a-zA-Z0-9]{22}$/;
 const playlistId = /^[a-zA-Z0-9_-]{10,100}$/;
+const MAX_TRACK_MINUTES = 90;
+export const MAX_TRACK_SECONDS = MAX_TRACK_MINUTES * 60;
+const MAX_AUDIO_MIB = 256;
+const FULL_DOWNLOAD_TIMEOUT_MS = 6 * 60 * 1000;
+const MAX_FILESIZE_ARG = `${MAX_AUDIO_MIB}M`;
 const streamCache = new Map();
 const streamLookups = new Map();
 
@@ -122,7 +127,7 @@ async function ytdlp(args, timeout, signal) {
 }
 
 export function startMusicDownload(infoFile) {
-  const [command, args, cleanup] = ytdlpCommand(['--load-info-json', infoFile, '--no-playlist', '--no-part',
+  const [command, args, cleanup] = ytdlpCommand(['--load-info-json', infoFile, '--no-playlist', '--no-part', '--max-filesize', MAX_FILESIZE_ARG,
     '-f', 'bestaudio[acodec=opus]/bestaudio/best', '--http-chunk-size', '1M', '-o', '-']);
   try {
     const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
@@ -175,12 +180,12 @@ export async function resolveMusic(input, refinement = '', options = {}) {
 export async function prepareMusic(url, directory, signal) {
   const source = parseInput(url);
   if (source.kind !== 'youtube') throw new Error('Escolha uma versão do YouTube para testar o áudio.');
-  await ytdlp(['--no-playlist', '--max-filesize', '80M', '--match-filters', '!is_live & duration <= 1200',
+  await ytdlp(['--no-playlist', '--max-filesize', MAX_FILESIZE_ARG, '--match-filters', `!is_live & duration <= ${MAX_TRACK_SECONDS}`,
     '-f', 'bestaudio/best', '-x', '--audio-format', 'mp3', '--audio-quality', '192K',
-    '-o', path.join(directory, 'faixa.%(ext)s'), '--', source.url], 120000, signal);
+    '-o', path.join(directory, 'faixa.%(ext)s'), '--', source.url], FULL_DOWNLOAD_TIMEOUT_MS, signal);
   const file = path.join(directory, 'faixa.mp3');
   let info;
-  try { info = await stat(file); } catch { throw new Error('Nenhum áudio foi preparado. O teste aceita vídeos gravados de até 20 minutos e 80 MB.'); }
+  try { info = await stat(file); } catch { throw new Error(`Nenhum áudio foi preparado. Use um vídeo gravado de até ${MAX_TRACK_MINUTES} minutos e ${MAX_AUDIO_MIB} MB de áudio.`); }
   if (!info.size) throw new Error('A plataforma retornou um áudio vazio.');
   return file;
 }
@@ -284,8 +289,8 @@ export async function prepareStream(input, directory, signal, track = {}) {
       const data = JSON.parse(await ytdlp(['--no-playlist', '--skip-download', '--dump-single-json',
         '-f', 'bestaudio[acodec=opus]/bestaudio/best', '--', query ? `ytsearch1:${query}` : source.url], 45000, lookup.abort.signal));
       const entry = data.entries ? data.entries.find(item => item?.url) : data;
-      if (!entry || entry.is_live || !Number.isFinite(entry.duration) || entry.duration > 1200) throw new Error('Use uma faixa gravada de até 20 minutos.');
-      if ((entry.filesize || entry.filesize_approx) > 80 * 1024 * 1024) throw new Error('O áudio da faixa ultrapassa 80 MB.');
+      if (!entry || entry.is_live || !Number.isFinite(entry.duration) || entry.duration > MAX_TRACK_SECONDS) throw new Error(`Use uma faixa gravada de até ${MAX_TRACK_MINUTES} minutos.`);
+      if ((entry.filesize || entry.filesize_approx) > MAX_AUDIO_MIB * 1024 * 1024) throw new Error(`O áudio da faixa ultrapassa ${MAX_AUDIO_MIB} MB.`);
       const url = new URL(entry.url);
       if (url.protocol !== 'https:' || !(url.hostname === 'googlevideo.com' || url.hostname.endsWith('.googlevideo.com'))) throw new Error('O YouTube não retornou uma fonte de áudio compatível.');
       const prepared = { url: entry.url, headers: entry.http_headers || {}, title: entry.title, duration: entry.duration,
@@ -325,8 +330,8 @@ export async function warmStream(track, signal) {
 
 // Apenas a próxima faixa é baixada em segundo plano, no formato original, sem MP3 intermediário.
 export async function bufferStream(prepared, directory, signal) {
-  await ytdlp(['--load-info-json', prepared.infoFile, '--no-playlist', '--no-part', '--max-filesize', '80M',
-    '-f', 'bestaudio[acodec=opus]/bestaudio/best', '-o', path.join(directory, 'proxima.%(ext)s')], 120000, signal);
+  await ytdlp(['--load-info-json', prepared.infoFile, '--no-playlist', '--no-part', '--max-filesize', MAX_FILESIZE_ARG,
+    '-f', 'bestaudio[acodec=opus]/bestaudio/best', '-o', path.join(directory, 'proxima.%(ext)s')], FULL_DOWNLOAD_TIMEOUT_MS, signal);
   const names = await readdir(directory);
   const name = names.find(item => /^proxima\.(?:webm|m4a|opus|ogg|mp3|mp4)$/.test(item));
   if (!name) throw new Error('Não foi possível pré-carregar a próxima faixa.');

@@ -7,6 +7,11 @@ const PLAY_ICON_SVG = '<svg class="icon-svg" viewBox="0 0 24 24" fill="currentCo
 const PAUSE_ICON_SVG = '<svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
 const SKIP_ICON_SVG = '<svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M5.5 5.5v13l9.5-6.5z"/><rect x="16.5" y="5.5" width="2.5" height="13" rx="1"/></svg>';
 
+function tempoDaFaixa(segundos) {
+  const inteiro = Math.floor(segundos);
+  return `${Math.floor(inteiro / 60)}:${String(inteiro % 60).padStart(2, '0')}`;
+}
+
 export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {}, showToast = () => {}, onPanelChange = () => {}, createSfuSession } = {}) {
   const $ = selector => document.querySelector(selector);
   let channelId = null;
@@ -305,6 +310,30 @@ export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {},
   const painel = $('#modal-music');
   const lugarDoPainel = painel?.parentElement;
   let voltarPara;
+  let instanteDaPosicao = 0;
+  let timerDoTempo;
+  const tempo = $('#k7-tempo');
+  const barra = $('#k7-progresso');
+  function atualizarTempo() {
+    clearTimeout(timerDoTempo);
+    if (!tempo || !barra || painel?.classList.contains('hidden') || $('#k7-deck')?.hidden) return;
+    const faixa = state?.track;
+    tempo.parentElement.hidden = !faixa;
+    if (!faixa) return;
+    const tocando = state.phase === 'playing';
+    const decorrido = tocando ? (performance.now() - instanteDaPosicao) / 1000 : 0;
+    const posicao = Math.max(0, (state.position || 0) + decorrido);
+    const total = faixa.duration;
+    barra.hidden = !(total > 0);
+    if (total > 0) {
+      barra.max = total;
+      barra.value = Math.min(posicao, total);
+      tempo.textContent = `${tempoDaFaixa(barra.value)} / ${tempoDaFaixa(total)}`;
+    } else {
+      tempo.textContent = tempoDaFaixa(posicao);
+    }
+    if (tocando) timerDoTempo = setTimeout(atualizarTempo, 1000 - (posicao * 1000) % 1000);
+  }
   const syncModalParent = () => {
     if (!painel) return;
     const telaCheia = document.fullscreenElement || document.webkitFullscreenElement;
@@ -314,6 +343,7 @@ export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {},
   function fecharConversa(devolverFoco = false) {
     if (!painel || painel.classList.contains('hidden')) return;
     painel.classList.add('hidden');
+    clearTimeout(timerDoTempo);
     syncModalParent();
     onPanelChange();
     if (devolverFoco) (voltarPara?.isConnected ? voltarPara : $('#stage-more summary'))?.focus();
@@ -323,6 +353,7 @@ export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {},
     if (!$('#k7-requests')) return;
     $('#k7-requests').hidden = fila;
     $('#k7-deck').hidden = !fila;
+    atualizarTempo();
     $('#k7-show-requests').setAttribute('aria-pressed', String(!fila));
     $('#k7-show-queue').setAttribute('aria-pressed', String(fila));
   }
@@ -723,7 +754,7 @@ export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {},
       const titulo = document.createElement('strong');
       titulo.textContent = track.title;
       const pedido = document.createElement('small');
-      pedido.textContent = `Pedido por ${track.requestedBy.name}`;
+      pedido.textContent = [track.duration > 0 ? tempoDaFaixa(track.duration) : null, `Pedido por ${track.requestedBy.name}`].filter(Boolean).join(' · ');
       info.append(titulo, pedido);
       left.append(info);
       const actionsWrap = document.createElement('div');
@@ -764,6 +795,8 @@ export function setupMusic({ socket, appState, prefs = {}, savePrefs = () => {},
     if (next.error && next.error !== state?.error) showToast(next.error, 'error');
     revision++;
     state = next;
+    instanteDaPosicao = performance.now();
+    atualizarTempo();
     subscribe();
     render();
   };

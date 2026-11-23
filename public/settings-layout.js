@@ -2,7 +2,7 @@
 export function setupSettingsLayout() {
   const nav = document.querySelector('.settings-nav');
   const caption = document.createElement('span'); caption.className = 'settings-nav-caption'; caption.textContent = 'APLICATIVO';
-  const group = ['perfil', 'conta', 'amigos', 'aparencia', 'atividade', 'microfone', 'som', 'transmissao', 'atalhos', 'admin'];
+  const group = ['perfil', 'conta', 'aparencia', 'atividade', 'microfone', 'som', 'transmissao', 'atalhos', 'admin'];
   for (const topic of group) {
     const tab = nav.querySelector(`[data-settings-tab="${topic}"]`);
     if (topic === 'microfone') nav.append(caption);

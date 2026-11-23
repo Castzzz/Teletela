@@ -46,9 +46,16 @@ app.whenReady().then(async()=>{
  await js(guest,"document.querySelectorAll('.modal-backdrop').forEach(el=>el.classList.add('hidden'));void 0");await click(guest,'#channel-geral .channel-row');await until(guest,"appState.currentChannelId==='geral'");
  await self();await click(guest,'#user-popover-nickname');await until(guest,'document.querySelector("#chat-nickname-input").value === "Guerreiro"');await click(guest,'[data-close-modal=modal-chat-nickname]');
  await self();await click(guest,'#user-popover-avatar');await until(guest,'!document.querySelector("#modal-user-profile").classList.contains("hidden")');assert(await js(guest,'!document.querySelector("#profile-card-nickname").classList.contains("hidden")'));await click(guest,'#profile-card-nickname');await until(guest,'!document.querySelector("#modal-chat-nickname").classList.contains("hidden")');await click(guest,'[data-close-modal=modal-chat-nickname]');
- for(const win of [owner,guest])await click(win,'[data-text-channel-id=aventura] .channel-row');
  const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jN1cAAAAASUVORK5CYII=';
- await js(guest,`(()=>{const bytes=Uint8Array.from(atob('${png}'),c=>c.charCodeAt(0));const data=new DataTransfer();data.items.add(new File([bytes],'teste.png',{type:'image/png'}));document.querySelector('#chat-input').dispatchEvent(new ClipboardEvent('paste',{bubbles:true,clipboardData:data}));})()`);
+ async function pastePng(){await js(guest,`(()=>{const bytes=Uint8Array.from(atob('${png}'),c=>c.charCodeAt(0));const data=new DataTransfer();data.items.add(new File([bytes],'teste.png',{type:'image/png'}));document.querySelector('#chat-input').dispatchEvent(new ClipboardEvent('paste',{bubbles:true,clipboardData:data}));})()`);}
+ await pastePng();await until(guest,'!document.querySelector("#chat-attachment-draft").hidden');
+ assert.equal(await js(owner,'Boolean(document.querySelector(".chat-image"))'),false);
+ for(const win of [owner,guest])await click(win,'[data-text-channel-id=aventura] .channel-row');
+ assert(await js(guest,'document.querySelector("#chat-attachment-draft").hidden'),'Trocar de conversa descarta o anexo da call');
+ await pastePng();
+ await until(guest,'Boolean(document.querySelector("#chat-attachment-draft img")?.naturalWidth)');
+ assert.equal(await js(owner,'Boolean(document.querySelector(".chat-image"))'),false);
+ await click(guest,'#btn-chat-send');
  await until(owner,'Boolean(document.querySelector(".chat-image"))');await click(owner,'.chat-image');await until(owner,'!document.querySelector("#image-viewer").classList.contains("hidden")');
  const saved=path.join(directory,'baixada.png');
  const download=new Promise((resolve,reject)=>owner.webContents.session.once('will-download',(_event,item)=>{item.setSavePath(saved);item.once('done',(_event,state)=>state==='completed'?resolve():reject(new Error(state)));}));

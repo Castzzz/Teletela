@@ -76,6 +76,28 @@ console.log(JSON.stringify({id:'jNQXAC9IVRw',duration:19,title:'Teste',url:'http
   await assert.rejects(prepareStream('https://youtube.com/watch?v=jNQXAC9IVRw', directory, AbortSignal.abort()), /cancelada/);
 });
 
+test('aceita compilados de 30, 60 e 90 minutos e aplica os limites por faixa', async t => {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'teletela-compilados-'));
+  const anterior = process.env.MUSIC_YTDLP;
+  t.after(async () => {
+    if (anterior === undefined) delete process.env.MUSIC_YTDLP;
+    else process.env.MUSIC_YTDLP = anterior;
+    await rm(dir, { recursive: true, force: true });
+  });
+  const extrator = path.join(dir, 'extrator.cjs');
+  process.env.MUSIC_YTDLP = extrator;
+  for (const [i, [duration, megabytes, error]] of [
+    [1800, 45], [3600, 110], [5400, 256], [5401, 80, /90 minutos/], [3600, 257, /256 MB/]
+  ].entries()) {
+    const id = 'compilado0' + i;
+    const metadata = { id, duration, filesize: megabytes * 1024 ** 2, url: 'https://r1.googlevideo.com/audio' };
+    await writeFile(extrator, '#!/usr/bin/env node\nconsole.log(' + JSON.stringify(JSON.stringify(metadata)) + ');', { mode: 0o700 });
+    const preparation = prepareStream('https://youtu.be/' + id, dir);
+    if (error) await assert.rejects(preparation, error);
+    else assert.equal((await preparation).duration, duration);
+  }
+});
+
 test('repassa MUSIC_PROXY ao yt-dlp e traduz bloqueios de IP do YouTube em mensagem amigável', async t => {
   assert.match(formatToolError("WARNING: teste\nERROR: [youtube] id: Sign in to confirm you’re not a bot. Use --cookies-from-browser", 'Falha.'), /bloqueou temporariamente/);
   assert.match(formatToolError('ERROR: [youtube] id: Video unavailable. This video is not available', 'Falha.'), /indisponível ou privado/);

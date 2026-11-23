@@ -444,7 +444,7 @@ test('CHALLENGE 2.3: VolumeMixerManager Non-Numeric, NaN and Corrupted Inputs Cl
 // SUITE 3: VoiceActivityDetector Energy Computation & Hangover Hysteresis
 // =============================================================================
 
-test('CHALLENGE 3.1: VAD Silence (All 0.0) Energy Computation', () => {
+test('CHALLENGE 3.1: VAD Silence (All 0.0) Energy Computation', (t) => {
   let mockBuffer = new Float32Array(512).fill(0.0);
 
   class VADTestAudioContext extends MockAudioContext {
@@ -459,9 +459,9 @@ test('CHALLENGE 3.1: VAD Silence (All 0.0) Energy Computation', () => {
     }
   }
 
-  let rafCb = null;
-  globalThis.requestAnimationFrame = (cb) => { rafCb = cb; return 1; };
-  globalThis.cancelAnimationFrame = () => { rafCb = null; };
+  let medir;
+  t.mock.method(globalThis, 'setInterval', cb => { medir = cb; return 1; });
+  t.mock.method(globalThis, 'clearInterval', () => { medir = null; });
 
   const track = new MockMediaStreamTrack({ kind: 'audio' });
   const stream = new MockMediaStream([track]);
@@ -477,7 +477,7 @@ test('CHALLENGE 3.1: VAD Silence (All 0.0) Energy Computation', () => {
     onVolumeLevel: (norm, db) => volumeLevels.push({ norm, db })
   });
 
-  rafCb(); // Run frame 1
+  medir(); // Run frame 1
 
   assert.equal(vad.isSpeaking, false, 'Silence must not trigger isSpeaking');
   assert.equal(speakingEvents.length, 0, 'No speaking events fired');
@@ -488,7 +488,7 @@ test('CHALLENGE 3.1: VAD Silence (All 0.0) Energy Computation', () => {
   vad.destroy();
 });
 
-test('CHALLENGE 3.2: VAD Noise Floor Below Threshold (-60 dBFS)', () => {
+test('CHALLENGE 3.2: VAD Noise Floor Below Threshold (-60 dBFS)', (t) => {
   let mockBuffer = new Float32Array(512).fill(0.001); // 0.001 amplitude -> ~ -60 dBFS
 
   class VADTestAudioContext extends MockAudioContext {
@@ -503,9 +503,9 @@ test('CHALLENGE 3.2: VAD Noise Floor Below Threshold (-60 dBFS)', () => {
     }
   }
 
-  let rafCb = null;
-  globalThis.requestAnimationFrame = (cb) => { rafCb = cb; return 1; };
-  globalThis.cancelAnimationFrame = () => { rafCb = null; };
+  let medir;
+  t.mock.method(globalThis, 'setInterval', cb => { medir = cb; return 1; });
+  t.mock.method(globalThis, 'clearInterval', () => { medir = null; });
 
   const track = new MockMediaStreamTrack({ kind: 'audio' });
   const stream = new MockMediaStream([track]);
@@ -520,7 +520,7 @@ test('CHALLENGE 3.2: VAD Noise Floor Below Threshold (-60 dBFS)', () => {
     onVolumeLevel: (norm, db) => volumeLevels.push({ norm, db })
   });
 
-  rafCb();
+  medir();
 
   assert.equal(vad.isSpeaking, false, 'Noise below threshold must not trip VAD');
   assert.equal(speakingEvents.length, 0);
@@ -529,7 +529,7 @@ test('CHALLENGE 3.2: VAD Noise Floor Below Threshold (-60 dBFS)', () => {
   vad.destroy();
 });
 
-test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', () => {
+test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', (t) => {
   let simTime = 1000;
   const originalDateNow = Date.now;
   Date.now = () => simTime;
@@ -548,9 +548,9 @@ test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', () =
     }
   }
 
-  let rafCb = null;
-  globalThis.requestAnimationFrame = (cb) => { rafCb = cb; return 1; };
-  globalThis.cancelAnimationFrame = () => { rafCb = null; };
+  let medir;
+  t.mock.method(globalThis, 'setInterval', cb => { medir = cb; return 1; });
+  t.mock.method(globalThis, 'clearInterval', () => { medir = null; });
 
   const track = new MockMediaStreamTrack({ kind: 'audio' });
   const stream = new MockMediaStream([track]);
@@ -567,13 +567,13 @@ test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', () =
   try {
     // 1. Initial silence
     mockBuffer.fill(0.0);
-    rafCb();
+    medir();
     assert.equal(vad.isSpeaking, false);
 
     // 2. Voice burst (0.1 amplitude -> -20 dBFS)
     simTime += 100;
     mockBuffer.fill(0.1);
-    rafCb();
+    medir();
     assert.equal(vad.isSpeaking, true, 'Voice burst must trigger isSpeaking = true');
     assert.equal(speakingEvents.length, 1);
     assert.equal(speakingEvents[0].speaking, true);
@@ -581,17 +581,17 @@ test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', () =
     // 3. Audio drops back to silence at +50ms
     simTime += 50;
     mockBuffer.fill(0.0);
-    rafCb();
+    medir();
     assert.equal(vad.isSpeaking, true, 'Hangover window must maintain isSpeaking = true at +50ms');
 
     // 4. Audio remains silent at +200ms (within 300ms hangover)
     simTime += 150; // total 200ms since voice stopped
-    rafCb();
+    medir();
     assert.equal(vad.isSpeaking, true, 'Hangover window must maintain isSpeaking = true at +200ms');
 
     // 5. Audio remains silent at +350ms (> 300ms hangover expired)
     simTime += 150; // total 350ms since voice stopped
-    rafCb();
+    medir();
     assert.equal(vad.isSpeaking, false, 'Hangover window expired (> 300ms): isSpeaking must transition to false');
     assert.equal(speakingEvents.length, 2);
     assert.equal(speakingEvents[1].speaking, false);
@@ -601,7 +601,7 @@ test('CHALLENGE 3.3 & 3.4: VAD Voice Burst & 300ms Hangover Window Timing', () =
   }
 });
 
-test('CHALLENGE 3.5: VAD Disabled State Instant Cancellation', () => {
+test('CHALLENGE 3.5: VAD Disabled State Instant Cancellation', (t) => {
   let mockBuffer = new Float32Array(512).fill(0.1); // voice active
 
   class VADTestAudioContext extends MockAudioContext {
@@ -616,9 +616,9 @@ test('CHALLENGE 3.5: VAD Disabled State Instant Cancellation', () => {
     }
   }
 
-  let rafCb = null;
-  globalThis.requestAnimationFrame = (cb) => { rafCb = cb; return 1; };
-  globalThis.cancelAnimationFrame = () => { rafCb = null; };
+  let medir;
+  t.mock.method(globalThis, 'setInterval', cb => { medir = cb; return 1; });
+  t.mock.method(globalThis, 'clearInterval', () => { medir = null; });
 
   const track = new MockMediaStreamTrack({ kind: 'audio' });
   const stream = new MockMediaStream([track]);
@@ -630,7 +630,7 @@ test('CHALLENGE 3.5: VAD Disabled State Instant Cancellation', () => {
     onSpeakingChange: (s) => speakingEvents.push(s)
   });
 
-  rafCb();
+  medir();
   assert.equal(vad.isSpeaking, true);
 
   // Disable VAD (e.g. mic mute)

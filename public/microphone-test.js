@@ -1,5 +1,5 @@
 import { generateMicrophoneConstraints } from './audio-manager.js';
-import { createMicrophonePipeline } from './microphone.js';
+import { createMicrophonePipeline, microphoneFilter } from './microphone.js';
 
 // A captura de teste é independente: não abre voz nem substitui a faixa enviada na call.
 export function setupMicrophoneTest({ getOptions }) {
@@ -35,7 +35,7 @@ export function setupMicrophoneTest({ getOptions }) {
       const captured = await navigator.mediaDevices.getUserMedia(constraints);
       if (run !== generation) { captured.getTracks().forEach(track => track.stop()); return; }
       raw = captured;
-      const processed = await createMicrophonePipeline(captured, { noiseFilter: options.noiseMode === 'ia' ? 'rnnoise' : 'off', gain: options.gain });
+      const processed = await createMicrophonePipeline(captured, { noiseFilter: microphoneFilter(options.noiseMode), gain: options.gain });
       if (run !== generation) { processed.stop(); return; }
       pipeline = processed;
       context = new AudioContext(); await context.resume();

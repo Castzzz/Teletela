@@ -1,32 +1,41 @@
 import { setupDirectMessages } from './direct-messages.js';
 import { imageCropStyle } from './image-crop.js';
 import { PRESENCE_LABELS, normalizePresence } from './presence.js';
-export function setupFriends({ socket, tabs, body, getAccount, selectSettingsTab, showToast, serverUrl = '', assetKey = () => '' }) {
-  const direct = setupDirectMessages({ socket, getAccount, serverUrl });
-  const tab = document.createElement('button');
-  tab.type = 'button'; tab.className = 'settings-tab'; tab.dataset.settingsTab = 'amigos';
-  tab.innerHTML = '<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="4"/><path d="M1 21v-2a8 8 0 0 1 16 0v2M17 4a4 4 0 0 1 0 8M23 21v-2a7 7 0 0 0-4-6"/></svg><span>Amigos</span>';
-  tabs.append(tab);
-  const section = document.createElement('section');
-  section.className = 'settings-section hidden'; section.dataset.settingsSection = 'amigos';
-  section.innerHTML = `<h4 class="settings-section-title">Seus amigos</h4>
-    <p class="account-intro">Adicione pelo @usuário da conta nesta sala. A presença mostra quem está com o Teletela conectado.</p>
-    <p id="friends-status" class="account-status" role="status"></p>
-    <button type="button" id="friends-open-account" class="btn-secondary hidden">Entrar ou criar conta</button>
-    <div id="friends-content" class="hidden">
-      <form id="friends-form" class="account-form">
-        <label for="friend-username">Adicionar amigo</label>
-        <input id="friend-username" autocomplete="off" autocapitalize="none" spellcheck="false" required maxlength="25" placeholder="@usuario" />
-        <button type="submit" class="btn-primary">Enviar pedido</button>
-      </form>
-      <h5>Amigos</h5><ul id="friends-list" class="friends-list"></ul>
-      <h5>Pedidos recebidos</h5><ul id="friends-incoming" class="friends-list"></ul>
-      <h5>Pedidos enviados</h5><ul id="friends-outgoing" class="friends-list"></ul>
-    </div>
-    <p id="friends-feedback" class="account-feedback" role="status" aria-live="polite"></p>`;
-  body.append(section);
+const friendIcons = {
+  chat: 'M21 11a8 8 0 0 1-8 8H8l-5 3 1-6a8.5 8.5 0 1 1 17-5Z',
+  phone: 'M5 3h4l1 5-3 2a15 15 0 0 0 7 7l2-3 5 1v4a2 2 0 0 1-2 2C10 20 4 14 3 5a2 2 0 0 1 2-2Z',
+};
+function actionIcon(kind) {
+  return '<svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="' + friendIcons[kind] + '"/></svg>';
+}
+
+export function setupFriends({ socket, calls, getAccount, openSettings, showToast, serverUrl = '', assetKey = () => '' }) {
+  const tab = document.getElementById('friends-open');
+  const section = document.getElementById('friends-page');
+  let filter = 'friends';
   const $ = selector => section.querySelector(selector);
   let supported = false, busy = false, state = { friends: [], incoming: [], outgoing: [] };
+  const mobileTab = document.querySelector('.mobile-nav [data-mobile-view="amigos"]');
+  const tabs = [tab, mobileTab];
+  const status = document.getElementById('friends-unread-status');
+  function updateUnread(unread) {
+    const description = unread.size === 1 ? 'Uma conversa com mensagem não lida' : unread.size + ' conversas com mensagens não lidas';
+    for (const button of tabs) {
+      const dot = button.querySelector('.friends-unread-dot');
+      dot.hidden = !unread.size;
+      if (unread.size) button.setAttribute('aria-describedby', status.id);
+      else button.removeAttribute('aria-describedby');
+    }
+    const text = unread.size ? description : '';
+    if (status.textContent !== text) status.textContent = text;
+    for (const label of section.querySelectorAll('[data-unread-for]')) {
+      label.hidden = !unread.has(label.dataset.unreadFor);
+      const chat = label.closest('.friend-row').querySelector('.friend-actions button');
+      if (label.hidden) chat.removeAttribute('aria-describedby');
+      else chat.setAttribute('aria-describedby', label.id);
+    }
+  }
+  const direct = setupDirectMessages({ socket, getAccount, serverUrl, assetKey, onUnreadChanged: updateUnread });
   const feedback = (message = '', error = false) => {
     $('#friends-feedback').textContent = message;
     $('#friends-feedback').dataset.error = String(error);
@@ -36,7 +45,7 @@ export function setupFriends({ socket, tabs, body, getAccount, selectSettingsTab
     const root = $(selector); root.replaceChildren();
     if (!list.length) {
       const empty = document.createElement('li'); empty.className = 'account-help';
-      empty.textContent = kind === 'friends' ? 'Nenhum amigo ainda.' : 'Nenhum pedido pendente.';
+      empty.textContent = kind === 'friends' ? (filter === 'online' ? 'Nenhum amigo online agora.' : 'Nenhum amigo ainda. Use Adicionar amigo para enviar um pedido.') : 'Nenhum pedido pendente.';
       root.append(empty); return;
     }
     for (const person of list) {
@@ -61,16 +70,37 @@ export function setupFriends({ socket, tabs, body, getAccount, selectSettingsTab
       const actions = document.createElement('div'); actions.className = 'friend-actions';
       if (kind === 'friends') {
         const chat = document.createElement('button');
-        chat.type = 'button'; chat.className = 'btn-secondary'; chat.textContent = 'Conversar';
+        chat.type = 'button'; chat.className = 'btn-secondary'; chat.innerHTML = actionIcon('chat');
+        chat.title = 'Conversar com ' + name.textContent; chat.setAttribute('aria-label', chat.title);
         chat.disabled = !socket.connected;
         chat.onclick = () => direct.open(person.id);
-        actions.append(chat);
+        const call = document.createElement('button');
+        call.type = 'button'; call.className = 'btn-secondary'; call.innerHTML = actionIcon('phone');
+        call.title = !calls.ready ? 'Ligações indisponíveis nesta conexão' : !person.online ? 'Amigo offline' : 'Ligar para ' + name.textContent;
+        call.disabled = !calls.ready || !person.online || !socket.connected;
+        call.setAttribute('aria-label', 'Ligar para ' + name.textContent);
+        call.onclick = () => calls.invite(person);
+        const notice = document.createElement('small');
+        notice.className = 'friend-unread-label';
+        notice.id = 'friend-unread-' + person.id;
+        notice.dataset.unreadFor = person.id;
+        notice.textContent = 'Nova mensagem';
+        notice.hidden = !direct.unread.has(person.id);
+        info.append(notice);
+        if (!notice.hidden) chat.setAttribute('aria-describedby', notice.id);
+        actions.append(chat, call);
       }
       for (const action of kind === 'incoming' ? ['accept', 'reject'] : kind === 'outgoing' ? ['cancel'] : ['remove']) {
         const button = document.createElement('button'); button.type = 'button'; button.className = 'btn-secondary';
         button.textContent = labels[action]; button.disabled = busy || !socket.connected;
         button.setAttribute('aria-label', `${labels[action]}: @${person.username}`);
-        button.addEventListener('click', () => request(action, { accountId: person.id })); actions.append(button);
+        button.addEventListener('click', () => request(action, { accountId: person.id }));
+        if (action === 'remove') {
+          const more = document.createElement('details'), trigger = document.createElement('summary');
+          trigger.textContent = '⋯'; trigger.title = 'Mais opções para ' + name.textContent;
+          trigger.setAttribute('aria-label', trigger.title);
+          more.append(trigger, button); actions.append(more);
+        } else actions.append(button);
       }
       row.append(actions); root.append(row);
     }
@@ -102,7 +132,11 @@ export function setupFriends({ socket, tabs, body, getAccount, selectSettingsTab
     $('#friends-open-account').classList.toggle('hidden', Boolean(account));
     $('#friends-content').classList.toggle('hidden', !account || !supported);
     $('#friends-form button').disabled = busy || !socket.connected;
-    renderList('#friends-list', state.friends, 'friends');
+    const list = state.friends.filter(person => filter !== 'online' || (socket.connected && person.online))
+      .sort((a, b) => Number(direct.unread.has(b.id)) - Number(direct.unread.has(a.id)) || Number(b.online) - Number(a.online) || (a.name || a.username).localeCompare(b.name || b.username, 'pt-BR'));
+    $('#friends-count').textContent = (filter === 'online' ? 'Online' : 'Todos os amigos') + ' · ' + list.length;
+    renderList('#friends-list', list, 'friends');
+    $('[data-filter="requests"]').textContent = state.incoming.length ? 'Pedidos (' + state.incoming.length + ')' : 'Pedidos';
     renderList('#friends-incoming', state.incoming, 'incoming');
     renderList('#friends-outgoing', state.outgoing, 'outgoing');
     tab.querySelector('span').textContent = state.incoming.length && account ? `Amigos (${state.incoming.length})` : 'Amigos';
@@ -122,8 +156,24 @@ export function setupFriends({ socket, tabs, body, getAccount, selectSettingsTab
       if (peloPerfil) showToast?.(aviso, 'error');
     } finally { busy = false; render(); }
   }
-  tab.addEventListener('click', () => { selectSettingsTab('amigos'); render(); });
-  $('#friends-open-account').addEventListener('click', () => selectSettingsTab('conta'));
+  calls.onReady = render;
+  for (const button of tabs) button.addEventListener('click', () => {
+    if (direct.unread.size) $('[data-filter="friends"]').click();
+  });
+  tab.addEventListener('click', () => {
+    document.body.classList.add('friends-open');
+    tab.setAttribute('aria-current', 'page');
+    $('#friends-heading').focus();
+  });
+  section.querySelectorAll('[data-filter]').forEach(button => button.onclick = () => {
+    filter = button.dataset.filter;
+    for (const item of section.querySelectorAll('[data-filter]')) item.setAttribute('aria-pressed', String(item === button));
+    for (const view of section.querySelectorAll('[data-friends-view]')) view.hidden = view.dataset.friendsView !==
+      (['online', 'friends'].includes(filter) ? 'list' : filter);
+    feedback(); render();
+    if (filter === 'add') $('#friend-username').focus();
+  });
+  $('#friends-open-account').addEventListener('click', () => openSettings('conta'));
   $('#friends-form').addEventListener('submit', event => { event.preventDefault(); request('request', { username: $('#friend-username').value.trim() }); });
   socket.on('friends-state', next => { supported = next?.supported === true; state = { friends: next?.friends || [], incoming: next?.incoming || [], outgoing: next?.outgoing || [] }; render(); });
   socket.on('account-state', () => { if (!getAccount()) state = { friends: [], incoming: [], outgoing: [] }; render(); });

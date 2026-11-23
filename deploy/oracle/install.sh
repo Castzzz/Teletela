@@ -145,7 +145,7 @@ fetch('https://api.cloudflareclient.com/v0a2158/reg', {
     '',
     '[Peer]',
     'PublicKey = ' + peer.public_key,
-    'Endpoint = ' + (peer.endpoint.v4 ? peer.endpoint.v4.replace(/:\d+$/, ':2408') : peer.endpoint.host),
+    'Endpoint = ' + (peer.endpoint.host ? peer.endpoint.host.replace(/:\d+$/, ':2408') : 'engage.cloudflareclient.com:2408'),
     'AllowedIPs = 0.0.0.0/0, ::/0',
     'PersistentKeepalive = 25',
     '',
@@ -160,6 +160,9 @@ fetch('https://api.cloudflareclient.com/v0a2158/reg', {
 });
 EOF
     chmod 600 "$APP/data/warp.conf"
+  else
+    # Migra endpoints IPv4 fixos antigos (ex: 162.159.192.8) que pararam de responder handshake
+    sed -i 's/^Endpoint = 162\.159\.192\.[0-9]*:2408$/Endpoint = engage.cloudflareclient.com:2408/' "$APP/data/warp.conf"
   fi
 fi
 

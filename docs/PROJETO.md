@@ -1,23 +1,23 @@
-**[4.8.0 publicada em 19/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.8.0)** — controle de acesso por transmissão, novo visual do bot de música e mudanças visuais no Teletela. Release desktop publicada com sete artefatos conferidos e atualização automática de Windows/Linux validada pelos manifestos públicos. Deploy na Oracle concluído com backup prévio íntegro, serviços ativos e hashes conferidos.
+**[4.8.0 publicada em 19/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.8.0)** — controle de acesso por transmissão, novo visual do bot de música e mudanças visuais no Teletela. Release desktop publicada com sete artefatos conferidos e atualização automática de Windows/Linux validada pelos manifestos públicos. Deploy na Oracle concluído com backup prévio íntegro, serviços ativos e hashes conferidos.
 
-**[4.7.0 publicada em 17/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.7.0)** — clipes de voz de 10 a 60 segundos com envio para um canal de texto. Teste entre dois clientes Electron aprovado. APK de teste 4.7.0 (código 18), dez anexos conferidos e atualização automática de Windows/Linux validada pelos manifestos públicos. Deploy na Oracle concluído com backup íntegro, serviços ativos e hashes de servidor, interface e gravador iguais aos locais.
+**[4.7.0 publicada em 17/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.7.0)** — clipes de voz de 10 a 60 segundos com envio para um canal de texto. Teste entre dois clientes Electron aprovado. APK de teste 4.7.0 (código 18), dez anexos conferidos e atualização automática de Windows/Linux validada pelos manifestos públicos. Deploy na Oracle concluído com backup íntegro, serviços ativos e hashes de servidor, interface e gravador iguais aos locais.
 
-**[4.6.0 publicada em 14/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.6.0):** Assistir juntos experimental, download da extensão, volume de transmissão até 300% e compatibilidade do bot de música. Release e deploy concluídos; reprodução real entre navegadores e Netflix ainda precisam de validação.
+**[4.6.0 publicada em 14/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.6.0):** Assistir juntos experimental, download da extensão, volume de transmissão até 300% e compatibilidade do bot de música. Release e deploy concluídos; reprodução real entre navegadores e Netflix ainda precisam de validação.
 
-**[4.5.1 publicada em 13/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.5.1):** correções de segurança e ajustes no SFU. Testes anteriores aproveitados a pedido do dono; pacotes, popup de novidades e saúde dos serviços conferidos.
+**[4.5.1 publicada em 13/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.5.1):** correções de segurança e ajustes no SFU. Testes anteriores aproveitados a pedido do dono; pacotes, popup de novidades e saúde dos serviços conferidos.
 
-**[4.5.0 publicada em 09/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.5.0):** mensagens privadas e temporárias, marcações com foto, prévia arrastável e fotos dos amigos. Cliente e servidor atualizados; testes anteriores aproveitados a pedido do dono.
+**[4.5.0 publicada em 09/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.5.0):** mensagens privadas e temporárias, marcações com foto, prévia arrastável e fotos dos amigos. Cliente e servidor atualizados; testes anteriores aproveitados a pedido do dono.
 
 # Teletela: documentação do projeto
 
-**[4.4.0 publicada em 09/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.4.0):** presença, atividades, redesign, avatares do histórico, teste de microfone e Membros redimensionável. Cliente e servidor atualizados; testes anteriores aproveitados a pedido do dono.
+**[4.4.0 publicada em 09/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.4.0):** presença, atividades, redesign, avatares do histórico, teste de microfone e Membros redimensionável. Cliente e servidor atualizados; testes anteriores aproveitados a pedido do dono.
 
-**[4.3.3 publicada em 05/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.3.3):** canal de Ausentes bloqueia o microfone de todos,
+**[4.3.3 publicada em 05/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.3.3):** canal de Ausentes bloqueia o microfone de todos,
 inclusive administradores, e restaura o estado anterior ao sair. Novo bundle Flatpak
 experimental nos downloads do GitHub, com atualização manual. APK 4.3.3/código 13.
 Release e servidor atualizados a pedido do dono, com backup prévio e saúde pública conferida.
 
-**[Versão 4.3.2 publicada em 02/11/2026](https://github.com/Castzzz/telinha/releases/tag/v4.3.2):** correção da conexão alternativa HTTP quando WebSocket falha.
+**[Versão 4.3.2 publicada em 02/11/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.3.2):** correção da conexão alternativa HTTP quando WebSocket falha.
 Validação na interface instalada: conexão normal, bloqueio de WebSocket, entrada no canal e
 retomada após queda. Release desktop e servidor atualizado para navegador, com backup prévio
 e saúde pública conferida. Android permanece na 4.3.1/código 12.
@@ -25,11 +25,11 @@ e saúde pública conferida. Android permanece na 4.3.1/código 12.
 Tudo o que precisa pra entender, rodar, mudar, publicar e manter o Teletela. Escrito pra quem
 for mexer no código, inclusive agentes de IA (Claude Code, Antigravity, etc.) em outra conversa.
 
-**[4.3.1 publicada em 31/10/2026](https://github.com/Castzzz/telinha/releases/tag/v4.3.1):** transmissão em janela normal no desktop,
+**[4.3.1 publicada em 31/10/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.3.1):** transmissão em janela normal no desktop,
 tela cheia em outro monitor, cabeçalho integrado e controles flutuantes com ocultação
 automática. APK 4.3.1/código 12 acompanha a interface; PiP móvel preservado.
 
-**[4.3.0 publicada em 31/10/2026](https://github.com/Castzzz/telinha/releases/tag/v4.3.0):**
+**[4.3.0 publicada em 31/10/2026](https://github.com/Castzzz/Teletela/releases/tag/v4.3.0):**
 amigos, membros na lateral, tempo individual por canal, exclusão do Geral, barra em tela
 cheia e captura nativa Android. APK 4.3.0/código 11. Servidor atualizado e saudável.
 Os registros abaixo de desenvolvimento local descrevem as etapas anteriores à publicação.
@@ -100,7 +100,7 @@ e um admin pra moderar.
   (privada sem persistência em disco), e as fotos dos amigos (inclusive WebP/GIF) são
   resolvidas na tela inicial e na aba Amigos via `resolveFriendAvatar` (`server.js`).
 
-Repositório público: https://github.com/Castzzz/telinha
+Repositório público: https://github.com/Castzzz/Teletela
 
 ## 2. Como funciona (arquitetura)
 
@@ -160,6 +160,7 @@ Pontos importantes:
   explicitamente mono para eliminar a perda de 6 dB causada por um canal vazio no RNNoise.
   `prefs.micOn` lembra o mute; `micGain` controla 0–300%. O modo antigo `ia-leve` é
   tratado como IA/RNNoise. A troca de filtro preserva o mute e libera a captura anterior.
+  Os perfis opcionais de pausa usam a probabilidade de fala calculada pelo RNNoise a cada 10 ms. Após 200 ms sem fala detectada, o ganho desce gradualmente até −12 ou −24 dB antes do ganho manual.
   [DIAGNOSTICO-MICROFONES.md](DIAGNOSTICO-MICROFONES.md) guarda o diagnóstico atual e o experimento histórico.
 - **Celular:** `mobile.css` e `mobile.js` usam navegação própria: Canais e Você.
   A call e o chat abrem em telas separadas; uma faixa compacta mantém mute e saída da call
@@ -318,7 +319,7 @@ public/                    A interface (vai dentro do app E é servida pelo serv
   permissions.js           Cargos, propriedade e configurações de voz/texto por pessoa/cargo
   profile-identity.js       Chave local Ed25519 e prova de identidade no handshake
   mobile-pip.js            Seleção de vídeo e apresentação compacta do PiP Android
-  audio-manager.js         Mixer de volume, ensurdecer, captura de áudio, VAD
+  audio-manager.js         Mixer de volume, ensurdecer, captura de áudio, VAD por temporizador (independe dos quadros da janela)
   microphone.js            Envio mono, reforço nativo, ganho manual e proteção de picos (teste)
   mobile.css, mobile.js    Layout por toque e integração com o APK Android
   style.css                Estilos base + temas (escuro / preto / claro)
@@ -423,7 +424,7 @@ FFmpeg; `broadcast.mjs` executa **uma reprodução central** no ritmo real e dis
 mesmos blocos MP3 por HTTP para todos; `server.mjs` coordena busca, reprodução, parada,
 eventos SSE e arquivos temporários. Os clientes só decodificam a transmissão recebida.
 O ponto de entrada tardia é o ponto atual do bot, não o começo do arquivo. O volume é local.
-O laboratório limita as faixas a vídeos gravados de até 20 minutos e 80 MB de entrada,
+O K7 e o laboratório aceitam vídeos gravados de até 90 minutos e 256 MB de áudio de entrada. O laboratório usa
 uma preparação de áudio por vez e uma busca por vez. Limpa a faixa ao fechar seu FFmpeg e
 o diretório temporário ao encerrar o processo por Ctrl+C/SIGTERM.
 
@@ -621,6 +622,52 @@ go test -race ./sfu                       # SFU: erro de espectador não interro
 
 ## 6. Publicar uma versão (release)
 
+**Janela de lançamento.** Cada aprovação do dono vale para uma versão específica.
+Prepare e teste essa versão com antecedência. Ao agendar, use o fuso `America/Sao_Paulo`
+e programe as tentativas das 03h00 às 03h50, a cada 10 minutos. Preserve o commit e os
+artefatos aprovados se o lançamento passar para outra noite.
+
+Antes de iniciar a publicação e imediatamente antes de um deploy que reinicie o serviço,
+confira se todos os canais de voz estão vazios, inclusive os privados. Em `/api/health`,
+`status: ok` com `totalUsers: 0` confirma que ninguém está conectado. Um valor positivo
+inclui quem só está lendo o chat. O servidor com ligações privadas também informa o booleano agregado `voiceOccupied`, que considera os canais de voz, os convites de ligação em andamento e as ligações atendidas. Nesse caso, use a ocupação completa de voz se disponível.
+Se houver alguém em call ou faltar confirmação, aguarde a próxima tentativa. A partir das
+04h, retome as etapas pendentes na próxima madrugada. Faça o backup antes do deploy e
+confira a saúde da sala antes de publicar os instaladores.
+
+O timer `teletela-madrugada.timer` roda no Ubuntu da VM mesmo com o PC desligado.
+Sem pedido em `/var/lib/teletela-agenda/pendente`, o systemd pula o serviço. Para
+reinstalar o timer após recuperar a VM, use `bash deploy/oracle/madrugada/instalar.sh`.
+Os comandos manuais de deploy e release continuam tendo efeito imediato.
+
+**Preparação de uma versão aprovada.** Faça o commit da versão e, para publicar o
+cliente, envie esse commit ao repositório. Gere os instaladores com os sons locais
+em uma pasta de saída limpa (`npm run dist -- --publish never`, confira também
+os dois arquivos de atualização). Crie um release **draft** com a tag da versão,
+o SHA completo como alvo (`gh release create "$tag" --draft --target "$commit"`)
+e envie os artefatos para ele com `gh release upload`. Confira a lista abaixo.
+O primeiro agendamento de cliente exige um token fine-grained de **Castzzz/Teletela**
+com **Contents → Read and write**. Rode `bash deploy/oracle/madrugada/credencial.sh`
+para digitá-lo no terminal. A credencial fica na VM, legível apenas por root.
+
+Com o commit aprovado no PC, execute `bash deploy/oracle/madrugada/agendar.sh app`,
+`servidor` ou `ambos` conforme o escopo aprovado. O comando confere os arquivos do
+rascunho e guarda seus identificadores e hashes. Para servidor, compila e envia o
+pacote antes de armar a fila. Depois da confirmação o PC pode ser desligado. Há um
+pedido por vez. O timer local pode ser consultado por SSH com
+`systemctl list-timers teletela-madrugada.timer`; as tentativas ficam no journal de
+`teletela-madrugada.service`. A agenda de servidor troca apenas a aplicação e os
+binários sobre a instalação existente. Mudanças de infraestrutura ou das unidades
+do sistema precisam do procedimento de instalação correspondente.
+
+A VM faz backup de dados e segredos antes do deploy, confere ocupação novamente
+antes do reinício e verifica os serviços e a saúde por HTTP local e HTTPS público.
+Se a verificação falhar, repõe os arquivos anteriores. Depois do sucesso conserva
+o backup mais recente em `/var/lib/teletela-agenda/ultimo-backup.tar.gz`. O backup
+externo do PC continua independente. Com `ambos`, o cliente só é publicado depois
+da confirmação do servidor. Uma tentativa que não consiga publicar mantém o rascunho
+e retoma a etapa pendente na janela seguinte.
+
 **Flatpak experimental:** `npm run dist:flatpak` usa `scripts/build-flatpak.sh`
 e `build.flatpak` no `package.json`, sem publicar. Exige `flatpak`, `flatpak-builder`
 e o remoto Flathub do usuário; o empacotador instala runtime/SDK/BaseApp 25.08.
@@ -644,7 +691,7 @@ Uma versão nova é o que faz os apps da galera atualizarem sozinhos.
    - inclua o identificador da versão anterior na lista de `openWhatsNew()` (`app.js`),
      que compara os componentes da versão para mostrar só as novidades ainda não vistas.
 3. Commit (veja [Convenções](#12-convenções): **nunca** adicione `public/sounds/`).
-4. `npm run release`
+4. Na tentativa autorizada pela janela acima, execute `npm run release`. Para preparar os instaladores antes, use `npm run dist -- --publish never`.
 
 O `release` compila o `telinha-audio.exe` (precisa do `mingw-w64-gcc`), gera AppImage,
 tar.gz, instalador e portátil do Windows, e publica no GitHub Releases usando o login do
@@ -776,16 +823,23 @@ trocar: apague a linha `OWNER_KEY` desse arquivo e rode o deploy. **Ela nunca va
 | `soundboard/index.json` + arquivos | sons do soundboard (16 por pessoa, até 1 MB, 300 no total) |
 | `room.json` | senha da sala (só o hash scrypt) e o segredo das chaves de membro |
 | `member-avatars/<memberId>.json` | última foto/GIF, recorte, perfil público e versão por identidade; arquivo atômico, até 15 MB por arquivo/256 MB no conjunto; entra no backup |
+| `conversas/anexos/` | mídia das DMs. Até 15 MB por imagem e 20 MB por arquivo. A cota compartilhada de 5 GB recusa novos anexos quando cheia e preserva os anteriores. |
 | `accounts.json` | contas opcionais, accessId original, perfil completo, scrypt e hashes dos códigos/tokens; arquivo atômico 0600, falha fechada se ilegível |
 | `dice.json` | últimas 30 rolagens gerais do servidor (formato v2); autor, horário, dados individuais, modificador e total; arquivo atômico 0600 |
 | `permissions.json` | segredo HMAC, dono (`ownerId`), cargos, nomes, vínculos e hash das chaves públicas; acesso 0600 |
 | `chat-images/` | imagens/GIFs da call (15 MB por envio, até 2 GB; **apagadas a cada reinício**) |
 | `chat-files/` | vídeos e arquivos da call (20 MB por envio, até 1 GB; **apagados a cada reinício**) |
 
-Os limites de espaço removem os arquivos mais antigos, mantendo o histórico da mensagem;
+Nos canais, os limites de espaço removem os arquivos mais antigos, mantendo o histórico da mensagem;
 o download de um arquivo removido responde 404. Apagar uma mensagem com anexo ou o canal de
 texto também remove o arquivo correspondente. Anexos dos canais de texto entram no backup;
 mídias da call ficam de fora.
+
+Nas conversas entre amigos, `dm-send-file` grava o arquivo e associa o nome, tipo,
+tamanho e identificador à mensagem da dupla. O histórico de texto anterior continua
+legível. A rota `/api/dm-file/:file` exige a chave de mídia de um socket conectado,
+sessão válida de um participante e amizade aceita, inclusive nas requisições Range.
+O cliente reconhece o suporte pelo campo `dmFiles` de `room-info`.
 
 Eventos `text-file` (canal de texto, funciona sem call) e `chat-file` (somente dentro da call)
 recebem `{ data: Buffer, mime, name, text?, replyTo?, channelId? }`. A mensagem guarda
@@ -1156,7 +1210,16 @@ válida conectada, mesmo fora de call, e atualiza ao conectar/desconectar/recupe
 Não é uma lista global entre servidores. Clientes antigos ignoram os novos eventos;
 o painel novo informa falta de suporte ao entrar em servidor anterior.
 
-`public/friends.js` também apresenta a amizade no mini perfil usando o ID de conta fornecido pelo servidor para membros autenticados. O mesmo estado de pedidos alimenta o perfil, a aba Amigos nas configurações e a página móvel Você.
+`public/friends.js` também apresenta a amizade no mini perfil usando o ID de conta fornecido pelo servidor para membros autenticados. O mesmo estado de pedidos alimenta o perfil, a aba Amigos na lateral e a aba correspondente na navegação móvel.
+
+As ligações de voz entre amigos usam o módulo Node `private-calls.js` e o cliente
+`public/private-calls.js`. O convite expira em 30 segundos. O primeiro aparelho a
+atender fica vinculado à ligação. O servidor emite credenciais de host e viewer
+para duas salas efêmeras do SFU, uma por sentido da voz. Ao desligar, perder a
+conexão ou remover a amizade, o servidor revoga as duas identidades de mídia.
+A ligação fica em memória e exige SFU configurado. O P2P do servidor local de
+desenvolvimento continua disponível para testar canais comuns.
+
 `public/accounts.js` restaura as preferências em memória se a gravação da sessão falhar.
 `public/stage-controls.js` esconde a barra após 3 s em tela cheia nativa ou alternativa CSS,
 mantém Tab/toque disponíveis e suspende a ocultação durante hover, arraste ou foco de teclado.
@@ -1365,7 +1428,7 @@ Mudar qualquer um destes quebra a atualização automática ou faz a galera perd
 - `appId: com.castzin.telinha` e `desktopName: telinha.desktop` (package.json).
 - A pasta de dados do Electron fixada em **"Telinha"** (`app.setPath('userData', ...)` no
   `main.cjs`).
-- Repositório `Castzzz/telinha` (o auto-update procura os releases lá).
+- Repositório `Castzzz/Teletela` (o auto-update procura os releases lá).
 - Chaves de preferências como `telinha_prefs`, `telinha_audio_*`.
 - Nomes de artefato `Teletela.AppImage`, `Teletela-Setup.exe` etc. (os links do README
   apontam pra eles).
@@ -1401,7 +1464,7 @@ O script não imprime a credencial; o arquivo nunca deve entrar no Git. O backup
 
 ### Publicação 3.8.0 concluída em 26/10/2026
 
-Código de release: `364043e`, tag [v3.8.0](https://github.com/Castzzz/telinha/releases/tag/v3.8.0).
+Código de release: `364043e`, tag [v3.8.0](https://github.com/Castzzz/Teletela/releases/tag/v3.8.0).
 Node/SFU/Caddy ativos na VM; perfil do proprietário comprovado por HMAC e vinculado antes
 do início do Node novo. Cargos e atribuições anteriores foram comparados ao backup e
 preservados. API `get-channel-settings` e protocolo de propriedade v2 conferidos na sala.
@@ -1417,7 +1480,7 @@ propriedade e a chave exclusiva de recuperação; o pedido privado de migração
 
 ### Publicação 3.9.0 concluída em 27/10/2026
 
-Tag [v3.9.0](https://github.com/Castzzz/telinha/releases/tag/v3.9.0), código `63d5d99`.
+Tag [v3.9.0](https://github.com/Castzzz/Teletela/releases/tag/v3.9.0), código `63d5d99`.
 Microfones restaurados ao processamento da 3.7; música compartilhada e playlists
 habilitadas na Oracle. SFU/Node/Caddy ativos; fontes extraídas como usuário telinha.
 Node v24.22.1 e Caddy 2.11.7 preservados, FFmpeg 8.0.1/libopus e yt-dlp 2026.10.26 instalados.
@@ -1502,7 +1565,7 @@ de `isOwner`, `isAdmin` ou dos handlers do servidor.
 
 ### Publicação da 4.1.0 (28/10/2026)
 
-Release pública [v4.1.0](https://github.com/Castzzz/telinha/releases/tag/v4.1.0), código
+Release pública [v4.1.0](https://github.com/Castzzz/Teletela/releases/tag/v4.1.0), código
 `7f68864` integrado à main. Inclui Windows (Setup/Portátil), Linux (AppImage/tar.gz), APK
 Android (4.1.0, código 8) e os manifests de atualização.
 
@@ -1706,7 +1769,7 @@ a `main` não foi alterada e não houve push, release ou deploy.
 
 ### Publicação da 4.2.0 concluída (30/10/2026)
 
-Release pública [v4.2.0](https://github.com/Castzzz/telinha/releases/tag/v4.2.0), marcada como
+Release pública [v4.2.0](https://github.com/Castzzz/Teletela/releases/tag/v4.2.0), marcada como
 latest e sem pré-release. A tag aponta para `b94a8350357847a153019399e7984a4f94b82c1c`,
 integrado por fast-forward e enviado à `main`. Inclui as duas frentes reunidas, com
 personalização, e o ajuste final de apelido somente na voz pelo próprio perfil.
@@ -1777,7 +1840,7 @@ visual cobre meia-noite sem novo pacote, pausa/retorno, troca, reabertura, três
 
 ### Publicação da 4.2.1 concluída (30/10/2026)
 
-Release pública [v4.2.1](https://github.com/Castzzz/telinha/releases/tag/v4.2.1), marcada como
+Release pública [v4.2.1](https://github.com/Castzzz/Teletela/releases/tag/v4.2.1), marcada como
 latest e sem pré-release. A tag aponta para `ae01ed6062d1ca70f4d0443a08f86bdcfde65d14`,
 integrado por fast-forward e enviado à `main`.
 
@@ -1805,7 +1868,7 @@ A `main` ficou selecionada após a publicação. As branches de desenvolvimento 
 ### Publicação da 4.3.0 concluída (31/10/2026)
 
 Release e deploy solicitados explicitamente pelo dono.
-[4.3.0 pública e marcada como mais recente](https://github.com/Castzzz/telinha/releases/tag/v4.3.0),
+[4.3.0 pública e marcada como mais recente](https://github.com/Castzzz/Teletela/releases/tag/v4.3.0),
 sem pré-release; tag no commit `76648db1c4e62f09ce7aed9d1a2e703ffc0abf43`.
 
 - Oito arquivos publicados: Setup, Portátil, AppImage, tar.gz, blockmap do Setup,
@@ -1830,7 +1893,7 @@ sem pré-release; tag no commit `76648db1c4e62f09ce7aed9d1a2e703ffc0abf43`.
 ### Publicação da 4.3.1 concluída (31/10/2026)
 
 Release solicitada pelo dono, publicada como versão mais recente e sem pré-release:
-[v4.3.1](https://github.com/Castzzz/telinha/releases/tag/v4.3.1), no commit
+[v4.3.1](https://github.com/Castzzz/Teletela/releases/tag/v4.3.1), no commit
 `dbe34a8272a86f9269b306070948be9255401b71`, enviado à `main`.
 
 - Janela desktop normal para a transmissão, tela cheia independente, cabeçalho integrado
@@ -1852,7 +1915,7 @@ Release solicitada pelo dono, publicada como versão mais recente e sem pré-rel
 ### Publicação da 4.3.3 concluída (05/11/2026)
 
 Release solicitada pelo dono e publicada como mais recente, sem pré-release:
-[v4.3.3](https://github.com/Castzzz/telinha/releases/tag/v4.3.3), no commit
+[v4.3.3](https://github.com/Castzzz/Teletela/releases/tag/v4.3.3), no commit
 `a0e66a0edc7ea0267aaba6afd168e0ccf6a5861d`, enviado à `main`.
 
 - Ausentes mantém todos mutados, inclusive o dono e administradores. Entrada manual e
@@ -2064,7 +2127,7 @@ perfis/arquivos de teste; os dados da sala oficial não foram alterados.
 Autorizados pelo dono, sem repetir os testes já concluídos (runner 62/62, regressões
 95/95 e interfaces). Integração do protótipo por avanço direto na `main`, publicada no
 commit `a97a81602154ba5338bc5143609df07034dae9e3`, tag
-[v4.4.0](https://github.com/Castzzz/telinha/releases/tag/v4.4.0), sem rascunho/pré-release
+[v4.4.0](https://github.com/Castzzz/Teletela/releases/tag/v4.4.0), sem rascunho/pré-release
 e marcada como versão mais recente.
 
 - `npm run release` gerou e publicou Windows Setup/Portátil, AppImage, tar.gz, blockmap
@@ -2176,7 +2239,7 @@ Node, Caddy, interface servida, dependências e configuração da VM foram prese
 
 ### Publicação da 4.5.1 (13/11/2026)
 
-- Release pública [v4.5.1](https://github.com/Castzzz/telinha/releases/tag/v4.5.1),
+- Release pública [v4.5.1](https://github.com/Castzzz/Teletela/releases/tag/v4.5.1),
   marcada como mais recente, sem rascunho/pré-release. Tag no commit `4c98a99`.
 - Nove arquivos publicados: Setup/Portátil Windows, AppImage, tar.gz, Flatpak experimental,
   APK Android 4.5.1/código 16, blockmap e os dois metadados de atualização automática.

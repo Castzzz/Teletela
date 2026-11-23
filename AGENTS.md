@@ -11,6 +11,12 @@ Migração planejada: [docs/MIGRAR-SERVIDOR.md](docs/MIGRAR-SERVIDOR.md). VM atu
 Lá tem a arquitetura, onde fica cada funcionalidade, os eventos do Socket.IO, os dados salvos,
 como fazer release/deploy e as armadilhas conhecidas.
 
+## Ao retomar o projeto em outra conta ou ferramenta
+
+Leia primeiro a retomada mais recente em [docs/PENDENCIAS.md](docs/PENDENCIAS.md).
+Ao concluir trabalho relevante, atualize esse registro com a data, as decisões do dono,
+o que está local ou em produção, os testes realizados e o que ainda depende de ação.
+
 ## Regras que não podem ser esquecidas
 
 - Fale e escreva **em português** (interface, comentários, commits). O dono fala informal.
@@ -19,6 +25,10 @@ como fazer release/deploy e as armadilhas conhecidas.
   (vai dentro do instalador).
 - **Release e deploy só quando o dono pedir explicitamente** (`npm run release`,
   `npm run deploy:oracle`). Eles publicam pra todo mundo e o deploy reinicia o servidor.
+- Quando o dono aprovar uma versão, agende **essa versão** para a janela das **03h às 04h,
+  horário de Brasília**. Confira a ocupação de todos os canais de voz, inclusive os privados,
+  antes de publicar ou reiniciar. Com gente em call ou ocupação desconhecida, tente de novo
+  a cada 10 minutos. Às 04h, adie o que estiver pendente para a próxima madrugada. Veja §6.
 - Mudou `public/`? Precisa de **release** (a interface vem instalada no app). Mudou só
   `server.js` ou `sfu/`? Só **deploy**. Tabela completa em docs/PROJETO.md §6.
 - Antes de release: aumentar `version` no `package.json` e atualizar o popup de novidades
@@ -45,6 +55,14 @@ npm run deploy:oracle       # atualiza a VM (só se o dono pedir; precisa de ~/.
 npm run backup              # baixa os dados da sala pra ~/Teletela-backups (só leitura na VM)
 npm run backup:auto         # liga o backup diário no PC do dono (timer do systemd do usuário)
 ```
+
+## Testes visuais no PC do dono
+
+Use um display isolado para que as janelas de teste não tomem o foco do dono. Nos
+testes offscreen do Electron do sistema, funciona o prefixo
+`env -u DISPLAY WAYLAND_DISPLAY=teletela-teste-sem-monitor /usr/lib/electron42/electron --ozone-platform=headless --disable-gpu`.
+Para conferir uma janela visível ou testar recursos que exigem compositor, use um
+compositor virtual separado. Se a verificação exigir a sessão física do dono, combine antes.
 
 ## Ao terminar uma mudança
 

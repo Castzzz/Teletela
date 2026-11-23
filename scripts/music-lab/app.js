@@ -106,7 +106,7 @@ events.onmessage = event => {
     message('#broadcast-status', 'A transmissão terminou. Você pode escolher outra música.');
   } else {
     disconnectAudio();
-    const text = state.phase === 'preparing' ? 'Preparando o áudio no servidor… Isso pode levar até dois minutos.'
+    const text = state.phase === 'preparing' ? 'Preparando o áudio no servidor… Faixas longas podem levar alguns minutos.'
       : state.phase === 'error' ? state.error : 'Escolha uma versão acima e clique em Tocar para todos.';
     message('#broadcast-status', text, state.phase === 'error');
   }

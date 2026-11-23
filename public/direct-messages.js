@@ -1,13 +1,44 @@
+import { attachmentDraft, attachmentPayload } from './chat-attachments.js';
 import { messageLinks } from './chat-links.js';
 import { attachLinkPreview } from './link-previews.js';
 
-export function setupDirectMessages({ socket, getAccount, serverUrl }) {
+export function setupDirectMessages({ socket, getAccount, serverUrl, assetKey, onUnreadChanged }) {
   const $ = id => document.getElementById(id);
   const dialog = $('dm-dialog'), log = $('dm-log'), input = $('dm-input');
   const unread = new Set();
   let friends = [], peer = null, generation = 0, before = null, owner = null;
   const messages = new Map(), latest = new Map(), seen = new Map();
   let membership = null;
+
+  const send = $('dm-compose').querySelector('[type="submit"]');
+  const attachments = attachmentDraft({ input, picker: $('dm-picker'), preview: $('dm-attachment-draft'), dropZone: dialog,
+    destination: () => peer, report: message => { $('dm-status').textContent = message; } });
+  let acceptsFiles = false;
+  socket.on('room-info', info => { if (info?.assetKey) acceptsFiles = info.dmFiles === true; });
+  socket.on('disconnect', () => { acceptsFiles = false; });
+  $('dm-attach').onclick = () => $('dm-picker').click();
+
+  function appendAttachment(row, attachment) {
+    const url = new URL('/api/dm-file/' + encodeURIComponent(attachment.file), serverUrl);
+    url.searchParams.set('access', assetKey());
+    const name = attachment.name || 'Arquivo';
+    if (attachment.mime.startsWith('image/')) {
+      const img = document.createElement('img');
+      img.className = 'dm-image'; img.src = url.href; img.alt = name; img.loading = 'lazy';
+      row.append(img);
+    } else if (attachment.mime.startsWith('video/') || attachment.mime === 'audio/wav') {
+      const player = document.createElement(attachment.mime === 'audio/wav' ? 'audio' : 'video');
+      player.src = url.href; player.controls = true; player.playsInline = true; player.preload = 'metadata';
+      player.setAttribute('aria-label', name); row.append(player);
+    }
+    const link = document.createElement('a');
+    url.searchParams.set('download', '1'); url.searchParams.set('name', name);
+    link.href = url.href; link.download = name; link.className = 'dm-file';
+    const label = document.createElement('strong'), detail = document.createElement('small');
+    label.textContent = name;
+    detail.textContent = 'Baixar · ' + (attachment.size >= 1048576 ? (attachment.size / 1048576).toFixed(1) + ' MB' : Math.ceil(attachment.size / 1024) + ' KB');
+    link.append(label, detail); row.append(link);
+  }
 
   function markRead(id, number) {
     if (number <= (seen.get(id) || 0)) return;
@@ -33,37 +64,18 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
       const result = await socket.timeout(10000).emitWithAck('dm-inbox', {});
       if (membership !== key || !result?.success) return;
       for (const item of result.latest) noteActivity(item.peer, item);
-      renderFriends();
+      onUnreadChanged(unread);
     } catch { /* As conversas abertas continuam recebendo mensagens ao vivo. */ }
   }
 
-  function renderFriends() {
-    const list = $('dm-friends');
-    list.replaceChildren();
-    for (const person of [...friends].sort((a, b) => (latest.get(b.id)?.timestamp || 0) - (latest.get(a.id)?.timestamp || 0))) {
-      const button = document.createElement('button');
-      button.className = 'dm-person'; button.type = 'button';
-      const name = document.createElement('strong'), detail = document.createElement('small');
-      name.textContent = person.name || person.username;
-      detail.textContent = '@' + person.username + (unread.has(person.id) ? ' · Nova mensagem' : '');
-      button.append(name, detail);
-      button.onclick = () => open(person.id);
-      list.append(button);
-    }
-    if (!friends.length) list.textContent = 'Adicione um amigo em Configurações → Amigos para começar.';
-    $('dm-badge').textContent = String(unread.size);
-    $('dm-badge').hidden = !unread.size;
-  }
-
   function reset() {
-    generation++;
+    generation++; attachments.clear();
     peer = before = null;
     $('dm-latest').hidden = true;
     messages.clear(); log.replaceChildren(); input.value = '';
     $('dm-status').textContent = '';
     $('dm-title').textContent = 'Conversas';
-    $('dm-back').hidden = $('dm-thread').hidden = true;
-    $('dm-friends').hidden = false;
+    $('dm-thread').hidden = true;
   }
 
   function renderMessages() {
@@ -93,7 +105,9 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
         last = index + label.length;
       }
       body.append(msg.text.slice(last));
-      row.append(by, time, body);
+      row.append(by, time);
+      if (msg.text) row.append(body);
+      if (msg.attachment) appendAttachment(row, msg.attachment);
       attachLinkPreview(body);
       log.insertBefore(row, proxima);
     }
@@ -127,16 +141,16 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
 
   function open(id) {
     if (!owner || !socket.connected) return;
-    reset(); renderFriends();
-    if (!dialog.open) dialog.showModal();
     const person = friends.find(friend => friend.id === id);
     if (!person) return;
+    reset();
+    if (!dialog.open) dialog.showModal();
     peer = id;
 
     $('dm-title').textContent = person.name || person.username;
-    $('dm-thread').hidden = $('dm-back').hidden = false;
-    $('dm-friends').hidden = $('dm-older').hidden = true;
-    $('dm-compose').querySelector('button').disabled = false;
+    $('dm-thread').hidden = false;
+    $('dm-older').hidden = true;
+    send.disabled = false;
     $('dm-status').textContent = 'Carregando conversa…';
     loadHistory(); input.focus();
   }
@@ -149,7 +163,6 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
     }
     owner = socket.connected ? id : null;
     friends = owner ? list : [];
-    $('dm-open').classList.toggle('hidden', !owner);
     const ids = new Set(friends.map(person => person.id));
     const key = JSON.stringify([owner, ...[...ids].sort()]);
     if (membership !== key) {
@@ -157,8 +170,8 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
       if (ids.size) refreshInbox(key);
     }
     for (const id of unread) if (!ids.has(id)) unread.delete(id);
-    if (peer && !ids.has(peer)) reset();
-    renderFriends();
+    if (peer && !ids.has(peer)) { dialog.close(); reset(); }
+    onUnreadChanged(unread);
   }
 
   function recordVisible() {
@@ -171,30 +184,36 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
       break;
     }
     $('dm-latest').hidden = log.scrollHeight - log.clientHeight - log.scrollTop < 4;
-    renderFriends();
+    onUnreadChanged(unread);
   }
   log.addEventListener('scroll', recordVisible);
   $('dm-latest').onclick = () => { log.scrollTop = log.scrollHeight; recordVisible(); };
-  $('dm-open').onclick = () => open();
-  $('dm-back').onclick = () => open();
+  document.addEventListener('visibilitychange', recordVisible);
   $('dm-close').onclick = () => dialog.close();
   dialog.addEventListener('close', reset);
   $('dm-older').onclick = () => loadHistory(true);
   $('dm-compose').onsubmit = async event => {
     event.preventDefault();
-    const button = event.currentTarget.querySelector('button');
+    const file = attachments.file;
     const draft = input.value, text = draft.trim(), turn = generation;
-    if (!peer || !socket.connected || button.disabled || !text) return;
-    button.disabled = true;
+    if (!peer || !socket.connected || send.disabled || (!text && !file)) return;
+    if (file && !acceptsFiles) { $('dm-status').textContent = 'O servidor precisa ser atualizado para receber anexos privados.'; return; }
+    send.disabled = true;
+    if (file) $('dm-status').textContent = 'Enviando anexo…';
     try {
-      const result = await socket.timeout(10000).emitWithAck('dm-send', { accountId: peer, text });
+      const data = file ? await attachmentPayload(file) : {};
+      if (turn !== generation || !socket.connected || attachments.file !== file) return;
+      const result = await socket.timeout(file ? 60000 : 10000).emitWithAck(file ? 'dm-send-file' : 'dm-send', { accountId: peer, text, ...data });
       if (turn !== generation) return;
       if (!result?.success) throw new Error(result?.error || 'Mensagem não enviada.');
-      if (input.value === draft) input.value = '';
+      if (attachments.file === file) {
+        attachments.clear();
+        if (input.value === draft) input.value = '';
+      }
       $('dm-status').textContent = ''; input.focus();
     } catch (err) {
       if (turn === generation) $('dm-status').textContent = err.message === 'operation has timed out' ? 'Envio sem confirmação. Confira a conversa.' : err.message;
-    } finally { if (turn === generation) button.disabled = false; }
+    } finally { if (turn === generation) send.disabled = false; }
   };
   socket.on('dm-message', msg => {
     const other = msg.from === owner ? msg.to : msg.from;
@@ -207,7 +226,7 @@ export function setupDirectMessages({ socket, getAccount, serverUrl }) {
       if (atEnd || msg.from === owner) log.scrollTop = log.scrollHeight;
       recordVisible();
     }
-    renderFriends();
+    onUnreadChanged(unread);
   });
-  return { open, sync };
+  return { open, sync, unread };
 }

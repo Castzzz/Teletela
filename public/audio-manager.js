@@ -247,7 +247,7 @@ export class VoiceActivityDetector {
     this.sourceNode = null;
     this.analyserNode = null;
     this.dataArray = null;
-    this.rafId = null;
+    this.sampleTimer = null;
 
     this.isSpeaking = false;
     this.lastSpokeTime = 0;
@@ -295,16 +295,14 @@ export class VoiceActivityDetector {
   setEnabled(enabled) {
     this.isEnabled = Boolean(enabled);
     if (!this.isEnabled) {
-      if (this.rafId && typeof cancelAnimationFrame !== 'undefined') {
-        cancelAnimationFrame(this.rafId);
-        this.rafId = null;
-      }
+      clearInterval(this.sampleTimer);
+      this.sampleTimer = null;
       if (this.isSpeaking) {
         this.isSpeaking = false;
         this.onSpeakingChange(false);
       }
       if (this.onVolumeLevel) this.onVolumeLevel(0, -100);
-    } else if (!this.rafId) {
+    } else {
       this.startLoop();
     }
   }
@@ -314,24 +312,10 @@ export class VoiceActivityDetector {
   }
 
   startLoop() {
-    if (typeof requestAnimationFrame === 'undefined') return;
-
-    let lastRun = 0;
-    const processFrame = () => {
-      if (!this.analyserNode || !this.isEnabled) {
-        this.rafId = requestAnimationFrame(processFrame);
-        return;
-      }
-
+    if (!this.analyserNode || !this.isEnabled || this.sampleTimer !== null) return;
+    // A call continua quando a janela está minimizada e deixa de desenhar quadros.
+    this.sampleTimer = setInterval(() => {
       const now = Date.now();
-      // Em telas de alta frequência (144Hz/240Hz), limita o cálculo de RMS a ~40 FPS (25ms),
-      // economizando CPU sem afetar a detecção de voz
-      if (now - lastRun < 25) {
-        this.rafId = requestAnimationFrame(processFrame);
-        return;
-      }
-      lastRun = now;
-
       this.analyserNode.getFloatTimeDomainData(this.dataArray);
 
       // Compute Root Mean Square (RMS)
@@ -365,17 +349,12 @@ export class VoiceActivityDetector {
         }
       }
 
-      this.rafId = requestAnimationFrame(processFrame);
-    };
-
-    this.rafId = requestAnimationFrame(processFrame);
+    }, 25);
   }
 
   stop() {
-    if (this.rafId && typeof cancelAnimationFrame !== 'undefined') {
-      cancelAnimationFrame(this.rafId);
-      this.rafId = null;
-    }
+    clearInterval(this.sampleTimer);
+    this.sampleTimer = null;
     if (this.sourceNode) {
       try { this.sourceNode.disconnect(); } catch (_) {}
       this.sourceNode = null;

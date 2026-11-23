@@ -1,6 +1,6 @@
 {
   "name": "telinha",
-  "version": "4.8.0",
+  "version": "4.9.0",
   "description": "Transmissão de tela P2P (WebRTC) e voz estilo Discord/TeamSpeak com áudio de sistema independente",
   "type": "module",
   "private": true,
@@ -79,6 +79,7 @@
       "daily-call-store.js",
       "account-store.js",
       "direct-messages.js",
+      "private-calls.js",
       "link-previews.js",
       "member-avatar-store.js",
       "accounts-protocol.js",
@@ -129,7 +130,7 @@
       {
         "provider": "github",
         "owner": "Castzzz",
-        "repo": "telinha",
+        "repo": "Teletela",
         "releaseType": "release"
       }
     ]
@@ -137,7 +138,7 @@
   "desktopName": "telinha.desktop",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Castzzz/telinha.git"
+    "url": "https://github.com/Castzzz/Teletela.git"
   },
   "optionalDependencies": {
     "uiohook-napi": "^1.5.5"

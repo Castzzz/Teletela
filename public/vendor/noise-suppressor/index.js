@@ -88,10 +88,10 @@ const id$1 = "@sapphi-red/web-noise-suppressor/rnnoise";
 * Assumes sample rate to be 48kHz.
 */
 var RnnoiseWorkletNode = class extends AudioWorkletNode {
-	constructor(context, { maxChannels, wasmBinary }) {
+	constructor(context, { maxChannels, wasmBinary, profile }) {
 		super(context, id$1, { processorOptions: {
 			maxChannels,
-			wasmBinary
+			wasmBinary, profile
 		} });
 	}
 	destroy() {

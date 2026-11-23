@@ -7,3 +7,5 @@ que compila o RNNoise da Xiph.Org/Mozilla (BSD-3-Clause).
 
 Pra atualizar: npm install -D @sapphi-red/web-noise-suppressor@<versão>
 e copie os mesmos arquivos de node_modules/@sapphi-red/web-noise-suppressor/dist/.
+Reaplique a opção profile em index.js e a atenuação por probabilidade de fala em
+rnnoise/workletProcessor.js. O perfil padrão ignora essa etapa.

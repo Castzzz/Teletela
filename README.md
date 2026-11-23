@@ -10,9 +10,9 @@ Salas de voz e transmissão de tela entre amigos, estilo Discord/TeamSpeak. Dá 
 - 🎚️ Volume de cada amigo só pra você, perfil com foto, chat e reações
 - 🔄 O app de PC se atualiza sozinho
 
-**[Novidades da 4.7.0](https://github.com/Castzzz/telinha/releases/tag/v4.7.0)** — use a tesoura da call para enviar de 10 a 60 segundos de voz a um canal de texto. A mensagem inclui o player, a data e a hora.
+**[Novidades da 4.7.0](https://github.com/Castzzz/Teletela/releases/tag/v4.7.0)** — use a tesoura da call para enviar de 10 a 60 segundos de voz a um canal de texto. A mensagem inclui o player, a data e a hora.
 
-**[Novidades da 4.6.0](https://github.com/Castzzz/telinha/releases/tag/v4.6.0) — volume:** o reforço das transmissões agora
+**[Novidades da 4.6.0](https://github.com/Castzzz/Teletela/releases/tag/v4.6.0) — volume:** o reforço das transmissões agora
 respeita os 300% do controle, inclusive ao restaurar o volume salvo. Antes, o som
 ficava limitado a 200%, mesmo com o controle acima disso.
 
@@ -34,9 +34,9 @@ para empacotar localmente, use `npm run watch:extension`. [Instalação e limita
 Netflix usa integração experimental, ainda não validada, e planos com anúncios não
 são suportados. O som fica no navegador. Atualize o app para receber o painel novo.
 
-**[Novidades da 4.5.1](https://github.com/Castzzz/telinha/releases/tag/v4.5.1):** correções de segurança no chat, nos anexos de salas com senha e na moderação de voz; ajustes no repasse de vídeo e no buffer de recepção das transmissões.
+**[Novidades da 4.5.1](https://github.com/Castzzz/Teletela/releases/tag/v4.5.1):** correções de segurança no chat, nos anexos de salas com senha e na moderação de voz; ajustes no repasse de vídeo e no buffer de recepção das transmissões.
 
-**[Novidades da 4.5.0](https://github.com/Castzzz/telinha/releases/tag/v4.5.0):** mensagens temporárias e privadas, marcações com foto, prévia da
+**[Novidades da 4.5.0](https://github.com/Castzzz/Teletela/releases/tag/v4.5.0):** mensagens temporárias e privadas, marcações com foto, prévia da
 transmissão arrastável e fotos dos amigos corrigidas. Também inclui a nova abertura com amigos online, lateral de
 canais renovada e configurações com menos texto. Clique no seu perfil no rodapé para trocar
 atividade e presença rapidamente (no celular: Você → Trocar atividade e presença).
@@ -102,26 +102,26 @@ em transmissões reais de 1080p60/1440p60; não garante resolver todo travamento
 
 | Sistema | Baixar | Atualiza sozinho? |
 |---|---|---|
-| **Windows** 10/11 | **[Teletela-Setup.exe](https://github.com/Castzzz/telinha/releases/latest/download/Teletela-Setup.exe)** | ✅ Sim |
-| **Linux** (qualquer distro) | **[Teletela.AppImage](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.AppImage)** | ✅ Sim |
+| **Windows** 10/11 | **[Teletela-Setup.exe](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela-Setup.exe)** | ✅ Sim |
+| **Linux** (qualquer distro) | **[Teletela.AppImage](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.AppImage)** | ✅ Sim |
 
 <details>
 <summary>Outras opções (não se atualizam sozinhas)</summary>
 
 | Sistema | Baixar | Quando usar |
 |---|---|---|
-| Windows | [Teletela-Portatil.exe](https://github.com/Castzzz/telinha/releases/latest/download/Teletela-Portatil.exe) | Se não puder instalar nada no PC |
-| Linux | [Teletela.tar.gz](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.tar.gz) | Se o AppImage não abrir de jeito nenhum |
-| Linux | [Teletela.flatpak](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.flatpak) | Instalação pelo Flatpak (experimental) |
+| Windows | [Teletela-Portatil.exe](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela-Portatil.exe) | Se não puder instalar nada no PC |
+| Linux | [Teletela.tar.gz](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.tar.gz) | Se o AppImage não abrir de jeito nenhum |
+| Linux | [Teletela.flatpak](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.flatpak) | Instalação pelo Flatpak (experimental) |
 
-Todas as versões e o que mudou em cada uma: [Releases](https://github.com/Castzzz/telinha/releases).
+Todas as versões e o que mudou em cada uma: [Releases](https://github.com/Castzzz/Teletela/releases).
 </details>
 
 ---
 
 ### Instalar pelo Flatpak (experimental)
 
-Baixe o [Teletela.flatpak](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.flatpak)
+Baixe o [Teletela.flatpak](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.flatpak)
 no GitHub. Ainda não há pacote publicado no Flathub. Com Flatpak instalado, abra o terminal
 na pasta onde baixou o arquivo:
 
@@ -144,7 +144,7 @@ se aplica: até existir um repositório Flatpak, instale o novo arquivo a cada v
 
 ## 🪟 Instalar no Windows
 
-1. Baixe o **[Teletela-Setup.exe](https://github.com/Castzzz/telinha/releases/latest/download/Teletela-Setup.exe)** e abra.
+1. Baixe o **[Teletela-Setup.exe](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela-Setup.exe)** e abra.
 2. Vai aparecer **"O Windows protegeu o computador"**. É porque o app não tem assinatura digital paga, não é vírus. Clique em **Mais informações** e depois em **Executar assim mesmo**.
 3. O Teletela instala e abre sozinho. Depois ele fica no **Menu Iniciar**.
 4. Se o Windows perguntar sobre o **Firewall**, clique em **Permitir**.
@@ -153,7 +153,7 @@ Pronto. Agora é [entrar na sala](#-entrar-na-sala).
 
 ## 🐧 Instalar no Linux
 
-1. Baixe o **[Teletela.AppImage](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.AppImage)**.
+1. Baixe o **[Teletela.AppImage](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.AppImage)**.
 2. Abra um terminal na pasta onde baixou e libere a execução:
    ```bash
    cd ~/Downloads
@@ -177,7 +177,7 @@ Pronto. Agora é [entrar na sala](#-entrar-na-sala).
 <details>
 <summary>Se o AppImage não abrir de jeito nenhum (usar o .tar.gz)</summary>
 
-Baixe o **[Teletela.tar.gz](https://github.com/Castzzz/telinha/releases/latest/download/Teletela.tar.gz)** e:
+Baixe o **[Teletela.tar.gz](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.tar.gz)** e:
 ```bash
 cd ~/Downloads
 tar -xzf Teletela.tar.gz
@@ -194,7 +194,7 @@ Esse jeito não se atualiza sozinho: quando sair versão nova, baixe de novo.
 A versão 4.3.0 inclui transmissão da tela do celular com áudio dos apps permitidos pelo
 Android, amigos, lista de membros e controles que somem em tela cheia.
 
-Baixe o [APK Android de teste](https://github.com/Castzzz/telinha/releases/latest/download/Teletela-Android-teste.apk) para Android 8 ou mais novo.
+Baixe o [APK Android de teste](https://github.com/Castzzz/Teletela/releases/latest/download/Teletela-Android-teste.apk) para Android 8 ou mais novo.
 
 Também dá para gerar o APK no PC. Ele abre a sala oficial, com canais,
 chat, voz, câmera e reprodução das transmissões do PC. No celular, a navegação é própria:
@@ -323,6 +323,8 @@ troca de câmera frontal/traseira no Android. O APK acompanha essa atualização
   o microfone nesse canal; ao sair, ele volta ao estado anterior: quem estava desmutado
   volta desmutado, e quem estava mutado continua mutado. Bloqueios da moderação continuam valendo.
 
+Os avatares ganham acessórios pelo calendário local. O gorro de Natal aparece de 1 a 28 de dezembro e a coroa de Ano Novo de 29 de dezembro a 5 de janeiro. As plumas aparecem da sexta à terça de Carnaval, as orelhas na semana que termina no domingo de Páscoa e o chapéu de bruxa de 25 a 31 de outubro. Para desligar neste aparelho, desmarque **Configurações → Aparência → Mostrar acessórios de época nos avatares**.
+
 Em **Configurações → Aparência**, o Clássico continua como padrão. O **Roda** (antigo Violeta) usa uma capa em arcos, dá destaque aos canais ocupados e centraliza os cartões de quem está na call. Em **Personalização**, as cores de tema, ações e destaques também aparecem na entrada e nas janelas destacadas. Quem já usava o Violeta entra direto no Roda. O **Terminal** organiza os participantes em linhas e permite percorrer os canais com ↑ e ↓ e entrar com Enter. Na coluna **Fala**, a bolinha fica verde enquanto a pessoa fala. Em **Aparência → Cursor do Terminal**, escolha se o cursor do cabeçalho pulsa suavemente, pisca ou fica parado. Com movimento reduzido no sistema, ele fica fixo. O Terminal também muda as configurações, a lista de amigos, os menus e as ferramentas da call. Nos ajustes de áudio, rótulos e controles ficam lado a lado quando há espaço. A abertura dos painéis e a troca de tópico têm animações curtas. A janela de transmissão acompanha as mudanças de visual e cor da sala. Os dois visuais animam a entrada de participantes e a abertura de painéis quando o sistema permite movimento.
 
 Em **Personalização → Cor do tema**, escolha a cor do fundo, dos painéis e dos menus. Para uma sala em tons de ameixa, combine **Escuro** com a amostra **Roxo**. **Voltar à paleta do visual** restaura as superfícies e preserva suas outras escolhas. Em **Personalização**, escolha também a cor primária dos botões e a secundária dos destaques,
@@ -357,12 +359,12 @@ canais. A separação começa com a atualização do servidor; o APK local acomp
 | **Conversar enquanto assiste** | Clique num canal de texto para abrir a conversa no centro; a transmissão continua numa prévia que você pode arrastar pela tela (duplo clique na barra volta pro canto). **Voltar à transmissão** aumenta o vídeo. O chat da call fica na lateral: arraste a borda esquerda para mudar a largura (ou use as setas com a alça em foco) |
 | **Rolar dados para RPG** | Botão **Dados** no início, em **Mais opções (⋯) → Rolar dados** na call ou no ícone de dado do chat; no celular, no cabeçalho. Escolha d4 a d100 ou digite `1d15` / `2d6+3`. Clique em um dado pronto para rolar na hora e ver o resultado em destaque. O servidor compartilha um único histórico das últimas 30 rolagens, com nome, dado, resultado e horário, independente do canal |
 | **Usar o mesmo perfil em outro aparelho** | ⚙️ → **Conta** (celular: **Você → Conta**). Crie uma conta opcional com usuário e senha e guarde o código de recuperação. Entre no outro PC ou Android para recuperar perfil, cargos e acessos. A sessão fica salva por até 30 dias; sair encerra a sessão daquele aparelho |
-| **Amigos** | ⚙️ → **Amigos** ou **Você → Amigos** no celular. No mini perfil de quem usa conta, clique em **Adicionar amigo** ou **Aceitar pedido**. O ✓ aparece quando a amizade é aceita. Pela lista, envie pelo @usuário, aceite/recuse pedidos, cancele os enviados e remova amizades. A lista fica salva entre aparelhos. Online significa conectado à sala em pelo menos um aparelho; não mostra o canal em que a pessoa está |
+| **Amigos** | Abra **Amigos** na lateral do desktop ou na barra inferior do celular. No mini perfil de quem usa conta, clique em **Adicionar amigo** ou **Aceitar pedido**. O ✓ aparece quando a amizade é aceita. Pela lista, envie pelo @usuário, aceite/recuse pedidos, cancele os enviados e remova amizades. A lista fica salva entre aparelhos. Online significa conectado à sala em pelo menos um aparelho; não mostra o canal em que a pessoa está |
 | **Controles em tela cheia** | A barra inferior some após 3 segundos sem interação. Mouse, toque ou teclado revelam de novo; enquanto usa os controles, ela continua visível |
-| **K7, o bot de música** | Clique na fita cassete na call e mande um nome, artista ou link do YouTube ou Spotify. Escolha uma versão para adicionar à fila. Pergunte o que está tocando ou veja as próximas faixas. Quando o K7 confirma o pedido, os resultados da busca somem. Ajuste **Seu volume** na conversa, logo acima do campo de pedido. Na aba **Fila**, você pode pausar, pular e reordenar faixas. Abra **Opções da fila** para repetir ou parar e limpar a fila. Os pedidos ficam na conversa local enquanto você estiver na call. A fila é compartilhada. |
+| **K7, o bot de música** | Clique na fita cassete na call e mande um nome, artista ou link do YouTube ou Spotify. Escolha uma versão para adicionar à fila. Compilados gravados podem ter até **90 minutos** e **256 MB de áudio**. Pergunte o que está tocando ou veja as próximas faixas. Quando o K7 confirma o pedido, os resultados da busca somem. Ajuste **Seu volume** na conversa, logo acima do campo de pedido. Na aba **Fila**, acompanhe o tempo da música (por exemplo, **0:30 / 3:20**) e veja a duração das próximas faixas quando disponível. Você também pode pausar, pular e reordenar faixas. Abra **Opções da fila** para repetir ou parar e limpar a fila. Os pedidos ficam na conversa local enquanto você estiver na call. A fila é compartilhada. |
 | **Mutar o microfone** | Botão 🎙️ ou tecla `M`. O app lembra se você estava mutado ou desmutado ao fechar e restaura essa escolha ao abrir. Na primeira vez, começa mutado. Entrar, trocar de canal ou reconectar também preserva a escolha. Entrar, sair, mutar/desmutar e ensurdecer/restaurar o áudio atualizam os ícones sem abrir popups; erros e avisos de moderação continuam aparecendo |
 | **Lista de canais** | Canais de voz vazios têm o mesmo espaçamento dos canais de texto; as duas seções ficam próximas na barra lateral |
-| **Parar de ouvir todo mundo** | Botão 🎧 ou tecla `D`. Cala as vozes, mas os avisos de entrada e saída da call continuam tocando, seguindo o volume geral e as preferências de sons. As transmissões continuam tocando (⚙️ tem a opção de calar elas também) |
+| **Parar de ouvir todo mundo** | Botão 🎧 ou tecla `D`. Cala as vozes, mas os avisos de entrada e saída da call continuam tocando, seguindo o volume geral e a saída escolhida em **Configurações → Som**. As transmissões continuam tocando (⚙️ tem a opção de calar elas também) |
 | **Virar a câmera do celular** | Ligue **Câmera** na call e toque em **Virar** para alternar frontal/traseira. A ação também fica em **⋯ → Virar câmera**. O microfone continua ligado e os amigos continuam assistindo. Se a outra lente não abrir, o app tenta manter/recuperar a anterior |
 | **Transmitir minha tela** | Entre num canal de voz e use o botão 🖥️ → escolha a qualidade (720p a Nativa, 30 ou 60 fps) e a tela ou a janela. Internet fraca? Use 720p |
 | **Assistir em outra janela** | No app desktop, clique em ⧉ ou aperte `P`: a transmissão abre numa janela que pode redimensionar, maximizar e arrastar para outro monitor. Use **Tela cheia**, `F`, `F11` ou duplo clique no vídeo; `Esc` sai da tela cheia. A janela tem cabeçalho integrado e controles em uma barra flutuante discreta, com ícones; em janelas pequenas, os botões ficam compactos. A barra some após 3 segundos sem interação, mesmo com o mouse parado sobre ela; mouse ou teclado revelam de novo. Enquanto o popup está aberto, o vídeo para de aparecer no Teletela e fica só nele. O áudio e o volume continuam na sala. Ao fechar o popup, o vídeo volta imediatamente ao Teletela, sem reconectar |
@@ -377,10 +379,11 @@ canais. A separação começa com a atualização do servidor; o APK local acomp
 | **Abrir o chat da call** | 💬 do lado do canal em que você está (bolinha vermelha = mensagem nova). Clicar no canal volta da tela de texto pra call |
 | **Mudar o tamanho das transmissões** | Vendo várias lado a lado, arraste a divisória entre elas (duplo clique deixa igual) |
 | **Ver a prévia de um link** | No chat da call, nos canais de texto e nas conversas com amigos, o primeiro link da mensagem ganha um cartão. Em clipes públicos do Medal, dê play na prévia para assistir na conversa ou clique no título para abrir o original. Vídeos do YouTube mostram a miniatura. Outros sites podem mostrar título, descrição e imagem. |
-| **Mandar imagem ou GIF no chat** | 📎 do lado do campo, `Ctrl+V` ou arraste pro chat (até 15 MB; GIF continua animado). O texto vai como legenda. Clique na imagem pra ver grande |
-| **Conversar com um amigo** | Entre na sua conta e abra **Conversas** na lista de canais, ou **Configurações → Amigos → Conversar**. O histórico de texto fica disponível nos aparelhos das duas contas, inclusive quando o amigo recebe a mensagem depois de voltar. |
-| **Clipar as vozes da call** | Clique na tesoura do painel de voz, inclusive enquanto lê um canal de texto. No celular, use a barra de chamada ou **Opções da chamada → Clipar vozes**. O clique marca o fim do trecho. Escolha de 10 a 60 segundos e o canal de texto. Ouça a prévia no volume geral da call e ajuste o trecho antes de enviar. Os novos clipes preservam as vozes até 48 kHz. O título começa com a data e a hora do clique e pode ser trocado no formulário ou em **Editar** na sua mensagem. Use **📌 Fixar** na mensagem para guardar o clipe nas fixadas do canal. No desktop, **Ctrl+Shift+F9** marca o momento durante o jogo (configurável em **Atalhos**). |
-| **Enviar vídeo ou arquivo** | Use o mesmo 📎 ou arraste pro chat (até 20 MB por arquivo). MP4/WebM têm player; outros formatos ficam disponíveis para baixar. Nos canais de texto os anexos ficam salvos; no chat da call são temporários |
+| **Mandar imagem ou GIF no chat** | 📎 do lado do campo, `Ctrl+V` ou arraste pro chat (até 15 MB; GIF continua animado). A imagem fica em prévia. Dá para remover, escrever uma legenda ou enviar com Enter ou **Enviar**. Nos canais, clique na imagem para ver grande |
+| **Ligar para um amigo** | Na aba **Amigos**, clique no telefone ao lado de quem está online. A outra pessoa pode atender ou recusar. O convite dura 30 segundos. A voz passa pelo servidor da sala. Saia do canal de voz antes de ligar. |
+| **Conversar com um amigo** | Entre na sua conta e abra **Amigos** e clique no balão ao lado da pessoa. Uma bolinha na aba indica conversas não lidas. Na lista, **Nova mensagem** identifica quem escreveu. O histórico de texto, imagens, vídeos e arquivos fica disponível nos aparelhos das duas contas. Você pode enviar mesmo com o amigo offline. |
+| **Clipar as vozes da call** | Clique na tesoura do painel de voz, inclusive enquanto lê um canal de texto. No celular, use a barra de chamada ou **Opções da chamada → Clipar vozes**. O clique marca o fim do trecho. Escolha de 10 a 60 segundos e o canal de texto. Ouça a prévia no volume geral da call e ajuste o trecho antes de enviar. Os novos clipes preservam as vozes até 48 kHz. O título começa com a data e a hora do clique e pode ser trocado no formulário ou em **Editar** na sua mensagem. Use **📌 Fixar** na mensagem para guardar o clipe nas fixadas do canal. No desktop, **Ctrl+Shift+F9** marca o momento durante o jogo (configurável em **Atalhos → Clipar vozes**). |
+| **Enviar vídeo ou arquivo** | Use o mesmo 📎 ou arraste pro chat (até 20 MB por arquivo). MP4/WebM têm player; outros formatos ficam disponíveis para baixar. Os anexos ficam salvos nos canais de texto e nas conversas entre amigos. No chat da call são temporários |
 | **Sons ao mutar/desmutar** | Em ⚙️ → *Som* → *Áudios dos controles*, escolha a opção 1 (quatro sons separados) ou a opção 2 (a nova dupla, igual para microfone e áudio). Dá para desligar os avisos; só você ouve, seguindo o volume geral, inclusive ao ensurdecer |
 | **Esconder minha própria transmissão** | Menu do botão 🖥️ ou ⚙️ → *Transmissão*. A prévia fica escondida automaticamente, mas clicar no seu **AO VIVO** ou **CÂMERA** abre só a prévia escolhida. O **✕** na aba volta a escondê-la. Os amigos continuam vendo e a preferência fica salva |
 | **Responder, reagir, editar e apagar mensagens** | Passe o mouse na mensagem do chat: ↩ responde, 😊 reage, ✏️ edita e 🗑️ apaga (as suas; admin apaga qualquer uma). `↑` com o campo vazio edita a sua última |
@@ -415,6 +418,7 @@ canais. A separação começa com a atualização do servidor; o APK local acomp
 | **Volume geral** | ⚙️ → *Volume geral do Teletela*: vozes e transmissões juntas, até 200% |
 | **Testar seu microfone** | ⚙️ → *Microfone* → **Testar microfone**: grava 4 segundos e reproduz só para você, com medidor de nível. Funciona fora da call e preserva seu mute; parar ou fechar as configurações libera a captura do teste |
 | **Volume do seu microfone** | ⚙️ → *Microfone*: ajuste manual de 0–300%, aplicado na hora. Na 3.9.0, o processamento voltou ao da 3.7, com RNNoise opcional e sem reforço automático de volume |
+| **Sons de transmissão** | Quem está na mesma call ouve um toque quando outra pessoa começa a compartilhar a tela ou a câmera. Quem transmite ouve toques distintos quando alguém começa ou para de assistir. Em **Configurações → Som**, dá para desligar esses avisos ou ajustar o volume dos avisos da call. |
 | **Som de entrada/saída** | Toca um áudio dos amigos quando alguém entra ou sai da call: o servidor sorteia e todo mundo do canal (inclusive quem entrou ou saiu) ouve o mesmo. Desliga em ⚙️ |
 | **Câmera** | Botão 📷 no canto de baixo: aparece *📷 CÂMERA* do seu lado e os amigos clicam pra ver. Dá pra ligar junto com a transmissão de tela (são dois selos separados) |
 | **Parou de ouvir alguém** | Clique na pessoa → *🔄 Reconectar a voz* (a conexão também se refaz sozinha se cair) |
@@ -431,8 +435,10 @@ O microfone pode ficar desligado: o som do PC vai separado, em estéreo.
 - **Linux:** antes de transmitir aparece *"Qual som transmitir?"*. Escolha o jogo/app pra mandar só o som dele (ele precisa estar aberto tocando algum som), o **som do PC inteiro** ou **sem som**.
 
 ### 🧠 Cancelamento de ruído
-Em ⚙️ → *Cancelamento de ruído do microfone*:
-- **Com IA** (padrão): RNNoise, com entrada e saída mono para evitar perda de volume por um canal vazio;
+Em ⚙️ → **Microfone** → **Redução de ruído**, você pode escolher o filtro.
+
+- **Forte · RNNoise** (padrão): RNNoise, com entrada e saída mono para evitar perda de volume por um canal vazio;
+- **Pausas suaves** e **Pausas silenciosas** usam o RNNoise e abaixam o ruído restante entre as falas em até 12 ou 24 dB. Comece pelas suaves e compare em **Testar microfone**, digitando e falando baixo;
 - **Básico**: o filtro do navegador;
 - **Desligado**: som cru do microfone.
 

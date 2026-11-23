@@ -4,10 +4,10 @@
 
 ONDE BAIXAR
 -----------
-  Passo a passo completo: https://github.com/Castzzz/telinha
+  Passo a passo completo: https://github.com/Castzzz/Teletela
 
-  Windows: https://github.com/Castzzz/telinha/releases/latest/download/Teletela-Setup.exe
-  Linux:   https://github.com/Castzzz/telinha/releases/latest/download/Teletela.AppImage
+  Windows: https://github.com/Castzzz/Teletela/releases/latest/download/Teletela-Setup.exe
+  Linux:   https://github.com/Castzzz/Teletela/releases/latest/download/Teletela.AppImage
 
 WINDOWS
 -------

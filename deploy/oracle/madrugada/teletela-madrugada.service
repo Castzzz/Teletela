@@ -1,0 +1,9 @@
+[Unit]
+Description=Executa a atualização aprovada do Teletela com a sala vazia
+ConditionPathExists=/var/lib/teletela-agenda/pendente/pedido.json
+After=network-online.target
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/flock --nonblock /var/lib/teletela-agenda/trava /usr/local/lib/teletela-madrugada/executar.py
