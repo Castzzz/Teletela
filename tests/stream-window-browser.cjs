@@ -96,12 +96,13 @@ app.whenReady().then(async () => {
   await click(viewer, '#btn-stage-pip');
   const player = await created;
   await until(player, 'Boolean(document.querySelector("video")?.videoWidth)');
-  await js(viewer, "window.aplicarVisual('roda');void 0");
-  await until(player, "document.documentElement.dataset.visual === 'roda' && getComputedStyle(document.querySelector('#player-controls')).borderRadius === '20px'");
   await js(viewer, "window.aplicarVisual('terminal');void 0");
   await until(player, "document.documentElement.dataset.visual === 'terminal' && getComputedStyle(document.querySelector('#player-controls')).borderRadius === '2px'");
   await js(viewer, "window.aplicarVisual('classico');void 0");
   await until(player, "document.querySelector('link[data-visual-css=terminal]').media === 'not all'");
+  // Um visual que saiu (Roda) cai no padrão também na janela de transmissão.
+  await js(viewer, "window.aplicarVisual('roda');void 0");
+  await until(player, "document.documentElement.dataset.visual === 'classico'");
   assert(player.isResizable() && player.isMaximizable() && player.isFullScreenable(), 'Janela precisa permitir tamanho e tela cheia');
   assert(await js(player, 'document.querySelector("video").muted'), 'Player deve manter o áudio no mixer original');
   assert(await js(viewer, `appState.activeStreams.get('${key}').stream === originalStream`), 'Abrir janela não pode substituir o stream recebido');

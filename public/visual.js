@@ -1,9 +1,8 @@
 window.temasTeletela = { escuro: 'Escuro', preto: 'Preto', claro: 'Claro' };
 // Compartilhado com a janela de entrada, que também abre via file://.
 window.aplicarVisual = function (preferencia, pagina = document) {
-  // O identificador antigo continua válido nos perfis já salvos.
-  const escolhido = preferencia === 'violeta' ? 'roda' : preferencia;
-  const visual = ['roda', 'terminal', 'aconchego', 'pixel', 'fita', 'personagens'].includes(escolhido) ? escolhido : 'classico';
+  // Violeta, Roda e Aconchego viraram o visual padrão: perfis salvos com eles caem no Clássico.
+  const visual = preferencia === 'terminal' ? 'terminal' : 'classico';
   pagina.documentElement.dataset.visual = visual;
   for (const elemento of pagina.querySelectorAll('[data-somente-terminal]')) elemento.hidden = visual !== 'terminal';
   for (const folha of pagina.querySelectorAll('link[data-visual-css]')) {

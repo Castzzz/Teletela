@@ -64,12 +64,13 @@ app.whenReady().then(async () => {
   assert.equal(fs.readFileSync(path.join(directory,'config/hypr/hyprland.conf'),'utf8'),'exec-once = waybar\n');
 
   if (process.env.TEST_PERSONALIZATION === '1') {
-    assert.equal(await js(first, "document.documentElement.dataset.visual"), 'roda');
-    assert(await js(first, "document.querySelector('[name=visual][value=roda]').checked"));
+    // Violeta e Roda viraram o visual padrão: quem tinha salvo um deles cai no Clássico.
+    assert.equal(await js(first, "document.documentElement.dataset.visual"), 'classico');
+    assert(await js(first, "document.querySelector('[name=visual][value=classico]').checked"));
     await click(first, '[name=visual][value=terminal]');
-    await click(first, '[name=visual][value=roda]');
-    await until(first, "document.documentElement.dataset.visual === 'roda'");
-    await until(first, "window.electronAPI.getPrefs().then(prefs => prefs.visual === 'roda')");
+    await click(first, '[name=visual][value=classico]');
+    await until(first, "document.documentElement.dataset.visual === 'classico'");
+    await until(first, "window.electronAPI.getPrefs().then(prefs => prefs.visual === 'classico')");
     await click(first, '[data-personal-accent="#047857"]');
     await until(first, 'document.documentElement.style.getPropertyValue("--accent-brand") === "#047857"');
     await js(first, `(async()=>{

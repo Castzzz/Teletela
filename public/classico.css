@@ -105,3 +105,20 @@
 
 /* No claro, o verde-neon do relógio some no fundo verde-claro: usa um verde escuro. */
 :root[data-visual="classico"][data-theme="claro"] :is(.lounge-call-timer, .channel-call-timer) { color: #1a7f45; background: rgb(26 127 69 / .1); border-color: rgb(26 127 69 / .25); }
+
+/* ---------- Vindo do Roda: foco visível e números que não pulam ---------- */
+[data-visual="classico"] :is(button, a, summary, input, select, textarea, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--interface-ink, var(--accent-brand)); outline-offset: 2px;
+}
+[data-visual="classico"] :is(.channel-user-time, .user-call-timer, time) { font-variant-numeric: tabular-nums; }
+
+/* ---------- Vindo do Aconchego: apertar afunda e volta com mola ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-visual="classico"] { --mola: cubic-bezier(.34, 1.25, .64, 1); }
+  [data-visual="classico"] :is(button, .channel-row, .home-voice-card, .visual-choice) {
+    transition: scale 220ms var(--mola), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  [data-visual="classico"] :is(button, .channel-row):active:not(:disabled) { scale: .96; transition-duration: 90ms; transition-timing-function: ease-out; }
+  /* Cartões grandes afundam menos, senão parecem encolher. */
+  [data-visual="classico"] .home-voice-card:active:not(:disabled) { scale: .985; }
+}

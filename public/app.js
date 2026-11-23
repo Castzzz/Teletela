@@ -1838,8 +1838,6 @@ function updateVoiceLounge() {
       }
       card.classList.add('lounge-user-card');
       card.dataset.userId = u.id;
-      // A cor da pessoa no cartão inteiro: o visual Personagens pinta o fundo pastel com ela.
-      card.style.setProperty('--pessoa', safeColor(u.color));
       const avatarTag = terminal ? 'button' : 'div';
       const avatarAttrs = terminal ? ` type="button" aria-label="${escapeHtml(`Ver perfil de ${u.name}`)}"` : '';
       const transmissoes = liveBadgesHtml(u);
