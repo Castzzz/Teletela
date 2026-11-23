@@ -245,7 +245,9 @@ conceder poderes que não possui.
 
 O botão **Configurações do canal** fica na ponta direita da linha e aparece ao passar o
 mouse, focar pelo teclado ou estar naquele canal. Use-o na lista de voz ou texto para mudar nome, descrição,
-visibilidade e quem pode enviar no chat. O envio pode ser liberado por pessoa ou cargo;
+visibilidade e quem pode enviar no chat. Em **Quem vê o canal** e **Quem manda mensagem**, escolha
+"Todo mundo" ou "Só quem eu escolher"; só no segundo caso aparecem os cargos (como etiquetas) e a
+lista de pessoas, com busca e contagem. O envio pode ser liberado por pessoa ou cargo;
 na call essa regra afeta o chat, preservando o microfone. Canais invisíveis só aparecem
 para quem tem acesso, **inclusive o dono do servidor**. O dono não pode alterar um canal
 que não vê nem atribuir cargos para contornar esse acesso. A revogação também bloqueia

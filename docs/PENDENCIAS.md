@@ -17,6 +17,9 @@ Commits em `visual-unico` (nada em `main`, nada publicado):
 5. Acabamentos: contraste, legendas maiores, cartões do início, ícones no lugar de emojis,
    título no celular.
 
+6. Configurações do canal repaginadas (Clássico e Terminal): blocos, escolha "Todo mundo" /
+   "Só quem eu escolher", cargos como etiquetas, pessoas com busca; `permissions-browser.cjs` passou.
+
 Testes: 62/62, canais/admin e personalização passaram. O teste da janela de transmissão só roda
 com tela (ver armadilha em PROJETO §13); passou na etapa 3 rodando na tela do dono. Falta: o dono
 experimentar (`npm run app` na branch), decidir se junta em `main`, e o popup de novidades quando
