@@ -5,7 +5,7 @@ import { setupScreenPreviews } from './screen-previews.js';
 import { setupSoundTrim } from './sound-trim.js';
 import { messageLinks } from './chat-links.js';
 import { setupLinkPreviews, attachLinkPreview } from './link-previews.js';
-import { configurarIndiceTerminal, canalComFoco, restaurarFocoDoCanal } from './terminal.js';
+import { configurarIndiceTerminal, configurarNumerosTerminal, esconderAvisoSeJaVisto, canalComFoco, restaurarFocoDoCanal } from './terminal.js';
 import { setupVoiceClips } from './voice-clips.js';
 import { setupMicrophoneTest } from './microphone-test.js';
 import { PRESENCE_LABELS, normalizePresence, savedPresence } from './presence.js';
@@ -90,7 +90,10 @@ function showToast(message, type = 'normal', duration = 3000) {
   const toast = document.createElement('div');
   toast.className = `toast ${type === 'error' ? 'toast-error' : type === 'success' ? 'toast-success' : ''}`;
   toast.textContent = message;
+  // Aviso repetido não empilha: o igual que ainda está na tela sai, e ficam no máximo 3.
+  for (const antigo of [...container.children]) if (antigo.textContent === message) antigo.remove();
   container.appendChild(toast);
+  while (container.children.length > 3) container.firstElementChild.remove();
   setTimeout(() => {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 250);
@@ -1678,11 +1681,16 @@ function updateTopBar() {
 
 let serverHomeSignature = '';
 
+// Ordem dos canais de voz no início; os atalhos 1–9 do Terminal usam a mesma.
+function homeVoiceOrder() {
+  return [...appState.channels.values()];
+}
+
 function renderServerHome() {
   if (appState.currentChannelId && !appState.browsingHome) return;
   const root = $('#server-home');
   if (!root) return;
-  const channels = [...appState.channels.values()];
+  const channels = homeVoiceOrder();
   const textChannels = [...(appState.textChannels?.values() || [])];
   // A fala muda várias vezes por segundo; o início só precisa mudar com canais e pessoas.
   const visual = document.documentElement.dataset.visual;
@@ -1755,6 +1763,16 @@ function setupServerHome() {
     setBrowsingHome(true);
   });
   configurarIndiceTerminal($('.channels-scroller'));
+  configurarIndiceTerminal($('#home-voice-channels'), '.terminal-canal');
+  esconderAvisoSeJaVisto();
+  // Mesma ordem da lista numerada do início (a que o Terminal mostra com 01, 02, 03...).
+  configurarNumerosTerminal(indice => {
+    const canal = homeVoiceOrder()[indice];
+    if (!canal || !socket.connected) return false;
+    if (canal.id !== appState.currentChannelId) switchChannel(canal.id);
+    else setBrowsingHome(false);
+    return true;
+  });
   $('#home-voice-channels').addEventListener('click', (e) => {
     const button = e.target.closest('[data-home-voice]');
     if (button) switchChannel(button.dataset.homeVoice);
@@ -3607,7 +3625,8 @@ function addSystemChatMessage(text, channelId = appState.currentChannelId) {
 
   const div = document.createElement('div');
   div.className = 'chat-system-notice';
-  div.textContent = text;
+  // No Terminal o aviso é uma linha de log: o emoji do começo ("👋") fica de fora.
+  div.textContent = document.documentElement.dataset.visual === 'terminal' ? text.replace(/^\p{Extended_Pictographic}\uFE0F?\s*/u, '') : text;
   const follow = chatAtEnd();
   container.appendChild(div);
   if (follow) container.scrollTop = container.scrollHeight;

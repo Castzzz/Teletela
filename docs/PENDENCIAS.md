@@ -20,6 +20,14 @@ Commits em `visual-unico` (nada em `main`, nada publicado):
 6. Configurações do canal repaginadas (Clássico e Terminal): blocos, escolha "Todo mundo" /
    "Só quem eu escolher", cargos como etiquetas, pessoas com busca; `permissions-browser.cjs` passou.
 
+7. Revisão do Terminal (25/40, relatório em `.impeccable/critique/`) e correções: quem fala vira a
+   linha mais forte; chegada mais fraca e sem congelar com o app sem foco; nome de quem fala acende
+   na barra lateral; controles como no Clássico ([Clipar], [Sons], "Sair" escrito, também no
+   Clássico); tudo em mono sem letras grudadas; [x] como único jeito de marcar no modal do canal;
+   teclas 1–9 entram no canal e setas no início (`configurarNumerosTerminal` em `terminal.js`);
+   aviso de teclas some após o uso (localStorage `teletela-terminal-teclas-visto`); miniatura verde;
+   sem "👋" no log; avisos repetidos não empilham (máx. 3).
+
 Testes: 62/62, canais/admin e personalização passaram. O teste da janela de transmissão só roda
 com tela (ver armadilha em PROJETO §13); passou na etapa 3 rodando na tela do dono. Falta: o dono
 experimentar (`npm run app` na branch), decidir se junta em `main`, e o popup de novidades quando
