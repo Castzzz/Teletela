@@ -1654,7 +1654,7 @@ function updateTopBar() {
 
   const textCh = appState.textView ? appState.textChannels.get(appState.textView) : null;
   const chatLabel = $('#chat-channel-label');
-  if (chatLabel) chatLabel.textContent = textCh ? `#${textCh.name}` : inCall ? `#${name}-chat` : 'Fora da call';
+  if (chatLabel) chatLabel.textContent = textCh ? `#${textCh.name}` : inCall ? name : 'Fora da call';
   const description = textCh?.description || (!textCh && appState.channels.get(appState.currentChannelId)?.description) || '';
   $('#chat-channel-description').textContent = description;
   $('#chat-channel-description').classList.toggle('hidden', !description);
@@ -2078,8 +2078,8 @@ function renderChannelChat(channelId) {
     <h3>Você está fora da call</h3>
     <p>Clique num canal da lista pra entrar e ver o chat dele.</p>
   ` : `
-    <h3>Bem-vindo ao chat do canal #${escapeHtml(name)}!</h3>
-    <p>As mensagens enviadas aqui são visíveis apenas para os amigos conectados neste canal.</p>
+    <h3>Papo da call ${escapeHtml(name)}</h3>
+    <p>Só quem está nesta call vê o que for mandado aqui.</p>
   `;
   container.appendChild(welcomeBanner);
 

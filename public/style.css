@@ -23,8 +23,8 @@
   --bg-active: rgba(255, 255, 255, 0.12);
 
   /* Accents */
-  --accent-brand: #5865f2;
-  --accent-brand-hover: #4752c4;
+  --accent-brand: #745af6;          /* o roxo do ícone do Teletela */
+  --accent-brand-hover: #6145e6;
   --accent-green: #23a55a;
   --accent-green-glow: rgba(35, 165, 90, 0.6);
   --accent-red: #f23f43;
@@ -232,7 +232,7 @@ ul {
 }
 
 .stream-tab.active {
-  background: rgba(88, 101, 242, 0.2);
+  background: color-mix(in srgb, var(--accent-brand) 20%, transparent);
   border-color: var(--accent-brand);
   color: var(--text-header);
 }
@@ -273,7 +273,7 @@ ul {
 }
 
 .btn-topbar-tool.active {
-  background: rgba(88, 101, 242, 0.2);
+  background: color-mix(in srgb, var(--accent-brand) 20%, transparent);
   border-color: var(--accent-brand);
   color: var(--text-header);
 }
@@ -966,13 +966,13 @@ ul {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, #5865f2, #7c3aed);
+  background: linear-gradient(135deg, var(--accent-brand), #7c3aed);
   color: #fff;
   font-weight: 700;
   border-radius: var(--radius-md);
   padding: 12px 24px;
   font-size: 15px;
-  box-shadow: 0 4px 14px rgba(88, 101, 242, 0.4);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent-brand) 40%, transparent);
   transition: all var(--transition-fast);
 }
 
@@ -1977,7 +1977,7 @@ ul {
 
 .preset-chip:hover {
   border-color: var(--accent-brand);
-  background: rgba(88, 101, 242, 0.15);
+  background: color-mix(in srgb, var(--accent-brand) 15%, transparent);
   color: var(--text-header);
 }
 
@@ -3134,7 +3134,7 @@ chat-link-preview:not(.link-preview-video) .link-preview-media:not([hidden]) ~ .
 
 .channel-type-option:has(input:checked) {
   border-color: var(--accent-brand);
-  background: rgba(88, 101, 242, 0.12);
+  background: color-mix(in srgb, var(--accent-brand) 12%, transparent);
 }
 
 .channel-type-option input {
@@ -3190,7 +3190,7 @@ chat-link-preview:not(.link-preview-video) .link-preview-media:not([hidden]) ~ .
 }
 
 .channel-item.drop-target > .channel-row {
-  background: rgba(88, 101, 242, 0.25);
+  background: color-mix(in srgb, var(--accent-brand) 25%, transparent);
   outline: 1px dashed var(--accent-brand);
   color: var(--text-header);
 }

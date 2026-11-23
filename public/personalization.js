@@ -61,7 +61,7 @@ export function setupPersonalization({ prefs, savePrefs, showToast }) {
     for (const button of themeSwatches) button.setAttribute('aria-pressed', String(state.themeColor.toLowerCase() === button.dataset.themeSwatch));
     const tintaPadrao = '#7c3aed';
     secondary.value = state.secondary || (root.dataset.visual === 'terminal' ? '#b3e89e' : tintaPadrao);
-    color.value = state.accent || '#5865f2'; intensity.value = state.intensity;
+    color.value = state.accent || '#745af6'; intensity.value = state.intensity;
     $('personal-wallpaper-value').textContent = state.intensity + '%';
     $('personal-remove-wallpaper').disabled = !state.wallpaper;
     $('personal-wallpaper-name').textContent = state.wallpaper ? 'Fundo salvo neste aparelho' : 'Nenhuma imagem escolhida';
