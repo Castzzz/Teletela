@@ -1,5 +1,27 @@
 # Pendências atuais
 
+## 23/11/2026 — visual único (branch `visual-unico`, só local)
+
+O dono pediu a revisão de design do Clássico (impeccable critique, nota 24/40, relatório em
+`.impeccable/critique/`) e mandou fazer tudo, começando pela call, numa branch separada.
+Commits em `visual-unico` (nada em `main`, nada publicado):
+
+1. `f771c68` ponto de partida (tudo como estava, com os visuais de teste) — pra voltar, é daqui.
+2. Call: quem fala acende o cartão inteiro e a foto respira; nome verde na barra lateral; grade
+   de cartões iguais (do Roda); cabeçalho só com o nome; clipe só no palco, com "Clipar"/"Sons";
+   Transmitir sem degradê.
+3. Roda, Aconchego, Pixel, Fita K7 e Personagens saem; Aparência fica Clássico e Terminal; valores
+   antigos caem no Clássico. Mola ao apertar e chegada suave (Aconchego), foco visível (Roda).
+4. Rosto próprio: Figtree + Bricolage Grotesque, roxo do ícone (#745af6) como cor padrão, links
+   sem o azul do Discord, chat da call com o nome do canal e banner "Papo da call".
+5. Acabamentos: contraste, legendas maiores, cartões do início, ícones no lugar de emojis,
+   título no celular.
+
+Testes: 62/62, canais/admin e personalização passaram. O teste da janela de transmissão só roda
+com tela (ver armadilha em PROJETO §13); passou na etapa 3 rodando na tela do dono. Falta: o dono
+experimentar (`npm run app` na branch), decidir se junta em `main`, e o popup de novidades quando
+for a release (a 5.0 vai ser a das atividades).
+
 ## 23/11/2026 — plano da 5.0 e decisões sobre os visuais
 
 - **5.0 = atividades** (no começo, 21 e talvez pôquer, no estilo das atividades do Discord). O clipe
