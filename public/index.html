@@ -661,21 +661,45 @@
       <div class="modal-header"><h3 id="channel-settings-title">Configurações do canal</h3><button type="button" class="modal-close-btn" data-close-modal="modal-channel-settings" aria-label="Fechar">✕</button></div>
       <form id="form-channel-settings">
         <div class="channel-settings-fields">
-        <div class="form-group"><label for="channel-settings-name">Nome</label><input id="channel-settings-name" class="form-input" maxlength="30" required></div>
-        <div class="form-group"><label for="channel-settings-description">Descrição</label><textarea id="channel-settings-description" class="form-input" maxlength="200" rows="2"></textarea></div>
-        <fieldset class="permission-list"><legend>Quem pode ver e acessar</legend>
-          <label class="permission-choice"><input type="checkbox" id="channel-settings-access-private"> Invisível para quem não tem acesso</label>
-          <p class="form-help">Desmarcado: todos podem ver. Marcado: só o dono e as pessoas ou cargos escolhidos. O Geral permanece público.</p>
-          <strong>Cargos</strong><div id="channel-settings-access-roles"></div><strong>Pessoas</strong><div id="channel-settings-access-members"></div>
-        </fieldset>
-        <fieldset class="permission-list"><legend>Quem pode enviar no chat</legend>
-          <label class="permission-choice"><input type="checkbox" id="channel-settings-write-private"> Restringir o envio de mensagens e anexos</label>
-          <p class="form-help">Desmarcado: todos com acesso podem enviar. Marcado: só o dono e os cargos ou pessoas escolhidos. Na call, afeta o chat; o microfone continua funcionando.</p>
-          <strong>Cargos</strong><div id="channel-settings-write-roles"></div><strong>Pessoas</strong><div id="channel-settings-write-members"></div>
-        </fieldset>
-        <div id="channel-settings-password-field" class="form-group"><label for="channel-settings-password">Senha para entrar na call</label><input id="channel-settings-password" class="form-input" type="password" minlength="4" maxlength="100" autocomplete="new-password"><label class="permission-choice"><input id="channel-settings-remove-password" type="checkbox"> Remover a senha atual</label></div>
+        <section class="cs-section cs-basics">
+          <div class="form-group"><label for="channel-settings-name">Nome</label><input id="channel-settings-name" class="form-input" maxlength="30" required></div>
+          <div class="form-group"><label for="channel-settings-description">Descrição <span class="cs-optional">opcional</span></label><textarea id="channel-settings-description" class="form-input" maxlength="200" rows="2" placeholder="Sobre o que é esse canal?"></textarea></div>
+          <div id="channel-settings-password-field" class="form-group"><label for="channel-settings-password">Senha pra entrar na call <span class="cs-optional">opcional</span></label><input id="channel-settings-password" class="form-input" type="password" minlength="4" maxlength="100" autocomplete="new-password"><label class="cs-inline-check" id="channel-settings-remove-password-row"><input id="channel-settings-remove-password" type="checkbox"> Tirar a senha atual</label></div>
+        </section>
+        <section class="cs-section" aria-labelledby="channel-settings-access-heading">
+          <h4 id="channel-settings-access-heading">Quem vê o canal</h4>
+          <div class="cs-mode" role="radiogroup" aria-labelledby="channel-settings-access-heading">
+            <label class="cs-mode-option"><input type="radio" name="channel-settings-access-mode" id="channel-settings-access-public" value="todos"><span><strong>Todo mundo</strong><small>Aparece pra sala inteira</small></span></label>
+            <label class="cs-mode-option"><input type="radio" name="channel-settings-access-mode" id="channel-settings-access-private" value="escolhidos"><span><strong>Só quem eu escolher</strong><small>Some pra quem não está na lista</small></span></label>
+          </div>
+          <p class="cs-note" id="channel-settings-access-note">O dono sempre vê.</p>
+          <div class="cs-picker">
+            <div class="cs-picker-group"><span class="cs-picker-label">Cargos</span><div class="cs-chips" id="channel-settings-access-roles"></div></div>
+            <div class="cs-picker-group">
+              <div class="cs-picker-head"><span class="cs-picker-label">Pessoas</span><span class="cs-count" id="channel-settings-access-count"></span></div>
+              <input type="search" class="form-input cs-search" id="channel-settings-access-search" placeholder="Buscar pessoa" aria-label="Buscar pessoa" autocomplete="off">
+              <div class="cs-people" id="channel-settings-access-members"></div>
+            </div>
+          </div>
+        </section>
+        <section class="cs-section" aria-labelledby="channel-settings-write-heading">
+          <h4 id="channel-settings-write-heading">Quem manda mensagem</h4>
+          <div class="cs-mode" role="radiogroup" aria-labelledby="channel-settings-write-heading">
+            <label class="cs-mode-option"><input type="radio" name="channel-settings-write-mode" id="channel-settings-write-public" value="todos"><span><strong>Todo mundo que vê</strong><small>Qualquer um com acesso escreve</small></span></label>
+            <label class="cs-mode-option"><input type="radio" name="channel-settings-write-mode" id="channel-settings-write-private" value="escolhidos"><span><strong>Só quem eu escolher</strong><small>Os outros só leem</small></span></label>
+          </div>
+          <p class="cs-note" id="channel-settings-write-note">O dono sempre pode. Na call, isso vale só pro chat; o microfone continua funcionando.</p>
+          <div class="cs-picker">
+            <div class="cs-picker-group"><span class="cs-picker-label">Cargos</span><div class="cs-chips" id="channel-settings-write-roles"></div></div>
+            <div class="cs-picker-group">
+              <div class="cs-picker-head"><span class="cs-picker-label">Pessoas</span><span class="cs-count" id="channel-settings-write-count"></span></div>
+              <input type="search" class="form-input cs-search" id="channel-settings-write-search" placeholder="Buscar pessoa" aria-label="Buscar pessoa" autocomplete="off">
+              <div class="cs-people" id="channel-settings-write-members"></div>
+            </div>
+          </div>
+        </section>
         </div>
-        <div class="modal-actions"><button type="button" class="btn-secondary" data-close-modal="modal-channel-settings">Cancelar</button><button type="submit" class="btn-primary">Salvar configurações</button></div>
+        <div class="modal-actions"><button type="button" class="btn-secondary" data-close-modal="modal-channel-settings">Cancelar</button><button type="submit" class="btn-primary">Salvar</button></div>
       </form>
     </div>
   </div>

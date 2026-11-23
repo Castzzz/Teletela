@@ -4379,8 +4379,57 @@ html.pause-in-background:is(.app-unfocused, .app-hidden) .has-frozen > canvas.av
 #form-channel-settings { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 .channel-settings-fields { min-height: 0; overflow-y: auto; padding-right: 6px; }
 #form-channel-settings .modal-actions { flex-shrink: 0; margin-top: 16px; }
-.channel-settings-modal .permission-list { margin: 12px 0; max-height: none; overflow: visible; }
-.channel-settings-modal .permission-list > div { max-height: 160px; overflow-y: auto; }
+/* Configurações do canal: três blocos (básico, quem vê, quem escreve). Em cada permissão,
+   duas escolhas grandes; a lista de cargos e pessoas só aparece em "Só quem eu escolher". */
+.channel-settings-fields { display: grid; gap: 14px; }
+.cs-section { display: grid; gap: 10px; padding: 16px; border: 1px solid var(--border-subtle); border-radius: 12px; background: color-mix(in srgb, var(--bg-tertiary) 45%, transparent); }
+.cs-section h4 { margin: 0; color: var(--text-header); font-size: 15px; font-weight: 700; }
+.cs-basics { gap: 12px; }
+.cs-basics .form-group { margin: 0; }
+.cs-basics textarea.form-input { font: inherit; resize: vertical; }
+.cs-optional { margin-left: 4px; color: var(--text-muted); font-size: 11px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.cs-inline-check { display: flex !important; align-items: center; gap: 8px; margin-top: 8px; color: var(--text-normal); font-size: 13px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.cs-inline-check[hidden] { display: none !important; }
+.cs-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.cs-mode-option { position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--border-medium); border-radius: 10px; background: var(--bg-secondary); cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 400; transition: border-color 140ms ease, background-color 140ms ease; }
+.cs-mode-option:hover { border-color: color-mix(in srgb, var(--accent-brand) 50%, var(--border-medium)); }
+.cs-mode-option input { margin-top: 2px; accent-color: var(--accent-brand); flex: none; }
+.cs-mode-option > span { display: grid; gap: 2px; min-width: 0; }
+.cs-mode-option strong { color: var(--text-header); font-size: 13.5px; }
+.cs-mode-option small { color: var(--text-muted); font-size: 12px; line-height: 1.35; }
+.cs-mode-option:has(input:checked) { border-color: var(--accent-brand); background: color-mix(in srgb, var(--accent-brand) 12%, var(--bg-secondary)); }
+.cs-mode-option:has(input:disabled) { cursor: default; opacity: .6; }
+.cs-mode-option:has(input:focus-visible) { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.cs-note { margin: 0; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+.cs-picker { display: none; gap: 14px; padding-top: 4px; }
+.cs-section:has(.cs-mode input[value="escolhidos"]:checked) .cs-picker { display: grid; }
+.cs-picker-group { display: grid; gap: 8px; }
+.cs-picker-head { display: flex; justify-content: space-between; align-items: baseline; }
+.cs-picker-label { color: var(--text-muted); font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.cs-count { color: var(--text-muted); font-size: 12px; }
+.cs-empty { color: var(--text-muted); font-size: 12.5px; }
+.cs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cs-chip { display: inline-flex !important; cursor: pointer; text-transform: none; letter-spacing: 0; }
+.cs-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.cs-chip span { padding: 6px 12px; border: 1px solid var(--border-medium); border-radius: 999px; color: var(--text-normal); font-size: 13px; font-weight: 600; transition: background-color 140ms ease, border-color 140ms ease; }
+.cs-chip:hover span { border-color: var(--text-muted); }
+.cs-chip input:checked + span { border-color: var(--accent-brand); background: var(--accent-brand); color: #fff; }
+.cs-chip input:focus-visible + span { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.cs-search { padding: 8px 12px; }
+.cs-search[hidden] { display: none; }
+.cs-people { display: grid; gap: 2px; max-height: 232px; overflow-y: auto; margin: 0 -6px; padding: 0 6px; overscroll-behavior: contain; }
+.cs-person { display: grid !important; grid-template-columns: 28px minmax(0, 1fr) 20px; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 8px; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.cs-person[hidden] { display: none !important; }
+.cs-person:hover { background: var(--bg-hover); }
+.cs-person input { position: absolute; opacity: 0; pointer-events: none; }
+.cs-person-avatar { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--cor); color: #fff; font-size: 11px; font-weight: 700; }
+.cs-person-name { overflow: hidden; color: var(--text-normal); font-size: 13.5px; white-space: nowrap; text-overflow: ellipsis; }
+.cs-person-name small { color: var(--text-muted); font-size: 11.5px; }
+.cs-check { width: 20px; height: 20px; border: 1.5px solid var(--border-medium); border-radius: 6px; transition: background-color 120ms ease, border-color 120ms ease; }
+.cs-person input:checked ~ .cs-check { border-color: var(--accent-brand); background: var(--accent-brand) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E") center / 14px no-repeat; }
+.cs-person input:checked ~ .cs-person-name { color: var(--text-header); font-weight: 600; }
+.cs-person:has(input:focus-visible) { outline: 2px solid var(--accent-brand); outline-offset: -2px; }
+@media (max-width: 520px) { .cs-mode { grid-template-columns: 1fr; } }
 .profile-roles { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 #permission-device { overflow-wrap: anywhere; }
 #admin-login-row { flex-wrap: wrap; }

@@ -514,3 +514,16 @@
 @property --b4 { syntax: '<length>'; inherits: false; initial-value: 2px; }
 @property --b5 { syntax: '<length>'; inherits: false; initial-value: 2px; }
 [data-visual="terminal"] .lounge-call-timer::before { display: none; }
+
+/* Configurações do canal no Terminal: caixas retas, mono e marcação [x]. */
+[data-visual="terminal"] :is(.cs-section, .cs-mode-option, .cs-chip span, .cs-person, .cs-check, .cs-person-avatar) { border-radius: 2px; }
+[data-visual="terminal"] .cs-section { background: transparent; border-style: dashed; }
+[data-visual="terminal"] .cs-section h4::before { content: '## '; color: var(--text-muted); }
+[data-visual="terminal"] .cs-mode-option:has(input:checked) { background: color-mix(in srgb, var(--accent-brand) 16%, transparent); }
+[data-visual="terminal"] .cs-chip input:checked + span { color: var(--bg-primary); }
+[data-visual="terminal"] .cs-chip span::before { content: '[ ] '; }
+[data-visual="terminal"] .cs-chip input:checked + span::before { content: '[x] '; }
+[data-visual="terminal"] .cs-person-avatar { width: 22px; height: 22px; font-size: 10px; }
+[data-visual="terminal"] .cs-person input:checked ~ .cs-check { background-image: none; }
+[data-visual="terminal"] .cs-person input:checked ~ .cs-check::before { content: 'x'; display: grid; place-items: center; height: 100%; color: var(--bg-primary); font-weight: 700; font-size: 12px; }
+[data-visual="terminal"] :is(.cs-section h4, .cs-mode-option strong, .cs-picker-label, .cs-count) { font-family: var(--term-fonte); }
