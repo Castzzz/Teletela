@@ -818,7 +818,7 @@ trocar: apague a linha `OWNER_KEY` desse arquivo e rode o deploy. **Ela nunca va
 |---|---|
 | `channels.json` | `{ channels, textChannels, defaultSettings, deletedDefaultChannels }`: canais de voz/texto, regras de acesso/escrita, configurações do Geral inicial e registro da exclusão de canais iniciais |
 | `text/<canal>.jsonl` | histórico de cada canal de texto (veja abaixo) |
-| `text/images/` | imagens/GIFs dos canais de texto (15 MB por envio, até 25 GB no total) |
+| `text/images/` | imagens/GIFs dos canais de texto (15 MB por envio, até 15 GB no total) |
 | `text/files/` | vídeos e arquivos dos canais de texto (20 MB por envio, até 5 GB no total) |
 | `soundboard/index.json` + arquivos | sons do soundboard (16 por pessoa, até 1 MB, 300 no total) |
 | `room.json` | senha da sala (só o hash scrypt) e o segredo das chaves de membro |
@@ -1113,7 +1113,7 @@ de ruído, e 11 inicialização (`initApp`).
 | Contas opcionais | `account-store.js`, `accounts-protocol.js`, `public/accounts.js`/`.css`; auth `accountToken`, aba Conta e login HTTP antes da senha da sala |
 | Dados de RPG | `dice-store.js`, `public/dice.js`/`.css`; eventos `dice-roll`, `dice-history`, `dice-rolled` |
 | Cinema e miniplayer | `public/stage-social.js`/`.css` e API de estado/ações em `public/music.js`; integração em `app.js` |
-| Visuais locais | A preferência `visual` escolhe Clássico, Roda ou Terminal. O valor antigo `violeta` é lido como `roda`; novas seleções usam `roda`. `public/visual.js` ativa as folhas na entrada e na sala. Na janela de transmissão, `public/window-appearance.js` acompanha as mudanças de tema, visual e cores da janela principal. `public/personalization.js` aplica as cores locais de `appearanceExperiment`: `themeColor` para as superfícies geradas por `public/theme-color.css`, `accent` para ações e `secondary` para destaques. |
+| Visuais locais | A preferência `visual` escolhe Clássico, Roda, Terminal ou Aconchego (teste), Pixel (teste), Fita K7 (teste, valor `fita`) ou Personagens (teste, valor `personagens`). O Aconchego fica em `public/aconchego.css`, o Pixel em `public/pixel.css` (Silkscreen + Schibsted Grotesk em `public/fonts/`, cores de texto sobre o rosa via `contrast-color()`) e a Fita em `public/fita.css` (Patrick Hand + Barlow + Barlow Condensed em `public/fonts/`, carretel em `public/fita/carretel.svg`), o Personagens em `public/personagens.css` (Lilita One + Figtree; o fundo pastel de cada cartão vem da variável `--pessoa`, que `updateVoiceLounge` em `app.js` põe em cada `.lounge-user-card`), por cima da camada `alternativo`, e usa a fonte Nunito embutida em `public/fonts/nunito/` (OFL), sem depender de internet. Prints dos visuais nos 3 temas, sem abrir janela: `VISUAL=aconchego OUT=/tmp/prints` + o prefixo headless do AGENTS.md + `tests/visual-capture.cjs`. O valor antigo `violeta` é lido como `roda`; novas seleções usam `roda`. `public/visual.js` ativa as folhas na entrada e na sala. Na janela de transmissão, `public/window-appearance.js` acompanha as mudanças de tema, visual e cores da janela principal. `public/personalization.js` aplica as cores locais de `appearanceExperiment`: `themeColor` para as superfícies geradas por `public/theme-color.css`, `accent` para ações e `secondary` para destaques. |
 | Tela inicial e controles por contexto | `renderServerHome` e `setupServerHome`: cartões de voz/pessoas e atalhos de texto; `updateTextLayout` e `updateStageControls`: chat e controles apenas no contexto correspondente |
 | Canais de texto | `renderTextChannels`, `openTextChannel`, `loadTextHistory`; servidor: `readTextMessages`, `appendTextMessage` |
 | Chat (responder, reagir, editar, apagar) | `buildChatMessage`, `setupChatMessageActions`, `startEditMessage`; servidor: `message-edit/delete/react` |
@@ -1420,6 +1420,11 @@ Coisas que já deram problema e o motivo:
     operações assíncronas e limite de concorrência. O tempo na tela muda apenas o texto,
     sem reconstruir canais ou fotos. Uma geração de consulta descarta detecções pendentes
     ao desligar o compartilhamento. O preload não expõe a lista de processos.
+
+- **Animação de entrada com o app em segundo plano.** Com "Pausar animações em segundo plano" ligado,
+  `animation-play-state: paused` congela as animações no primeiro quadro. Uma entrada que começa
+  com opacidade baixa (a `chegada-na-call` de `sala.css`) deixa o cartão apagado até o app ganhar foco.
+  Entradas novas devem partir do elemento visível (o Aconchego usa só escala e desliga a animação sem foco).
 
 ### Nomes que não podem mudar
 

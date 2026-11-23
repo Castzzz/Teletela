@@ -1,5 +1,90 @@
 # Pendências atuais
 
+## 23/11/2026 — plano da 5.0 e decisões sobre os visuais
+
+- **5.0 = atividades** (no começo, 21 e talvez pôquer, no estilo das atividades do Discord). O clipe
+  de transmissões também está nos planos. A unificação visual entra junto como um extra.
+- **Unificar Clássico, Roda e Aconchego** num visual só, com a cara do Clássico. Deve trazer as
+  animações do Aconchego (apertar com mola, chegada suave) e outras mudanças. Quem usa Roda ou
+  Aconchego cai no visual único (`visual.js` já trata valor desconhecido como Clássico). Terminal fica.
+  O dono não tinha nada específico em mente; pediu uma revisão de design do Clássico (impeccable
+  critique) para decidir o que mudar.
+- **Pixel, Fita K7 e Personagens descartados por enquanto**: não entram na 5.0. Ficam no disco
+  (sem commit) como referência.
+- **Ideia para depois da 5.0:** cada pessoa escolher o estilo do próprio cartão na call, como
+  personalização de perfil (ex.: a fitinha com carretéis que giram ao falar, do K7, e os pulinhos
+  ao falar, do Personagens). Cada um usaria o seu.
+
+## 23/11/2026 — identidade forte: Pixel pronto, K7 e Personagens na fila
+
+O dono pediu uma identidade visual mais forte. O sorteio no registro mais ousado deu
+quatro direções. Ele gostou de três e pediu para construir uma de cada vez. Quando todas
+estiverem prontas, vai lançar a preferida junto com a próxima versão.
+
+1. **Pixel (teste)**, pronto localmente em `public/pixel.css`. Inspiração: catálogo de fonte
+   bitmap (Emigre). Títulos em Silkscreen sempre em múltiplos de 8 px, texto em Schibsted
+   Grotesk, papel e tinta com um rosa sintético (#ff2da0), bordas de 2 px e retícula.
+   Após o primeiro teste do dono, as bordas passaram de branco para cinza (`--px-linha`),
+   os cabeçalhos perderam a faixa invertida e os avatares voltaram a ser redondos.
+   Quem fala ganha retícula piscando e nome invertido. Quem chega fica rosa. O título da call
+   se monta em degraus. Conferido com prints nos 3 temas e no celular. Passaram os 62 testes
+   e o de personalização.
+2. **Fita K7 (teste)**, pronto localmente em `public/fita.css` (valor `fita`). Carcaça de
+   plástico escura (#131216/#232229) nos temas escuro e preto, capinha de papel creme no claro.
+   Etiquetas de papel creme com caneta azul (#24429f) e a faixa da marca (cor primária, laranja,
+   amarelo) no início, no topo da call e no canal atual. Títulos e nomes de canal em Patrick Hand,
+   texto em Barlow, legendas impressas em Barlow Condensed ("LADO A", "CANAIS DE VOZ"). O tempo
+   da call é um contador de fita. Cada cartão da call é uma fitinha com parafusos nos cantos e dois
+   carretéis (`public/fita/carretel.svg`) ao lado da foto, que giram enquanto a pessoa fala; quem
+   fala ganha a borda vermelha do REC, quem chega entra de cima com a borda amarela. O nome do
+   canal é "escrito" da esquerda pra direita ao abrir a call. Conferido com prints nos 3 temas,
+   no celular e na janela de entrada; passaram os 62 testes. Falta o dono experimentar no app.
+3. **Personagens (teste)**, pronto localmente em `public/personagens.css` (valor `personagens`).
+   Noite de anil no escuro, lilás claro no claro. Cada cartão da call é uma figurinha: fundo pastel
+   na cor da pessoa (`--pessoa`, posto por `app.js`), foto com contorno branco grosso e plaquinha
+   do nome levemente torta. Quem fala dá pulinhos com amassadinha e ganha borda na cor dela; quem
+   chega é "colado" com um balancinho (desligado com o app sem foco). Títulos em Lilita One, texto
+   em Figtree, ação em amarelo-gema com texto escuro. Aniversário e frase no perfil ficaram de fora
+   (precisariam de campos novos). Conferido com prints nos 3 temas e no celular; 62 testes e o de
+   canais passaram. O Fita K7 também desliga a animação de chegada com o app sem foco.
+
+   Após ver o K7, o dono achou que não ficou ruim, mas não sabe se os amigos usariam. Falta ele
+   ver o Personagens e escolher qual dos três (ou nenhum) vai pra release.
+
+## 23/11/2026 — Terminal mais característico e teto de imagens
+
+A pedido do dono, o visual Terminal ganhou movimento com função. Tem um medidor de fala
+de cinco barras em degraus, com o nome de quem fala na cor da fala. Quem chega com a call
+aberta aparece com a linha acesa, controlada pela classe `acabou-de-entrar` em `app.js`.
+O título do canal é digitado ao abrir a call. Os avisos do chat seguem o estilo IRC (`* ...`).
+O resto da moldura passou para mono e cantos retos, com IBM Plex Mono 600 de verdade
+(`public/terminal/*.woff2`). Com movimento reduzido, nada se mexe. Com o app sem foco,
+o título aparece direto e a linha de quem chegou fica acesa até a pessoa voltar.
+
+O teto das imagens dos canais de texto caiu de 25 para 15 GB (`server.js`), abrindo espaço
+para clipes e para o site de RPG. Essa parte só precisa de deploy. O clipe de transmissão
+ficou em espera: o dono vai consultar os amigos (proposta: 1080p60, até 60 s, cota de 20 GB).
+
+Passaram os 62 testes e o teste de celular. O `stream-window-browser.cjs` termina com
+segfault (139) em headless, inclusive na `main` sem mudanças. É do ambiente, não da mudança.
+
+## 23/11/2026 — visual Aconchego (teste)
+
+A pedido do dono, começou o redesign com as skills de design (impeccable, frontend-design).
+Entre quatro direções sorteadas, o dono escolheu o "app caloroso e macio". Ele virou uma
+4ª opção em **Configurações → Aparência**, "Aconchego (teste)", sem mexer em Clássico, Roda
+e Terminal: `public/aconchego.css`, fonte Nunito em `public/fonts/nunito/`, miniatura em
+`public/previews/aconchego.png` e o registro em `visual.js`, `index.html`, `stream-window.html`
+e `electron/connect.html`. O contrato da direção fica em `.impeccable/surfaces/` e o produto
+em `PRODUCT.md`.
+
+Conferido em Electron headless com `tests/visual-capture.cjs` (início, call com duas
+pessoas, configurações e celular, nos 3 temas). Passaram os 62 testes e o teste de
+personalização. Também apareceu um bug antigo: com o app sem foco, o cartão de quem entra
+na call fica a 55% de opacidade nos visuais alternativos (ver armadilhas no PROJETO.md);
+só o Aconchego foi corrigido. Falta: o dono experimentar no app de verdade, conferir a
+janela de entrada e a de transmissão com o visual, e decidir se segue para release.
+
 ## 22/11/2026, 23h — 4.9.0 enfileirada na VM
 
 O pedido `ambos` para o commit `73a8692` está em `/var/lib/teletela-agenda/pendente`

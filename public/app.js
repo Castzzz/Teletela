@@ -1817,13 +1817,28 @@ function updateVoiceLounge() {
     }
     let proximo = loungeUsersGrid.firstElementChild;
     const users = ch ? sortedUsers(ch) : [];
+    const canalAnterior = loungeUsersGrid.dataset.canal;
+    loungeUsersGrid.dataset.canal = appState.currentChannelId || '';
 
     users.forEach((u) => {
       const isMe = u.id === appState.myId;
 
       const card = existentes.get(u.id) || document.createElement('div');
+      // Só marca quem chegou com a call já aberta; ao entrar no canal ninguém é "novo".
+      if (!existentes.has(u.id) && !isMe && canalAnterior === appState.currentChannelId) {
+        card.classList.add('acabou-de-entrar');
+        // Reordenar a lista reinsere o cartão; sem a classe a luz não acende de novo.
+        const apagar = (evento) => {
+          if (evento.target !== card) return; // o evento também sobe das molduras animadas do avatar
+          card.classList.remove('acabou-de-entrar');
+          card.removeEventListener('animationend', apagar);
+        };
+        card.addEventListener('animationend', apagar);
+      }
       card.classList.add('lounge-user-card');
       card.dataset.userId = u.id;
+      // A cor da pessoa no cartão inteiro: o visual Personagens pinta o fundo pastel com ela.
+      card.style.setProperty('--pessoa', safeColor(u.color));
       const avatarTag = terminal ? 'button' : 'div';
       const avatarAttrs = terminal ? ` type="button" aria-label="${escapeHtml(`Ver perfil de ${u.name}`)}"` : '';
       const transmissoes = liveBadgesHtml(u);

@@ -1,0 +1,327 @@
+/* ==========================================================================
+   VISUAL "ACONCHEGO" (teste)
+   Chão morno, cartões macios e uma cor só pro que dá pra apertar.
+   Vem por cima de interface.css e sala.css (camada "alternativo"); o layout e os
+   controles são os mesmos dos outros visuais, só muda letra, cor, raio e o toque.
+   A cor do tema e a primária pessoais (theme-color.css / personalization.js) continuam valendo.
+   ========================================================================== */
+
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url("fonts/nunito/nunito-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 200 1000;
+  font-display: swap;
+  src: url("fonts/nunito/nunito-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Tokens: escuro (cacau) é o padrão ---------- */
+:root[data-visual="aconchego"] {
+  color-scheme: dark;
+  --bg-tertiary: #1a1411;          /* chão */
+  --bg-primary: #241c18;           /* painéis */
+  --bg-secondary: #2c231e;         /* cartões dentro dos painéis */
+  --bg-card: #352a24;
+  --bg-floating: #2f2520;
+  --bg-elevated: var(--bg-floating);
+  --bg-hover: rgba(255, 226, 200, 0.06);
+  --bg-active: rgba(255, 226, 200, 0.11);
+  --border-subtle: #33281f;
+  --border-medium: #45372e;
+  --text-header: #fbf3ec;
+  --text-normal: #ecdfd5;
+  --text-muted: #b8a698;
+  --text-link: #ff9a6c;
+  --accent-brand: #cf4a14;         /* tangerina: só em ação */
+  --accent-brand-hover: #b83f0f;
+  --accent-green: #3fb46e;
+  --interface-ink: #ff9a6c;        /* a mesma tinta, clara o bastante pra ler no cacau */
+  --interface-tint: color-mix(in srgb, var(--accent-brand) 12%, var(--bg-secondary));
+  --interface-line: color-mix(in srgb, var(--accent-brand) 35%, var(--border-medium));
+  --accent-soft: color-mix(in srgb, var(--accent-brand) 16%, transparent);
+  --accent-softer: color-mix(in srgb, var(--accent-brand) 9%, transparent);
+  --font-family: "Nunito", "Noto Sans", -apple-system, "Segoe UI", sans-serif;
+  --interface-radius: 16px;
+  --panel-radius: 22px;
+  --panel-gap: 10px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --panel-shadow: 0 1px 2px rgba(0, 0, 0, .25), 0 10px 28px -8px rgba(0, 0, 0, .35);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, .2), 0 6px 18px -10px rgba(0, 0, 0, .45);
+  --mola: cubic-bezier(.34, 1.25, .64, 1); /* solta o botão com uma mola curta */
+}
+:root[data-visual="aconchego"][data-theme="preto"] {
+  --bg-tertiary: #050403;
+  --bg-primary: #110d0b;
+  --bg-secondary: #19130f;
+  --bg-card: #221a15;
+  --bg-floating: #1a1410;
+  --border-subtle: #1f1813;
+  --border-medium: #33281f;
+}
+:root[data-visual="aconchego"][data-theme="claro"] {
+  color-scheme: light;
+  --bg-tertiary: #fbeedd;          /* damasco */
+  --bg-primary: #fffdfa;
+  --bg-secondary: #ffffff;
+  --bg-card: #f8ecdf;
+  --bg-floating: #ffffff;
+  --bg-hover: rgba(120, 66, 30, 0.06);
+  --bg-active: rgba(120, 66, 30, 0.1);
+  --border-subtle: #f1e3d3;
+  --border-medium: #e6d3bf;
+  --text-header: #2b201a;
+  --text-normal: #3d302a;
+  --text-muted: #6f6058;
+  --text-link: #b53f10;
+  --interface-ink: #b53f10;
+  --accent-green: #1f8a4c;
+  --interface-tint: #fdeee2;
+  --interface-line: #f1cdb5;
+  --panel-shadow: 0 1px 2px rgba(120, 66, 30, .06), 0 10px 30px -12px rgba(120, 66, 30, .16);
+  --card-shadow: 0 1px 2px rgba(120, 66, 30, .05), 0 6px 16px -8px rgba(120, 66, 30, .14);
+}
+
+/* ---------- Base ---------- */
+[data-visual="aconchego"] body {
+  background: var(--bg-tertiary);
+  font-family: var(--font-family);
+  font-feature-settings: "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+}
+[data-visual="aconchego"] ::selection { background: color-mix(in srgb, var(--accent-brand) 35%, transparent); color: var(--text-header); }
+[data-visual="aconchego"] :is(input, textarea) { caret-color: var(--accent-brand); }
+[data-visual="aconchego"] * { scrollbar-color: var(--border-medium) transparent; }
+[data-visual="aconchego"] :is(.lounge-call-timer, .channel-call-timer, .channel-user-time, time) { font-variant-numeric: tabular-nums; }
+
+/* Títulos: Nunito pesada, sem serifa (a Roda usa Georgia; aqui não). */
+[data-visual="aconchego"] :is(h1, h2, h3, .sidebar-title, .brand-text, .lounge-header h2, .home-header h1) {
+  font-family: var(--font-family);
+  letter-spacing: -0.015em;
+}
+[data-visual="aconchego"] :is(.home-header h1, .lounge-header h2) { font-weight: 800; }
+[data-visual="aconchego"] .brand-text { font-weight: 800; letter-spacing: -0.02em; }
+
+/* Rótulos de categoria em caixa alta viram frase normal, como o resto do app. */
+:root[data-visual="aconchego"] :is(.category-header, .category-title, .server-members-group h3, .form-group label, .user-popover-label, .quality-chooser-label, .soundboard-section-title) {
+  text-transform: none;
+  letter-spacing: 0;
+}
+[data-visual="aconchego"] :is(.category-header, .server-members-group h3) { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+/* Os títulos da lista de configurações vêm em caixa alta no HTML; aqui viram frase. */
+[data-visual="aconchego"] .settings-nav-caption { display: block; text-transform: lowercase; letter-spacing: 0; font-size: 12.5px; }
+[data-visual="aconchego"] .settings-nav-caption::first-letter { text-transform: uppercase; }
+[data-visual="aconchego"] .form-group label { font-size: 13.5px; color: var(--text-header); }
+
+/* ---------- Painéis: cartões macios sobre o chão ---------- */
+[data-visual="aconchego"] .app-topbar { background: var(--bg-tertiary); border-bottom: none; }
+[data-visual="aconchego"] .app-layout { background: var(--bg-tertiary); }
+[data-visual="aconchego"] :is(.sidebar-channels, .stage-section, .chat-drawer, .server-members) {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+}
+[data-visual="aconchego"] .chat-drawer.collapsed { border: none; box-shadow: none; }
+[data-visual="aconchego"] :is(.sidebar-header, .chat-header) { border-bottom: none; background: transparent; }
+[data-visual="aconchego"] .sidebar-header { border-bottom: 1px solid var(--border-subtle); }
+
+/* ---------- Lista de canais ---------- */
+[data-visual="aconchego"] .channel-row {
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: var(--text-normal);
+}
+[data-visual="aconchego"] .channel-item.channel-active > .channel-row {
+  background: var(--interface-tint);
+  color: var(--text-header);
+  border: none;
+  box-shadow: none;
+}
+[data-visual="aconchego"] .channel-item.channel-active > .channel-row .icon-svg { color: var(--interface-ink); }
+[data-visual="aconchego"] .channel-user { border-radius: 10px; }
+
+/* ---------- Botões: pílulas. A tangerina cheia fica só no botão principal. ---------- */
+[data-visual="aconchego"] :is(.btn-primary, .btn-share-primary, .primary-button) {
+  background: var(--accent-brand);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 22px;
+  font-weight: 800;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, .12), 0 6px 16px -6px color-mix(in srgb, var(--accent-brand) 55%, transparent);
+  filter: none;
+}
+[data-visual="aconchego"] :is(.btn-primary, .btn-share-primary, .primary-button):hover {
+  background: var(--accent-brand-hover);
+  filter: none;
+  transform: none;
+}
+[data-visual="aconchego"] .btn-secondary {
+  border: 1px solid var(--border-medium);
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  font-weight: 700;
+}
+[data-visual="aconchego"] .btn-secondary:hover { text-decoration: none; background: var(--bg-card); }
+[data-visual="aconchego"] :is(.btn-topbar-action, .btn-topbar-tool) {
+  border-radius: 999px;
+  border: 1px solid var(--border-medium);
+  background: var(--bg-primary);
+  color: var(--text-normal);
+}
+[data-visual="aconchego"] :is(.btn-topbar-action, .btn-topbar-tool):is(.active, [aria-expanded="true"]),
+[data-visual="aconchego"] #btn-server-members[aria-expanded="true"] {
+  background: var(--interface-tint);
+  border-color: var(--interface-line);
+  color: var(--text-header);
+}
+
+/* ---------- Campos ---------- */
+[data-visual="aconchego"] :is(.form-input, .form-select, .members-search input, #member-search) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+}
+[data-visual="aconchego"] :is(.form-input, .form-select):focus { border-color: var(--accent-brand); box-shadow: 0 0 0 3px var(--accent-soft); }
+[data-visual="aconchego"] :is(.chat-composer, #dm-input) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 999px;
+}
+[data-visual="aconchego"] .chat-composer:focus-within { border-color: var(--accent-brand); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---------- Início da sala ---------- */
+[data-visual="aconchego"] .home-header { border-bottom: none; padding-bottom: 8px; }
+[data-visual="aconchego"] .home-server-icon { border-radius: 18px; background: var(--interface-tint); color: var(--interface-ink); }
+[data-visual="aconchego"] .home-voice-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  box-shadow: var(--card-shadow);
+}
+[data-visual="aconchego"] .home-voice-card:enabled:hover { border-color: var(--interface-line); background: var(--bg-secondary); }
+[data-visual="aconchego"] .home-voice-card.occupied { background: var(--bg-secondary); border-color: color-mix(in srgb, var(--accent-green) 45%, var(--border-medium)); }
+[data-visual="aconchego"] .home-channel-icon { border-radius: 14px; background: var(--bg-card); }
+[data-visual="aconchego"] .home-card-bottom { border-top: 1px dashed var(--border-medium); }
+[data-visual="aconchego"] :is(.home-enter > span, .home-text-hash) { color: var(--interface-ink); }
+[data-visual="aconchego"] .home-text-channel { background: var(--bg-secondary); border: 1px solid var(--border-subtle); border-radius: 18px; box-shadow: var(--card-shadow); }
+[data-visual="aconchego"] .home-news-button { border-radius: 999px; }
+
+/* ---------- Palco da call ---------- */
+[data-visual="aconchego"] .lounge-header { border-bottom: none; }
+[data-visual="aconchego"] .lounge-header .lounge-icon { border-radius: 16px; background: var(--interface-tint); }
+[data-visual="aconchego"] :is(.lounge-call-timer, .channel-call-timer) {
+  border-radius: 999px;
+  border: none;
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+[data-visual="aconchego"] .lounge-user-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  box-shadow: var(--card-shadow);
+}
+/* Cartões lado a lado, do tamanho que couber (mesma conta da Roda, cartão menor). */
+[data-visual="aconchego"] .lounge-users-grid {
+  --cartao-min: 220px;
+  --intervalo: 14px;
+  container-type: inline-size;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  align-content: flex-start;
+  gap: var(--intervalo);
+}
+[data-visual="aconchego"] .lounge-users-grid > .lounge-user-card {
+  min-width: 0;
+  flex: 0 0 min(100%, var(--cartao-min));
+}
+@supports (width: calc(1px * round(down, 10px / 2px, 1))) {
+  [data-visual="aconchego"] .lounge-users-grid > .lounge-user-card {
+    --colunas: max(1, round(down, (100cqw + var(--intervalo)) / (var(--cartao-min) + var(--intervalo)), 1));
+    flex-basis: round(down, (100% + var(--intervalo)) / var(--colunas) - var(--intervalo), 1px);
+  }
+}
+@media (max-width: 760px) and (orientation: portrait) {
+  [data-visual="aconchego"] .lounge-users-grid > .lounge-user-card { flex-basis: calc((100% - var(--intervalo)) / 2); }
+}
+
+/* Quem fala ganha um anel verde macio no cartão, além do do avatar. */
+[data-visual="aconchego"] .lounge-user-card:has(.is-speaking),
+[data-visual="aconchego"] .lounge-user-card.is-speaking {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-green) 22%, transparent), var(--card-shadow);
+}
+
+/* ---------- Seu cartão no pé da barra ---------- */
+[data-visual="aconchego"] .user-dock {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  box-shadow: var(--card-shadow);
+}
+[data-visual="aconchego"] .dock-btn { border-radius: 10px; }
+[data-visual="aconchego"] .voice-panel-info { color: var(--accent-green); }
+
+/* ---------- Chat e membros ---------- */
+[data-visual="aconchego"] .chat-welcome-banner:has(h3) {
+  background: var(--interface-tint);
+  border: none;
+  border-radius: 18px;
+}
+[data-visual="aconchego"] :is(.chat-system-message, .chat-system) { border-radius: 14px; }
+[data-visual="aconchego"] .chat-message { border-radius: 14px; }
+
+/* ---------- Configurações e janelas ---------- */
+[data-visual="aconchego"] :is(.modal-card, dialog.modal-card) {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .08), 0 30px 60px -20px rgba(0, 0, 0, .45);
+}
+[data-visual="aconchego"] .settings-tab { border-radius: 12px; }
+[data-visual="aconchego"] .settings-tab.active { background: var(--interface-tint); color: var(--text-header); }
+[data-visual="aconchego"] .settings-tab.active .icon-svg { color: var(--interface-ink); }
+[data-visual="aconchego"] .settings-section-title { font-weight: 800; letter-spacing: -0.01em; }
+[data-visual="aconchego"] :is(.user-popover, .soundboard-popover, .pins-popover, .friends-panel) {
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, .08), 0 18px 40px -16px rgba(0, 0, 0, .4);
+}
+[data-visual="aconchego"] .visual-choice img { border-radius: 14px; }
+
+/* Foco visível na tinta da ação, com folga do contorno. */
+[data-visual="aconchego"] :is(button, a, summary, input, select, [tabindex="0"]):focus-visible {
+  outline: 2px solid var(--interface-ink);
+  outline-offset: 2px;
+}
+
+/* ---------- Movimento assinatura: apertar afunda com mola ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  [data-visual="aconchego"] :is(button, .channel-row, .home-voice-card, .visual-choice) {
+    transition: transform 220ms var(--mola), background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  [data-visual="aconchego"] :is(button, .channel-row, .home-voice-card):active:not(:disabled) {
+    transform: scale(.96);
+    transition-duration: 90ms;
+    transition-timing-function: ease-out;
+  }
+  [data-visual="aconchego"] .home-voice-card:active:not(:disabled) { transform: scale(.985); }
+
+  /* Chegada na call: cresce um pouco, sem sumir. Com o app em segundo plano as animações
+     pausam no primeiro quadro, então partir da opacidade cheia evita cartão apagado. */
+  @keyframes chegada-macia { from { scale: .94; } to { scale: 1; } }
+  [data-visual="aconchego"] .lounge-user-card[data-user-id] { animation: chegada-macia 280ms cubic-bezier(.22, 1, .36, 1); }
+  :root[data-visual="aconchego"]:is(.app-unfocused, .app-hidden) .lounge-user-card[data-user-id] { animation: none; }
+}

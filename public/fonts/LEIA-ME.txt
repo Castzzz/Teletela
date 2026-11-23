@@ -1,0 +1,10 @@
+Fontes embutidas (funcionam sem internet), todas SIL Open Font License 1.1 (https://openfontlicense.org),
+baixadas do Google Fonts em 23/11/2026:
+- nunito/            Nunito (Vernon Adams e outros) — visual Aconchego
+- silkscreen/        Silkscreen (Jason Kottke) — títulos do visual Pixel
+- schibsted-grotesk/ Schibsted Grotesk (Schibsted, Bakken & Bæck) — texto do visual Pixel
+- patrick-hand/      Patrick Hand (Patrick Wagesreiter) — títulos à mão do visual Fita K7
+- barlow/            Barlow (Jeremy Tribby) — texto do visual Fita K7
+- barlow-condensed/  Barlow Condensed (Jeremy Tribby) — legendas impressas do visual Fita K7
+- lilita-one/        Lilita One (Juan Montoreano) — títulos do visual Personagens
+- figtree/           Figtree (Erik Kennedy) — texto do visual Personagens

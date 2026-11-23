@@ -323,7 +323,7 @@ const MAX_TEXT_MESSAGES_PER_CHANNEL = 50000; // passou disso, apaga as mais anti
 const TEXT_RECENT_IN_MEMORY = 250;
 const TEXT_PAGE_SIZE = 50;
 const MAX_TEXT_LENGTH = 4000;
-const MAX_TEXT_IMAGES_TOTAL_BYTES = 25 * 1024 * 1024 * 1024; // 25 GB (passou disso, apaga as imagens mais antigas)
+const MAX_TEXT_IMAGES_TOTAL_BYTES = 15 * 1024 * 1024 * 1024; // 15 GB (passou disso, apaga as imagens mais antigas); o resto do disco fica pros clipes e pro site de RPG
 const TEXT_IMAGE_FILE_RE = /^[a-f0-9-]{36}\.(png|jpg|webp|gif)$/;
 
 // Map<id, { id, name, createdBy, createdAt, recent: [], count, lastMessageAt }>

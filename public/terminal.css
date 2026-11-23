@@ -2,6 +2,17 @@
   font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 400; font-display: swap;
   src: url('terminal/IBMPlexMono-Regular.ttf') format('truetype');
 }
+/* Seminegrito de verdade: sem ele o navegador engrossa o regular e as letras borram. */
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('terminal/ibm-plex-mono-600-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'IBM Plex Mono'; font-style: normal; font-weight: 600; font-display: swap;
+  src: url('terminal/ibm-plex-mono-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 :root[data-visual="terminal"] {
   --term-fonte: 'IBM Plex Mono', ui-monospace, monospace;
   --bg-primary: #131c1c; --bg-secondary: #192221; --bg-tertiary: #0d1414;
@@ -358,7 +369,8 @@
   :is(.modal-card, .settings-section, .mobile-sheet, .soundboard-popover, .profile-quick-menu,
       .share-menu, .pins-popover, .toast, .settings-help[open] > :not(summary)),
 :root[data-visual="terminal"].pause-in-background:is(.app-hidden, .app-unfocused)
-  :is(.home-header, .launcher-hero, .settings-tab.active, #modal-settings .modal-header)::after {
+  :is(.home-header, .launcher-hero, .settings-tab.active, #modal-settings .modal-header)::after,
+:root[data-visual="terminal"].pause-in-background:is(.app-hidden, .app-unfocused) .lounge-header h2 {
   animation: none;
 }
 
@@ -406,3 +418,98 @@
 [data-visual="terminal"] .music-bot-card .music-bot-title { grid-column: 2; grid-row: 2; text-align: left; align-self: start; }
 [data-visual="terminal"] .music-bot-card .music-bot-status { grid-column: 3; grid-row: 1; font-size: 10px; }
 [data-visual="terminal"] .music-bot-card .music-bot-quick-actions { grid-column: 3; grid-row: 2; margin: 0; }
+
+
+/* ==========================================================================
+   Terminal 2: mais cara de terminal e movimento só onde diz algo
+   (medidor de fala, título digitado ao entrar, linha nova acesa, chat estilo IRC).
+   ========================================================================== */
+:root[data-visual="terminal"] { --term-saida: cubic-bezier(.23, 1, .32, 1); }
+
+/* O resto da moldura também fala em mono: botões, cabeçalhos, avisos e o chat. */
+[data-visual="terminal"] :is(.btn-topbar-action, .btn-topbar-tool, .home-header-actions button,
+  .reaction-trigger, .chat-welcome-banner, .server-member-name, .server-member, .chat-msg-author,
+  .chat-msg-header, .chat-input, #chat-input, .voice-panel-info, .user-profile, .channel-user,
+  .terminal-canal-nome small, .category-header) {
+  font-family: var(--term-fonte);
+}
+[data-visual="terminal"] :is(.chat-msg-body, .chat-msg-text) { font: 13.5px/1.55 var(--term-fonte); }
+[data-visual="terminal"] :is(.category-header, .server-members-group h3) { letter-spacing: 0; }
+[data-visual="terminal"] :is(.user-dock, .reactions-bar, .reaction-trigger, .btn-chat-send,
+  .chat-welcome-banner, .stage-controls-bar :is(button, .btn-control-icon)) { border-radius: 2px; }
+[data-visual="terminal"] .user-dock { border: 1px solid var(--term-linha); background: var(--bg-tertiary); }
+[data-visual="terminal"] .btn-chat-send { background: var(--term-selecao); color: var(--term-destaque); border: 1px solid var(--term-linha); }
+[data-visual="terminal"] .chat-welcome-banner { border: 1px solid var(--term-linha); text-align: left; }
+
+/* Avisos da sala viram linhas de log, como no IRC: "* Bia entrou no canal." */
+[data-visual="terminal"] .chat-system-notice {
+  background: none; border-radius: 0; padding: 2px 4px 2px 58px; text-align: left;
+  font: 12px/1.5 var(--term-fonte); color: var(--text-muted); text-indent: -1.4ch;
+}
+[data-visual="terminal"] .chat-system-notice::before { content: '* '; color: var(--term-destaque); }
+
+/* Medidor de fala: cinco barras em blocos. Paradas e baixas na pausa; sobem e descem enquanto
+   a pessoa fala. O servidor só manda "falando ou não", então a altura é ilustrativa. */
+[data-visual="terminal"] .terminal-fala i {
+  width: 19px; height: 11px; border: 0; border-radius: 0; background: none; color: var(--border-medium);
+  --b1: 2px; --b2: 2px; --b3: 2px; --b4: 2px; --b5: 2px;
+  background-image: linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor),
+    linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor), linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 100%, 4px 100%, 8px 100%, 12px 100%, 16px 100%;
+  background-size: 3px var(--b1), 3px var(--b2), 3px var(--b3), 3px var(--b4), 3px var(--b5);
+}
+[data-visual="terminal"] .user-avatar-wrap.is-speaking ~ .terminal-fala { color: var(--term-fala); }
+[data-visual="terminal"] .user-avatar-wrap.is-speaking ~ .terminal-fala i {
+  color: var(--term-fala); --b1: 5px; --b2: 9px; --b3: 11px; --b4: 7px; --b5: 4px;
+  /* A regra antiga do ponto usa o atalho "background"; repetimos as barras pra não sumirem. */
+  background: linear-gradient(currentColor, currentColor) 0 100% / 3px var(--b1) no-repeat,
+    linear-gradient(currentColor, currentColor) 4px 100% / 3px var(--b2) no-repeat,
+    linear-gradient(currentColor, currentColor) 8px 100% / 3px var(--b3) no-repeat,
+    linear-gradient(currentColor, currentColor) 12px 100% / 3px var(--b4) no-repeat,
+    linear-gradient(currentColor, currentColor) 16px 100% / 3px var(--b5) no-repeat;
+}
+/* Quem fala ganha o nome na cor da fala: dá pra achar a pessoa sem ler a coluna. */
+[data-visual="terminal"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) .lounge-user-name { color: var(--term-fala); }
+[data-visual="terminal"] .lounge-user-card:has(.user-avatar-wrap.is-speaking) { background: var(--term-papel); }
+
+/* Barra fina embaixo do cabeçalho da call, no lugar da linha cheia: o prompt tem chão. */
+[data-visual="terminal"] .lounge-header h2::after {
+  content: ''; display: inline-block; width: .5em; height: .1em; margin-inline-start: .18em;
+  background: var(--term-destaque); vertical-align: baseline;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Fala: troca de quadro em degraus, como um VU de caracteres. Para sozinho quando a fala acaba. */
+  @keyframes terminal-vu {
+    0%   { --b1: 4px;  --b2: 9px;  --b3: 11px; --b4: 6px;  --b5: 3px; }
+    25%  { --b1: 8px;  --b2: 5px;  --b3: 10px; --b4: 11px; --b5: 6px; }
+    50%  { --b1: 11px; --b2: 7px;  --b3: 4px;  --b4: 9px;  --b5: 10px; }
+    75%  { --b1: 6px;  --b2: 11px; --b3: 8px;  --b4: 4px;  --b5: 8px; }
+    100% { --b1: 4px;  --b2: 9px;  --b3: 11px; --b4: 6px;  --b5: 3px; }
+  }
+  [data-visual="terminal"] .user-avatar-wrap.is-speaking ~ .terminal-fala i { animation: terminal-vu 640ms steps(1, end) infinite; }
+
+  /* Entrou na call: o nome do canal é "digitado" uma vez, da esquerda pra direita. */
+  @keyframes terminal-digitar { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0); } }
+  [data-visual="terminal"] .voice-lounge:not(.hidden) .lounge-header h2 { animation: terminal-digitar 260ms steps(10, end); }
+
+  /* Quem acabou de chegar aparece com a linha acesa e apaga devagar. Se o app estiver sem foco,
+     a animação pausa no começo: a linha fica acesa até você voltar e ver quem entrou. */
+  @keyframes terminal-linha-nova {
+    from { background-color: var(--term-selecao); box-shadow: inset 2px 0 var(--term-destaque); }
+    to   { background-color: var(--bg-primary); box-shadow: inset 2px 0 transparent; }
+  }
+  [data-visual="terminal"] #lounge-users-grid > .lounge-user-card[data-user-id] { animation: none; }
+  [data-visual="terminal"] #lounge-users-grid > .lounge-user-card.acabou-de-entrar { animation: terminal-linha-nova 1600ms var(--term-saida); }
+
+  /* Linha de log nova no chat também chega acesa, por pouco tempo. */
+  @keyframes terminal-log-novo { from { color: var(--term-destaque); } to { color: var(--text-muted); } }
+  [data-visual="terminal"] .chat-system-notice:last-child { animation: terminal-log-novo 900ms var(--term-saida); }
+}
+/* As variáveis das barras precisam ser registradas pra animar em degraus. */
+@property --b1 { syntax: '<length>'; inherits: false; initial-value: 2px; }
+@property --b2 { syntax: '<length>'; inherits: false; initial-value: 2px; }
+@property --b3 { syntax: '<length>'; inherits: false; initial-value: 2px; }
+@property --b4 { syntax: '<length>'; inherits: false; initial-value: 2px; }
+@property --b5 { syntax: '<length>'; inherits: false; initial-value: 2px; }
