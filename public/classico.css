@@ -161,3 +161,29 @@
   /* Cartões grandes afundam menos, senão parecem encolher. */
   [data-visual="classico"] .home-voice-card:active:not(:disabled) { scale: .985; }
 }
+
+/* ---------- Acabamentos ---------- */
+/* Cinza dos textos secundários um tom mais claro: o antigo ficava abaixo de 4.5:1 no fundo. */
+:root[data-visual="classico"]:not([data-theme="claro"]) { --text-muted: #a5abb4; }
+[data-visual="classico"] :is(input, textarea)::placeholder { color: var(--text-muted); opacity: 1; }
+/* Legendas de 10px viram 11.5px: "CANAIS DE VOZ", "SEU ESPAÇO". */
+[data-visual="classico"] :is(.category-header, .settings-nav-caption) { font-size: 11.5px; letter-spacing: .07em; }
+/* Vermelho de perigo um pouco mais escuro no hover, pra o branco em cima passar de 4.5:1. */
+[data-visual="classico"] .dock-btn.active-danger:hover { background: #c82f33; }
+
+/* Cartões do início: sem o círculo tracejado quando o canal está vazio, e o "Entrar"
+   sempre na mesma altura, mesmo quando o nome do canal quebra em duas linhas. */
+[data-visual="classico"] .home-empty-mark { display: none; }
+[data-visual="classico"] .home-voice-card { grid-template-rows: auto 1fr; }
+[data-visual="classico"] .home-card-bottom { align-self: end; min-height: 32px; }
+[data-visual="classico"] .home-enter > span { transition: translate 160ms ease; }
+[data-visual="classico"] .home-voice-card:enabled:hover .home-enter > span { translate: 3px 0; }
+
+/* Celular: o nome do app não corta mais ("Tele…"); a frase de baixo sai pra dar espaço. */
+@media (max-width: 760px) {
+  [data-visual="classico"] .mobile-header-copy strong { font-size: 19px; letter-spacing: -.02em; }
+  [data-visual="classico"] .mobile-header-copy > span { display: none; }
+}
+
+/* Ícone do chat desenhado no lugar do emoji. */
+[data-visual="classico"] .chat-hash .icon-svg { width: 18px; height: 18px; vertical-align: -3px; color: var(--text-muted); }

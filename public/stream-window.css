@@ -14,7 +14,7 @@ body { background: var(--bg-tertiary); }
 .player-stream-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
 .player-stream-icon { display: grid; place-items: center; width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px; color: var(--accent-brand); background: color-mix(in srgb, var(--accent-brand) 12%, transparent); }
 .player-stream-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.player-status { display: flex; gap: 5px; align-items: center; color: var(--text-muted); font-size: 9px; font-weight: 700; letter-spacing: 1.1px; }
+.player-status { display: flex; gap: 5px; align-items: center; color: var(--text-muted); font-size: 10.5px; font-weight: 700; letter-spacing: 1.1px; }
 .live-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent-green); }
 #stream-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; line-height: 1.3; }
 .player-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }

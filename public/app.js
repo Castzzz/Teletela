@@ -1789,7 +1789,7 @@ function updateVoiceLounge() {
   if (title) {
     if (appState.currentChannelId) {
       const timerBadge = ch?.callStartedAt
-        ? ` <span class="lounge-call-timer" data-call-timer="${Number(ch.callStartedAt)}" title="Tempo ativo desta call">⏱ ${formatCallClock(ch.callStartedAt)}</span>`
+        ? ` <span class="lounge-call-timer" data-call-timer="${Number(ch.callStartedAt)}" title="Tempo ativo desta call">${formatCallClock(ch.callStartedAt)}</span>`
         : '';
       // Só o nome: o ícone ao lado e a barra lateral já dizem que é canal de voz.
       title.innerHTML = `${escapeHtml(name)}${timerBadge}`;
@@ -4662,8 +4662,7 @@ function setupGameActivity() {
     const now = Date.now();
     renderDailyCallTimers();
     for (const el of $$('[data-call-timer]')) {
-      const prefix = el.classList.contains('lounge-call-timer') ? '⏱ ' : '';
-      el.textContent = `${prefix}${formatCallClock(Number(el.dataset.callTimer), now)}`;
+      el.textContent = formatCallClock(Number(el.dataset.callTimer), now);
     }
   }, 1000);
 }

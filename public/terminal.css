@@ -513,3 +513,4 @@
 @property --b3 { syntax: '<length>'; inherits: false; initial-value: 2px; }
 @property --b4 { syntax: '<length>'; inherits: false; initial-value: 2px; }
 @property --b5 { syntax: '<length>'; inherits: false; initial-value: 2px; }
+[data-visual="terminal"] .lounge-call-timer::before { display: none; }
