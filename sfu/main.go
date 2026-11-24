@@ -580,7 +580,7 @@ func (r *Room) sendCount() {
 
 func setupWebRTC() {
 	m := &webrtc.MediaEngine{}
-	// Só VP8 + Opus: funciona em qualquer navegador (Chrome, Firefox, Safari).
+	// Opus, VP8 (funciona em qualquer navegador) e H.264 (codificação pela placa de vídeo).
 	must(m.RegisterCodec(webrtc.RTPCodecParameters{
 		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeOpus, ClockRate: 48000, Channels: 2,
 			SDPFmtpLine: "minptime=10;useinbandfec=1;stereo=1;sprop-stereo=1"},
@@ -590,6 +590,13 @@ func setupWebRTC() {
 	must(m.RegisterCodec(webrtc.RTPCodecParameters{
 		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeVP8, ClockRate: 90000, RTCPFeedback: videoFeedback},
 		PayloadType:        96,
+	}, webrtc.RTPCodecTypeVideo))
+	// H.264 é o que os codificadores de placa de vídeo geram. O app só prefere ele quando o PC
+	// codifica pela placa; clientes antigos continuam oferecendo VP8 primeiro.
+	must(m.RegisterCodec(webrtc.RTPCodecParameters{
+		RTPCodecCapability: webrtc.RTPCodecCapability{MimeType: webrtc.MimeTypeH264, ClockRate: 90000, RTCPFeedback: videoFeedback,
+			SDPFmtpLine: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f"},
+		PayloadType: 102,
 	}, webrtc.RTPCodecTypeVideo))
 
 	ir := &interceptor.Registry{}

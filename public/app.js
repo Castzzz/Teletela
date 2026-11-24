@@ -13,6 +13,7 @@ import { setupServerBranding } from './server-branding.js';
 import { setupSettingsLayout } from './settings-layout.js';
 import { createStreamWindow } from './stream-window.js';
 import { setInitialVideoDescription } from './stream-start-bitrate.js';
+import { preferirCodecVideo } from './video-codec.js';
 import { setupStreamVolumeControl, syncStreamVolumeControl, forgetStreamVolumeControl } from './stream-volume-control.js';
 import { profileIdentity, profileProof } from './profile-identity.js';
 /**
@@ -6890,6 +6891,7 @@ class SfuSession {
   async publish() {
     const pc = this.newPeer(this.iceServers);
     this.stream.getTracks().forEach((track) => pc.addTrack(track, this.stream));
+    if (this.kind !== 'voice') await preferirCodecVideo(pc);
     const offer = await pc.createOffer();
     if (this.kind === 'voice') {
       offer.sdp = enhanceOpusVoiceSdp(offer.sdp);
@@ -7066,6 +7068,8 @@ async function createScreenOfferForUser(targetId, kind = 'screen') {
   const preset = QUALITY_PRESETS[appState.myUser.streamQuality] || QUALITY_PRESETS['1080p60'];
 
   try {
+    await preferirCodecVideo(pc);
+    if (appState.screenPeersOut.get(key) !== pc) return;
     const offer = await pc.createOffer();
     offer.sdp = enhanceOpusStereoSdp(offer.sdp, 256000);
     await setInitialVideoDescription(pc, offer, kind === 'camera' ? CAMERA_BITRATE : preset.maxBitrate, {

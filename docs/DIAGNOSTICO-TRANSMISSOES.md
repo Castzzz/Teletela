@@ -336,3 +336,33 @@ e [W3C, motivo de limitação de qualidade](https://www.w3.org/TR/webrtc-stats/#
 Capturas conferidas nos três temas e nos painéis de envio/recepção. As medições acima são
 locais e não comparam antes/depois; não confirmam resolver a espera de mais de um minuto
 na rede do amigo. Nenhum release ou deploy nesta validação.
+
+
+## Quedas de qualidade sem perda de pacotes e travadas para todos (24/11/2026)
+
+Relato do dono: um amigo tem a transmissão sempre com quedas de qualidade, sem perda de pacotes,
+RTT ruim ou outro número estranho no Diagnóstico; e de vez em quando todas as transmissões dão
+uma travada para todo mundo.
+
+Consulta somente de leitura na VM (24/11, ~20h de Brasília): socket de mídia do SFU com `d0`
+desde o reinício de 23/11; `UdpRcvbufErrors` igual ao de 11/11 (o buffer de 4 MiB resolveu os
+descartes); SFU com ~5% de um núcleo em média e ~60 MB; steal da Oracle ~0,5%; placa de rede sem
+erros. Nos logs de 14 dias, 15 `host: disconnected` e 5 `host: failed` (rede de quem envia, voz
+ou tela; enquanto dura, a imagem para para todos os espectadores daquele host).
+
+Hipóteses, sem confirmação por números do incidente:
+
+- **Codificação no processador.** O SFU só aceitava VP8, que no Chromium é quase sempre
+  software (libvpx). Sem perda e com RTT bom, queda de resolução com `maintain-framerate`
+  aponta para CPU do emissor. Correção desta data: H.264 pela placa de vídeo quando o PC
+  informa `powerEfficient` (ver PROJETO, "Codec da transmissão") e o Diagnóstico mostrando
+  "Codificação: Placa de vídeo/Processador".
+- **Keyframes para todos.** `requestKeyframe` aceita PLI/FIR de qualquer espectador a cada
+  500 ms e força um keyframe a cada espectador que conecta. Um espectador com perdas ou entradas
+  seguidas geram keyframes grandes para todos: picos de qualidade ruim ou micro-travadas
+  simultâneas. Não há contagem de PLI no log para confirmar. Próximo passo: registrar PLI por
+  espectador e espaçar para ~1,5 s (só SFU).
+- **Sem adaptação por espectador** (já descrito em 11/11): simulcast/SVC fica para depois.
+
+Para confirmar no amigo: print do Diagnóstico **no PC dele transmitindo**, com "Limitação de
+envio" e "Codificação". `cpu` + "Processador (libvpx)" confirma a primeira hipótese.

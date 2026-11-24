@@ -36,3 +36,12 @@ test('distingue captura de envio e usa a banda do transporte da própria faixa',
   assert.equal(row.protocol, 'UDP');
   assert.equal(row.rtt, 8);
 });
+
+test('informa se o vídeo é codificado/decodificado pela placa ou pelo processador', () => {
+  const envio = videoMetrics(report({ id: 'v', type: 'outbound-rtp', kind: 'video', timestamp: 1, encoderImplementation: 'MediaFoundationVideoEncodeAccelerator', powerEfficientEncoder: true }), undefined, 'outbound').rows[0];
+  assert.equal(envio.implementation, 'MediaFoundationVideoEncodeAccelerator'); assert.equal(envio.powerEfficient, true);
+  const recebe = videoMetrics(report({ id: 'v', type: 'inbound-rtp', kind: 'video', timestamp: 1, decoderImplementation: 'libvpx', powerEfficientDecoder: false })).rows[0];
+  assert.equal(recebe.implementation, 'libvpx'); assert.equal(recebe.powerEfficient, false);
+  const ausente = videoMetrics(report({ id: 'v', type: 'outbound-rtp', kind: 'video', timestamp: 1 }), undefined, 'outbound').rows[0];
+  assert.equal(ausente.implementation, null); assert.equal(ausente.powerEfficient, null);
+});

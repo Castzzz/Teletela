@@ -58,6 +58,8 @@ app.whenReady().then(async () => {
   }
   const sender = await open('Emissor');
   const viewer = await open('Espectador');
+  // TEST_CODEC=h264 força o H.264 (sem placa de vídeo aqui ele roda no OpenH264).
+  if (process.env.TEST_CODEC) await js(sender, `localStorage.setItem('teletela-codec-video', ${JSON.stringify(process.env.TEST_CODEC)});void 0`);
   assert(await js(viewer, "!document.querySelector('#stage-controls-bar .watch-trigger') && !!document.querySelector('.app-topbar .watch-trigger')"));
   await click(sender, '#btn-share-camera');
   await until(sender, 'appState.myUser.isCameraOn');
@@ -220,6 +222,8 @@ app.whenReady().then(async () => {
   await click(viewer, `[data-stream-key="${screenKey}"]`);
   await until(viewer, `document.getElementById('video-el-${screenKey}')?.videoWidth > 0`);
   const firstFrameMs = Date.now() - watchStarted;
+  const codecRecebido = await js(viewer, `(async()=>{const pc=appState.sfuViewers?.get?.('${screenKey}')?.pc;const pcs=pc?[pc]:[...(appState.screenPeersIn?.values?.()||[])];for(const p of pcs){const r=await p.getStats();for(const s of r.values())if(s.type==='inbound-rtp'&&s.kind==='video')return r.get(s.codecId)?.mimeType||null;}return null})()`);
+  if (process.env.TEST_CODEC === 'h264') assert.equal(codecRecebido, 'video/H264', 'O espectador precisa receber H.264 quando o emissor prefere H.264');
   assert(await js(sender, `(()=>{const pc=appState.sfuPublisher?.pc || appState.screenPeersOut.get('${await js(viewer, 'appState.myId')}');return pc?.localDescription.sdp.includes('x-google-start-bitrate=2000')})()`), 'Chromium precisa aceitar a indicação inicial de 2 Mbps da tela');
   await pause(2500);
   const received = await js(viewer, `(()=>{const video=document.getElementById('video-el-${screenKey}');return {width:video.videoWidth,height:video.videoHeight}})()`);
@@ -272,7 +276,7 @@ app.whenReady().then(async () => {
   await until(viewer, `document.getElementById('transmission-diagnostics-results').textContent.includes('Resolução recebida')`);
   fs.writeFileSync('/tmp/teletela-diagnostico-recepcao.png', (await viewer.webContents.capturePage()).toPNG());
   await js(sender, 'clearInterval(startPaintTimer);void 0');
-  console.log(`Tela sintética 1080p60 (${process.env.TEST_SFU === '1' ? 'SFU' : 'P2P'}): primeiro quadro em ${firstFrameMs} ms; recebendo ${received.width} × ${received.height} após 2,5 s. Não simula a rede dos amigos.`);
+  console.log(`Tela sintética 1080p60 (${process.env.TEST_SFU === '1' ? 'SFU' : 'P2P'}): codec ${codecRecebido || 'não identificado'}; primeiro quadro em ${firstFrameMs} ms; recebendo ${received.width} × ${received.height} após 2,5 s. Não simula a rede dos amigos.`);
   console.log('Janela de transmissão: WebRTC real, indicação de bitrate aceita, volume/mute/restauração, vídeo só no popup, retorno automático, áudio preservado, troca de transmissão, tamanho, tela cheia, temas e parar de assistir passaram.');
 }).catch(error => { console.error(error); process.exitCode = 1; }).finally(async () => {
   clearTimeout(timeout);

@@ -41,6 +41,9 @@ export function videoMetrics(report, previous = new Map(), direction = 'inbound'
       kbps: byteDelta === null ? null : byteDelta * 8 / seconds / 1000,
       loss, rtt: rtt === null ? null : rtt * 1000, codec: codec.replace('video/', '') || null,
       limitation: direction === 'outbound' ? stat.qualityLimitationReason || null : null,
+      implementation: (direction === 'outbound' ? stat.encoderImplementation : stat.decoderImplementation) || null,
+      powerEfficient: typeof (direction === 'outbound' ? stat.powerEfficientEncoder : stat.powerEfficientDecoder) === 'boolean'
+        ? (direction === 'outbound' ? stat.powerEfficientEncoder : stat.powerEfficientDecoder) : null,
       freezes: direction === 'inbound' ? delta(stat.freezeCount, old?.freezeCount) : null });
     next.set(stat.id, { ...stat });
   }
@@ -62,6 +65,9 @@ export function setupTransmissionDiagnostics({ getConnections, mountStageOverlay
     const fields = document.createElement('dl');
     const receiving = connection.direction === 'inbound';
     const resolution = (width, height) => width && height ? `${width} × ${height}` : 'Indisponível';
+    // O Chromium só expõe o nome do codificador para quem está capturando; sem ele, "Indisponível".
+    const hardware = m => m.powerEfficient === null && !m.implementation ? 'Indisponível'
+      : `${m.powerEfficient ? 'Placa de vídeo' : m.powerEfficient === false ? 'Processador' : 'Não informado'}${m.implementation ? ` (${m.implementation})` : ''}`;
     const reason = { none: 'Sem limitação informada', cpu: 'Processamento do PC', bandwidth: 'Estimativa de banda', other: 'Outro motivo' };
     for (const [key, value] of [
       ...(!receiving ? [['Resolução da captura', resolution(metrics.captureWidth, metrics.captureHeight)]] : []),
@@ -72,6 +78,7 @@ export function setupTransmissionDiagnostics({ getConnections, mountStageOverlay
       ['Transporte', metrics.protocol || 'Indisponível'],
       [connection.direction === 'inbound' ? 'Perda no intervalo' : 'Perda informada pelo destino', format(metrics.loss, '%', 1)],
       ['Latência de ida e volta', format(metrics.rtt, ' ms')], ['Codec', metrics.codec || 'Indisponível'],
+      [receiving ? 'Decodificação' : 'Codificação', hardware(metrics)],
       ['Limitação de envio', receiving ? 'Veja no PC de quem transmite' : reason[metrics.limitation] || 'Indisponível'],
       ...(receiving ? [['Congelamentos no intervalo', format(metrics.freezes, '')]] : [])
     ]) {

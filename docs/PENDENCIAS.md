@@ -1,8 +1,16 @@
 # Pendências atuais
 
+## 24/11/2026 — transmissão pela placa de vídeo entra na 5.0 (reagendada)
+
+Relato do dono: um amigo tem quedas de qualidade sem perda nem ping ruim, e às vezes todas as transmissões travam pra todo mundo. A VM está saudável (detalhes em DIAGNOSTICO-TRANSMISSOES, 24/11). Hipótese principal: VP8 codificado no processador do emissor. O dono pediu H.264 pela placa e mandou incluir na 5.0 se desse.
+
+Feito: `public/video-codec.js` prefere H.264 só quando `mediaCapabilities` diz que a placa codifica (sem placa, fica VP8); SFU aceita H.264 (PT 102) além do VP8; o Diagnóstico mostra "Codificação: Placa de vídeo/Processador (nome)"; item nas novidades da 5.0. Testado com câmera falsa em Electron offscreen: H.264 via SFU e P2P chegando no espectador (OpenH264, sem placa aqui), VP8 forçado e automático, texto do diagnóstico. **Não testado numa placa de verdade nem no Android** (WebView decodifica H.264, mas não conferido). `stream-window-browser.cjs` completo continua precisando de compositor. 62/62, 234 testes de `tests/*.test.js` (o estresse do M1 só falha em paralelo, igual sem a mudança), canais/admin e `go test -race ./sfu`.
+
+Falta: o amigo transmitir com a 5.0 e mandar print do Diagnóstico (Codificação e Limitação). Próximo passo possível só no SFU: contar PLI por espectador e espaçar os keyframes (~1,5 s).
+
 ## 24/11/2026 — 5.0.0 aprovada e agendada (`ambos`) pra 25/11 às 03h
 
-O dono aprovou a 5.0.0 com as apostas vinculadas à conta e mandou agendar pra madrugada de 25/11. Antes do commit passaram 62/62, as atividades (23) e a integração de canais/admin. `main` enviada ao GitHub, instaladores gerados com os sons locais, rascunho v5.0.0 apontando pro commit da versão e `agendar.sh ambos` rodado. O timer da VM tenta das 03h às 03h50 com os canais vazios; se ninguém sair da call, fica pra próxima madrugada. Depois conferir no journal de `teletela-madrugada.service` e no GitHub se a v5.0.0 saiu do rascunho.
+O dono aprovou a 5.0.0 com as apostas vinculadas à conta e mandou agendar pra madrugada de 25/11. Reagendada no mesmo dia com a transmissão pela placa de vídeo (entrada acima): pedido antigo removido da fila, instaladores refeitos e rascunho apontando pro commit novo. Antes do commit passaram 62/62, as atividades (23) e a integração de canais/admin. `main` enviada ao GitHub, instaladores gerados com os sons locais, rascunho v5.0.0 apontando pro commit da versão e `agendar.sh ambos` rodado. O timer da VM tenta das 03h às 03h50 com os canais vazios; se ninguém sair da call, fica pra próxima madrugada. Depois conferir no journal de `teletela-madrugada.service` e no GitHub se a v5.0.0 saiu do rascunho.
 
 ## 24/11/2026 — apostas da 5.0 vinculadas à conta (local)
 

@@ -285,6 +285,19 @@ Se o envio estiver menor que a captura, o painel mostra um aviso sem presumir CP
 Essa melhoria é informativa: não altera presets nem a adaptação da transmissão.
 O painel também mostra meta do encoder, banda estimada da conexão (somente no envio)
 e transporte UDP/TCP; os valores vêm de `getStats`, sem presumir capacidade da internet.
+Também mostra quem codifica/decodifica (`encoderImplementation`/`decoderImplementation` e
+`powerEfficientEncoder`/`Decoder`): "Placa de vídeo" ou "Processador".
+
+**Codec da transmissão (5.0).** `public/video-codec.js` consulta
+`navigator.mediaCapabilities.encodingInfo({ type: 'webrtc' })` uma vez por sessão e só prefere
+H.264 (`setCodecPreferences`, básico 42e01f com packetization-mode=1 na frente) quando o H.264
+é `powerEfficient` (placa de vídeo) e o VP8 não. Sem placa, o H.264 cairia no OpenH264 do
+processador e não ganharia do VP8, então fica VP8. Vale pra tela e câmera, em SFU e P2P; a voz
+não muda. O SFU registra H.264 (PT 102) além do VP8 (PT 96) e repassa sem recodificar; todo
+espectador recebe o codec que o emissor escolheu (Electron e WebView do Android decodificam os
+dois). Cliente antigo continua oferecendo VP8 primeiro; SFU antigo responde VP8 ao cliente novo.
+Para testar: `localStorage['teletela-codec-video'] = 'h264'` ou `'vp8'` força um deles;
+`TEST_SFU=1 TEST_CODEC=h264` no `tests/stream-window-browser.cjs` confere o H.264 chegando.
 
 A oferta inicial de vídeo usa `public/stream-start-bitrate.js` em SFU e P2P para indicar
 `x-google-start-bitrate`: metade do teto escolhido, limitada a 2 Mbps para tela e

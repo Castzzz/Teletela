@@ -308,6 +308,7 @@ troca de câmera frontal/traseira no Android. O APK acompanha essa atualização
   **Ver contexto** mostra as mensagens ao redor. Canais de texto consultam todo o histórico
   salvo; o chat da call só guarda as últimas 50 mensagens. Canais privados respeitam o acesso.
 - **Diagnóstico das transmissões:** **Mais opções (⋯) → Diagnóstico da transmissão** no palco ou **Configurações → Transmissão**. Quem envia vê a resolução da captura, a enviada e a limitação; quem assiste vê a resolução recebida. Escolher 1080p não garante envio contínuo nessa resolução: o navegador pode adaptar o vídeo.
+- **Transmissão pela placa de vídeo:** quando o PC informa que codifica H.264 pela placa (NVENC, QuickSync, AMF), a tela e a câmera vão em H.264 e sobra processador. Sem isso continua em VP8. O Diagnóstico mostra "Codificação: Placa de vídeo" ou "Processador".
   Mostra resolução, FPS, taxa de vídeo, perda e latência reais enquanto transmite ou assiste.
   Via SFU, mede o trecho entre você e o servidor. Dados ausentes aparecem como indisponíveis.
   O envio também mostra a meta de vídeo, a banda estimada da conexão e o transporte
