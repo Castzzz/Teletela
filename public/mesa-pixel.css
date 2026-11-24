@@ -1,0 +1,64 @@
+/* Cartas e fichas em pixel art: "(Pixel) Poker Cards" de IvoryRed, CC BY 4.0
+   (crédito em public/baralho/LICENCA.txt). Carta 48×64, ficha 32×30. Esta folha
+   vem depois de vinte-e-um.css e poker.css e troca o desenho em CSS pelas imagens. */
+:is(.frente-21, .verso-21, #monte-21 span, .monte-poker span) { image-rendering: pixelated; }
+
+/* A carta já tem a borda e os cantos desenhados: sai o cartão por trás. */
+.carta-21, .vaga-poker, :is(#monte-21, .monte-poker),
+:is(.amigo-21, .minha-mao, .banca-21) .leque-21:not(:has(.carta-21)) { aspect-ratio: 3 / 4; }
+.frente-21 { padding: 0; background: none; border-radius: 0; box-shadow: none; filter: drop-shadow(0 2px 2px rgb(4 18 12 / 45%)); }
+.verso-21,
+:is(#monte-21, .monte-poker) span {
+  border: 0; border-radius: 0; box-shadow: none;
+  background: url(baralho/verso.png) center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 2px rgb(4 18 12 / 45%));
+}
+.carta-21.destaque-poker .frente-21 { box-shadow: none; filter: drop-shadow(0 0 0 var(--ouro)) drop-shadow(0 0 2px var(--ouro)) drop-shadow(0 4px 6px rgb(0 0 0 / 50%)); }
+
+/* Pixel art não inclina: rodado num ângulo quebrado ele fica serrilhado. */
+.carta-21, .amostra-21 .carta-21:is(:first-child, :last-child) { transform: none; }
+.amostra-21 .carta-21:first-child { translate: 0 .3rem; }
+:is(#monte-21, .monte-poker) { transform: none; }
+
+/* Pilhas: cada coluna é uma imagem pronta (fichas/<cor>-<n>.png, 32 px de largura,
+   30 px + 2 px por ficha), do tamanho original, porque menor que isso o pixel some. */
+:is(.pilha-21, .ficha-caindo, .ficha-botao-21, .ficha-solta-21, #bandeja-21 span) { image-rendering: pixelated; background-size: 100% 100%; background-repeat: no-repeat; }
+.pilha-21 { display: block; width: 32px; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 35%)); }
+.ficha-caindo { position: absolute; z-index: 6; width: 32px; height: 30px; pointer-events: none; }
+
+/* Botões de ficha e a ficha da carteira: uma ficha só. */
+:is(.ficha-botao-21, .ficha-solta-21) {
+  background: var(--ficha-pixel, url(fichas/roxa-1.png)) center / 100% 100% no-repeat;
+  border-radius: 0; box-shadow: none;
+}
+.ficha-botao-21 { width: 48px; height: 45px; padding-bottom: .15rem; }
+.ficha-botao-21:active:not(:disabled) { box-shadow: none; }
+.ficha-solta-21 { width: 1.35rem; height: 1.27rem; }
+.ficha-botao-21.vermelha { --ficha-pixel: url(fichas/vermelha-1.png); }
+.ficha-botao-21.azul { --ficha-pixel: url(fichas/azul-1.png); }
+.ficha-botao-21.roxa { --ficha-pixel: url(fichas/roxa-1.png); }
+.ficha-botao-21.verde { --ficha-pixel: url(fichas/verde-1.png); }
+.ficha-botao-21.preta { --ficha-pixel: url(fichas/preta-1.png); }
+
+/* Bandeja da banca: uma coluna de 10 de cada cor. */
+#bandeja-21 { gap: 2px; padding: 4px 5px; }
+#bandeja-21 span { width: 32px; height: 48px; border-radius: 0; box-shadow: none; }
+#bandeja-21 span.vermelha { background-image: url(fichas/vermelha-10.png); }
+#bandeja-21 span.azul { background-image: url(fichas/azul-10.png); }
+#bandeja-21 span.roxa { background-image: url(fichas/roxa-10.png); }
+#bandeja-21 span.verde { background-image: url(fichas/verde-10.png); }
+#bandeja-21 span.preta { background-image: url(fichas/preta-10.png); }
+
+/* Brilho de quem ganhou: estrelinha em cruz, de pixel. */
+.brilho-pixel {
+  position: absolute; z-index: 6; width: 3px; height: 3px; margin: -1px;
+  pointer-events: none;
+  background: var(--ouro, #f5d76e);
+  box-shadow: 3px 0 var(--ouro, #f5d76e), -3px 0 var(--ouro, #f5d76e), 0 3px var(--ouro, #f5d76e), 0 -3px var(--ouro, #f5d76e);
+}
+
+/* No círculo de aposta as colunas viram um montinho em favo de mel: a vaga de
+   cada uma (--x, --y) vem de pilha(), em mesa-pecas.js. Cada coluna cresce pra
+   cima a partir da base. */
+:is(.aposta-21, .aposta-poker) .pilhas-21 { position: relative; display: block; width: 32px; height: 30px; }
+:is(.aposta-21, .aposta-poker) .pilha-21 { position: absolute; bottom: 0; left: 0; translate: var(--x, 0) var(--y, 0); }

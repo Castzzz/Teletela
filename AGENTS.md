@@ -50,6 +50,7 @@ PORT=3999 OWNER_KEY=segredo-dono TELINHA_DATA_DIR=/tmp/teletela-data node server
 npm test                    # 62 testes (todos passam)
 node --test tests/m1-*.test.js tests/m2-*.test.js tests/m3-*.test.js   # todos passam
 node tests/m4-channels-admin.test.js                                   # integração do servidor
+node --test tests/poker.test.js tests/vinte-e-um-fichas.test.js tests/apostas.test.js   # atividades
 npm run release             # publica versão nova (só se o dono pedir)
 npm run deploy:oracle       # atualiza a VM (só se o dono pedir; precisa de ~/.ssh/oracle_telinha_ampere; faz backup antes)
 npm run backup              # baixa os dados da sala pra ~/Teletela-backups (só leitura na VM)

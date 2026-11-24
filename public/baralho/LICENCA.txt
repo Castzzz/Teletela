@@ -1,0 +1,9 @@
+Cartas (public/baralho/) e fichas (public/fichas/) do Teletela:
+"(Pixel) Poker Cards" de IvoryRed — https://ivoryred.itch.io/pixel-poker-cards
+Licença Creative Commons Atribuição 4.0 Internacional (CC BY 4.0)
+https://creativecommons.org/licenses/by/4.0/
+
+Modificações: a folha de cartas foi recortada em arquivos separados (uma carta
+por arquivo, verso vermelho em verso.png). As fichas viraram pilhas de 1 a 10 de
+cada cor (public/fichas/<cor>-<n>.png): as de 1, 2, 4 e 8 são as do pacote, e as
+outras repetem ou cortam a faixa lateral da pilha de 8. O desenho não foi alterado.

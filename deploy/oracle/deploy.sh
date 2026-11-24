@@ -12,7 +12,7 @@ source deploy/oracle/config.sh
 SSH=(ssh -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=30 "$VM")
 GO="${GO:-$(command -v go || echo "$HOME/.local/go/bin/go")}"
 ENABLE_MUSIC="${ENABLE_MUSIC:-1}"
-YTDLP_VERSION="${YTDLP_VERSION:-2026.10.26}"
+YTDLP_VERSION="${YTDLP_VERSION:-2026.11.23}"
 [[ "$ENABLE_MUSIC" =~ ^[01]$ ]] || { echo "ENABLE_MUSIC precisa ser 0 ou 1." >&2; exit 1; }
 [[ "$YTDLP_VERSION" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]{2}$ ]] || { echo "Versão do yt-dlp inválida." >&2; exit 1; }
 
@@ -39,7 +39,7 @@ fi
 
 echo "== Empacotando o servidor (sem as dependências do app desktop)"
 mkdir -p "$stage/app"
-cp -r server.js stream-access.js link-previews.js channel-extras.js daily-call-store.js permission-store.js member-avatar-store.js account-store.js private-calls.js direct-messages.js accounts-protocol.js dice-store.js watch-together.js package.json package-lock.json public music "$stage/app/"
+cp -r server.js stream-access.js link-previews.js channel-extras.js daily-call-store.js permission-store.js member-avatar-store.js account-store.js private-calls.js direct-messages.js accounts-protocol.js dice-store.js vinte-e-um.js fichas-store.js apostas.js poker.js watch-together.js package.json package-lock.json public music "$stage/app/"
 mkdir -p "$stage/app/scripts"
 cp scripts/configurar-dono.mjs "$stage/app/scripts/"
 (cd "$stage/app" && npm ci --omit=dev --ignore-scripts --no-audit --no-fund --silent)

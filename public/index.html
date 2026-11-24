@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="mobile.css" />
   <link rel="stylesheet" href="music.css" />
   <link rel="stylesheet" href="stage-social.css" />
+  <link rel="stylesheet" href="vinte-e-um.css" />
+  <link rel="stylesheet" href="apostas.css" />
+  <link rel="stylesheet" href="poker.css" />
+  <link rel="stylesheet" href="salao.css" />
+  <link rel="stylesheet" href="mesa-pixel.css" />
   <link rel="stylesheet" href="dice.css" />
   <link rel="stylesheet" href="watch-together.css" />
   <link rel="stylesheet" href="accounts.css" />
@@ -27,11 +32,21 @@
 </head>
 <body class="theme-discord">
 
-  <dialog id="private-dialog" aria-labelledby="private-name">
-    <p>Ligação privada</p><h2 id="private-name"></h2><p id="private-status" role="status"></p>
-    <div><button id="private-answer" class="btn-primary">Atender</button>
-    <button id="private-mute" class="btn-secondary" hidden>Mutar microfone</button>
-    <button id="private-end" class="btn-secondary">Desligar</button></div>
+  <dialog id="private-dialog" class="private-call" aria-labelledby="private-name" aria-describedby="private-status">
+    <div class="private-call-who">
+      <span class="private-call-avatar" id="private-avatar" aria-hidden="true"></span>
+      <div class="private-call-text">
+        <p class="private-call-label" id="private-label">Ligação privada</p>
+        <h2 id="private-name"></h2>
+        <p class="private-call-status" id="private-status" role="status"></p>
+      </div>
+    </div>
+    <div class="private-call-actions">
+      <button type="button" id="private-expand" class="private-call-btn" title="Abrir a ligação" hidden><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span>Abrir</span></button>
+      <button type="button" id="private-mute" class="private-call-btn" aria-pressed="false" hidden><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/><path class="private-mic-slash" d="M3 3l18 18"/></svg><span id="private-mute-label">Mutar</span></button>
+      <button type="button" id="private-end" class="private-call-btn private-call-hang"><svg class="icon-svg private-hang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l1 5-3 2a15 15 0 0 0 7 7l2-3 5 1v4a2 2 0 0 1-2 2C10 20 4 14 3 5a2 2 0 0 1 2-2Z"/></svg><span id="private-end-label">Desligar</span></button>
+      <button type="button" id="private-answer" class="private-call-btn private-call-answer" aria-label="Atender"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l1 5-3 2a15 15 0 0 0 7 7l2-3 5 1v4a2 2 0 0 1-2 2C10 20 4 14 3 5a2 2 0 0 1 2-2Z"/></svg><span>Atender</span></button>
+    </div>
     <audio id="private-audio" autoplay></audio>
   </dialog>
   <nav class="mobile-nav" aria-label="Navegação no celular">
@@ -76,6 +91,7 @@
     <button type="button" data-stream-access-open class="mobile-settings-row hidden"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Acesso às minhas transmissões</button>
     <button type="button" id="btn-mobile-screen" class="mobile-settings-row hidden"><span class="mobile-row-icon"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span><span><span id="mobile-screen-label">Transmitir tela com som</span><small id="mobile-screen-hint">O Android vai pedir permissão</small></span><span aria-hidden="true">›</span></button>
     <button type="button" class="mobile-settings-row hidden" id="mobile-flip-camera-option" data-mobile-proxy="btn-mobile-flip-camera"><span>Virar câmera<small id="mobile-flip-camera-hint">Usar câmera traseira</small></span><span class="mobile-row-icon" aria-hidden="true"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 0 0-14-5L3 9m0-6v6h6m-5 4a8 8 0 0 0 14 5l3-3m0 6v-6h-6"/></svg></span></button>
+    <button type="button" class="mobile-settings-row" data-mobile-proxy="btn-atividades">Atividades<small>21, poker e apostas na call</small></button>
     <button type="button" class="mobile-settings-row" id="mobile-voice-clip">Clipar vozes<small>Últimos 10 a 60 segundos</small></button>
     <button type="button" id="btn-mobile-music" class="mobile-settings-row hidden"><span>K7 · Música<small>Pedidos e fila desta call</small></span><span aria-hidden="true">›</span></button>
     <button type="button" id="btn-mobile-watch" class="mobile-settings-row" aria-controls="modal-watch-together">Assistir juntos</button>
@@ -312,6 +328,38 @@
         <p id="friends-feedback" class="account-feedback" role="status"></p>
       </div>
     </main>
+    <main id="private-room" class="private-room" aria-labelledby="private-room-title">
+      <section class="private-room-stage">
+        <header class="private-room-top">
+          <span class="private-room-dot" aria-hidden="true"></span>
+          <h2 id="private-room-title">Ligação privada</h2>
+          <span id="private-room-time" class="private-room-time"></span>
+          <button type="button" id="private-room-minimize" class="private-room-icon" title="Minimizar a ligação" aria-label="Minimizar a ligação"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></button>
+        </header>
+        <div class="private-room-screens" id="private-room-screens"></div>
+        <div class="private-room-people">
+          <figure class="private-room-person" id="private-room-me" data-speaking="false">
+            <span class="private-room-avatar" aria-hidden="true"></span>
+            <figcaption><strong></strong><span class="private-room-flags"><svg class="icon-svg private-flag-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/><path d="M3 3l18 18"/></svg><svg class="icon-svg private-flag-deafened" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/><path d="M3 3l18 18"/></svg></span></figcaption>
+            <span class="sr-only">Você</span>
+          </figure>
+          <figure class="private-room-person" id="private-room-peer" data-speaking="false">
+            <span class="private-room-avatar" aria-hidden="true"></span>
+            <figcaption><strong></strong><span class="private-room-flags"><svg class="icon-svg private-flag-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/><path d="M3 3l18 18"/></svg><svg class="icon-svg private-flag-deafened" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/><path d="M3 3l18 18"/></svg></span></figcaption>
+            <span class="sr-only">Seu amigo</span>
+          </figure>
+        </div>
+        <footer class="private-room-controls">
+          <button type="button" id="private-room-mute" class="private-room-btn" aria-pressed="false" title="Mutar microfone" aria-label="Mutar microfone"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1M12 18v4M8 22h8"/><path class="private-slash" d="M3 3l18 18"/></svg></button>
+          <button type="button" id="private-room-deafen" class="private-room-btn" aria-pressed="false" title="Desativar áudio" aria-label="Desativar áudio"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/><path class="private-slash" d="M3 3l18 18"/></svg></button>
+          <button type="button" id="private-room-share" class="private-room-btn" aria-pressed="false" title="Transmitir tela" aria-label="Transmitir tela"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4M12 7v6M9 10l3-3 3 3"/></svg></button>
+          <button type="button" id="private-room-chat-toggle" class="private-room-btn" aria-pressed="true" title="Esconder conversa" aria-label="Esconder conversa"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11a8 8 0 0 1-8 8H8l-5 3 1-6a8.5 8.5 0 1 1 17-5Z"/></svg></button>
+          <button type="button" id="private-room-fullscreen" class="private-room-btn" aria-pressed="false" title="Tela cheia" aria-label="Tela cheia"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+          <button type="button" id="private-room-end" class="private-room-btn private-room-hang" title="Desligar" aria-label="Desligar"><svg class="icon-svg private-hang-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h4l1 5-3 2a15 15 0 0 0 7 7l2-3 5 1v4a2 2 0 0 1-2 2C10 20 4 14 3 5a2 2 0 0 1 2-2Z"/></svg></button>
+        </footer>
+      </section>
+      <aside id="private-room-chat" class="private-room-chat" aria-label="Conversa privada"></aside>
+    </main>
     <main id="stage-section" class="stage-section">
       <div class="stream-preview-toolbar"><span>Transmissão</span><button type="button" id="btn-return-to-stream" class="btn-secondary" title="Voltar à transmissão em tamanho maior">Voltar à transmissão <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button></div>
 
@@ -365,6 +413,136 @@
         <!-- Vídeos injetados dinamicamente com overlay de HUD, estatísticas e volume -->
       </section>
 
+      <section hidden id="mesa-21" aria-labelledby="titulo-21">
+        <header class="cabecalho-21">
+          <div class="titulo-21">
+            <!-- Dentro de um jogo, volta pro salão (salao.js) -->
+            <button type="button" id="voltar-salao" class="btn-secondary" hidden><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Atividades</button>
+            <h2 id="titulo-21" tabindex="-1">Atividades</h2>
+          </div>
+          <div class="navegar-21">
+            <span id="carteira-21" hidden><span class="ficha-solta-21" aria-hidden="true"></span><span></span></span>
+            <button type="button" id="apostas-21-botao" class="btn-secondary" aria-controls="apostas-21" aria-expanded="false"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m-3-7.5c0-1.4 1.3-2 3-2s3 .7 3 2-1.3 1.8-3 2.2-3 .9-3 2.3 1.3 2 3 2 3-.6 3-2"/></svg><span>Apostas</span></button>
+            <!-- Tabela das mãos do poker (poker.js); só aparece com o poker aberto -->
+            <button type="button" id="maos-poker-botao" class="btn-secondary" aria-controls="maos-poker" aria-expanded="false" hidden><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>Mãos</button>
+            <button type="button" id="ranking-21-botao" class="btn-secondary" aria-controls="ranking-21" aria-expanded="false"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>Ranking</button>
+            <button type="button" id="som-21" class="btn-secondary" aria-pressed="true" aria-label="Desligar sons da mesa" title="Desligar sons da mesa"><svg class="icon-svg som-ligado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg><svg class="icon-svg som-desligado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="m22 9-6 6m0-6 6 6"/></svg></button>
+            <button type="button" id="ampliar-21" class="btn-secondary" aria-label="Tela cheia" title="Tela cheia"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5M9 20H4v-5"/></svg></button>
+            <button type="button" id="voltar-21" class="btn-secondary">Voltar à call</button>
+          </div>
+        </header>
+        <!-- Salão: a entrada das Atividades. Os jogos ficam abertos no canal ao mesmo tempo;
+             cada um joga o que quiser. A arte é feita das próprias cartas e fichas. -->
+        <div id="salao-jogos" class="salao" hidden>
+          <div class="salao-miolo">
+          <header class="salao-chamada">
+            <span class="salao-letreiro">Cassino Colheita</span>
+            <p>Escolha uma mesa. Dá pra jogar um enquanto a call joga outro.</p>
+          </header>
+          <ul class="salao-cartoes">
+            <li><button type="button" class="salao-cartao" data-jogo="21">
+              <span class="salao-arte" aria-hidden="true"><span class="salao-cartas"><img src="baralho/ace_of_spades.png" alt=""><img src="baralho/king_of_hearts.png" alt=""></span><img class="salao-pilha" src="fichas/roxa-5.png" alt=""></span>
+              <strong>21</strong>
+              <span class="salao-descricao">Contra a banca ou entre amigos. Chegue o mais perto de 21 sem passar.</span>
+              <span class="salao-status"></span>
+            </button></li>
+            <li><button type="button" class="salao-cartao" data-jogo="poker">
+              <span class="salao-arte" aria-hidden="true"><span class="salao-cartas"><img src="baralho/verso.png" alt=""><img src="baralho/verso.png" alt=""></span><img class="salao-pilha" src="fichas/preta-7.png" alt=""><img class="salao-pilha" src="fichas/vermelha-3.png" alt=""></span>
+              <strong>Poker</strong>
+              <span class="salao-descricao">Texas Hold'em com blinds de 5 e 10. Senta com quanto quiser, levanta quando quiser.</span>
+              <span class="salao-status"></span>
+            </button></li>
+            <li><button type="button" class="salao-cartao" data-jogo="apostas">
+              <span class="salao-arte" aria-hidden="true"><img class="salao-pilha" src="fichas/azul-4.png" alt=""><img class="salao-pilha" src="fichas/verde-9.png" alt=""><img class="salao-pilha" src="fichas/vermelha-6.png" alt=""></span>
+              <strong>Apostas</strong>
+              <span class="salao-descricao">Alguém faz uma pergunta, a call aposta fichas na resposta e quem acertar leva o pote.</span>
+              <span class="salao-status"></span>
+            </button></li>
+          </ul>
+          <p class="salao-nota">As fichas valem em todas as atividades. Toda segunda-feira cada pessoa ganha mais 1.000.</p>
+          </div>
+        </div>
+        <div id="jogo-21" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
+        <div class="trilho-21"><div class="feltro-21">
+          <!-- O monte de onde as cartas saem voando e a bandeja de fichas da banca -->
+          <div id="monte-21" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div id="bandeja-21" aria-hidden="true"><span class="preta"></span><span class="verde"></span><span class="roxa"></span><span class="azul"></span><span class="vermelha"></span></div>
+          <div id="maos-21"></div>
+          <svg id="faixa-21" viewBox="0 0 600 60" aria-hidden="true"><path id="arco-21" d="M20 8 Q300 62 580 8" fill="none"/><text><textPath href="#arco-21" startOffset="50%" text-anchor="middle"></textPath></text></svg>
+          <div id="placar-21" hidden><strong></strong><span></span></div>
+        </div></div>
+        <div class="painel-21">
+          <div class="estado-21">
+            <div id="fichas-na-mesa" hidden></div>
+            <p id="aviso-21" role="status"></p>
+          </div>
+          <fieldset id="entrada-21" hidden>
+            <legend>Valendo</legend>
+            <label><input type="radio" name="fichas-21" value="1" checked><span>Fichas</span></label>
+            <label><input type="radio" name="fichas-21" value="0"><span>Só diversão</span></label>
+          </fieldset>
+          <div id="montar-21" hidden role="group" aria-label="Montar a aposta">
+            <button type="button" class="ficha-botao-21 vermelha" data-ficha="5" aria-label="Pôr ficha de 5">5</button>
+            <button type="button" class="ficha-botao-21 azul" data-ficha="10" aria-label="Pôr ficha de 10">10</button>
+            <button type="button" class="ficha-botao-21 roxa" data-ficha="25" aria-label="Pôr ficha de 25">25</button>
+            <button type="button" class="ficha-botao-21 verde" data-ficha="50" aria-label="Pôr ficha de 50">50</button>
+            <button type="button" class="ficha-botao-21 preta" data-ficha="100" aria-label="Pôr ficha de 100">100</button>
+            <button type="button" class="btn-secondary" data-montar="tudo">Tudo</button>
+            <button type="button" class="btn-secondary" data-montar="limpar">Limpar</button>
+          </div>
+          <footer id="acoes-21"></footer>
+        </div>
+        </div>
+        <!-- Poker (poker.js): Texas Hold'em, blinds 5/10 -->
+        <div id="jogo-poker" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
+          <div class="trilho-21"><div class="feltro-21 feltro-poker">
+            <div id="lugares-poker">
+              <div class="centro-poker">
+                <div class="monte-poker" aria-hidden="true"><span></span><span></span><span></span></div>
+                <div id="mesa-cartas-poker" role="group" aria-label="Cartas da mesa"></div>
+                <div id="pote-poker" hidden></div>
+                <svg class="faixa-poker" viewBox="0 0 600 60" aria-hidden="true"><path id="arco-poker" d="M20 8 Q300 62 580 8" fill="none"/><text><textPath href="#arco-poker" startOffset="50%" text-anchor="middle">Cassino Colheita</textPath></text></svg>
+                <div id="placar-poker" hidden><strong></strong><span></span></div>
+              </div>
+            </div>
+          </div></div>
+          <div class="painel-21 painel-poker">
+            <div class="estado-21">
+              <p id="info-poker"></p>
+              <p id="aviso-poker" role="status"></p>
+            </div>
+            <fieldset id="entrada-poker" hidden>
+              <legend>Valendo</legend>
+              <label><input type="radio" name="fichas-poker" value="1" checked><span>Fichas</span></label>
+              <label><input type="radio" name="fichas-poker" value="0"><span>Só diversão</span></label>
+            </fieldset>
+            <form id="valor-poker" hidden>
+              <label for="valor-poker-numero" class="valor-poker-rotulo"></label>
+              <input type="range" id="valor-poker-faixa" aria-hidden="true" tabindex="-1">
+              <input type="number" id="valor-poker-numero" class="form-input" inputmode="numeric">
+              <div class="valor-poker-rapidos"></div>
+            </form>
+            <footer id="acoes-poker"></footer>
+          </div>
+        </div>
+        <aside id="apostas-21" hidden aria-labelledby="titulo-apostas-21">
+          <header><h3 id="titulo-apostas-21">Apostas do canal</h3><button type="button" class="btn-secondary" id="fechar-apostas-21" aria-label="Fechar apostas"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+          <div id="aposta-atividades"></div>
+        </aside>
+        <aside id="maos-poker" hidden aria-labelledby="titulo-maos-poker">
+          <header><h3 id="titulo-maos-poker">Mãos do poker</h3><button type="button" class="btn-secondary" id="fechar-maos-poker" aria-label="Fechar mãos do poker"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+          <p>Da mais forte pra mais fraca. Vale a melhor combinação de 5 cartas entre as suas 2 e as 5 da mesa. Na mesma categoria, ganha quem tem as cartas mais altas.</p>
+          <ol></ol>
+        </aside>
+        <aside id="ranking-21" hidden aria-labelledby="titulo-ranking-21">
+          <header><h3 id="titulo-ranking-21">Ranking da sala</h3><button type="button" class="btn-secondary" id="fechar-ranking-21" aria-label="Fechar ranking"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
+          <ol></ol>
+          <p>As fichas valem em todas as atividades. Toda segunda-feira cada pessoa ganha mais 1.000.</p>
+          <!-- A licença das cartas e fichas (CC BY 4.0) pede o crédito: ver public/baralho/LICENCA.txt -->
+          <p class="creditos-21">Cartas e fichas: <a href="https://ivoryred.itch.io/pixel-poker-cards" target="_blank" rel="noopener">(Pixel) Poker Cards</a>, de <a href="https://ivoryred.itch.io" target="_blank" rel="noopener">IvoryRed</a> (<a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>), recortadas em pilhas. Sons: Casino Audio, de <a href="https://www.kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0).</p>
+        </aside>
+      </section>
+
       <!-- FLOATING EMOJI REACTIONS LAYER -->
       <div id="reactions-layer" class="reactions-layer" aria-hidden="true"></div>
 
@@ -416,6 +594,7 @@
         </div>
 
         <div class="stage-controls-right">
+          <button type="button" id="btn-atividades" class="btn-control-icon" aria-controls="mesa-21" aria-expanded="false" title="Atividades da call"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="7" y="3" width="13" height="17" rx="2"/><path d="m4 6-1 14q0 2 2 2h10m-2-15 3 4-3 4-3-4z"/></svg><span class="control-label">Atividades</span></button>
           <button type="button" id="btn-voice-clip" class="btn-control-icon" title="Clipar os últimos 10 a 60 segundos de voz" aria-label="Clipar vozes"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="m8 8 12 12M8 16 20 4"/></svg><span class="control-label">Clipar</span></button>
           <button id="btn-soundboard" class="btn-control-icon" title="Soundboard: tocar um som pra toda a call" aria-label="Soundboard" aria-expanded="false"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 14v-3a9 9 0 0 1 18 0v3"/><rect x="2" y="12" width="5" height="9" rx="2"/><rect x="17" y="12" width="5" height="9" rx="2"/></svg><span class="control-label">Sons</span></button>
           <button id="btn-stage-pip" class="btn-control-icon hidden" title="Abrir transmissão em janela (P)" aria-label="Abrir transmissão em janela">⧉</button>
@@ -444,6 +623,7 @@
           <span id="chat-channel-label">#geral-chat</span>
         </div>
         <div class="chat-header-actions">
+          <button type="button" id="btn-chat-aposta" class="btn-icon-close" title="Criar aposta" aria-label="Criar aposta" hidden><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm0 4v10m-3-7.5c0-1.4 1.3-2 3-2s3 .7 3 2-1.3 1.8-3 2.2-3 .9-3 2.3 1.3 2 3 2 3-.6 3-2"/></svg></button>
           <button type="button" id="btn-chat-search" class="btn-icon-close" title="Buscar mensagens" aria-label="Buscar mensagens"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="10" cy="10" r="7"/><path d="m15 15 6 6"/></svg></button>
           <button id="btn-chat-pins" class="btn-icon-close btn-chat-pins hidden" title="Mensagens fixadas" aria-label="Mensagens fixadas"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5M9 3h6l-1 7 4 3v2H6v-2l4-3z"/></svg></button>
           <button id="btn-chat-back-voice" class="btn-chat-back hidden" title="Voltar pro chat da call">🔊 Chat da call</button>
@@ -452,6 +632,8 @@
       </div>
 
       <p id="chat-channel-description" class="chat-channel-description hidden"></p>
+      <!-- Aposta do canal de voz (apostas.js) -->
+      <div id="aposta-chat" hidden></div>
       <div id="pins-popover" class="pins-popover hidden" role="dialog" aria-label="Mensagens fixadas"></div>
 
       <!-- SCROLLABLE MESSAGES LIST -->
@@ -1134,6 +1316,14 @@
           <li><strong>Configurações mais largas</strong> e ícone de microfone de verdade quando alguém tá mutado.</li>
         </ul>
         </div>
+        <!-- Fixo em todas as versões: a licença CC BY das cartas e fichas pede o crédito (ver public/baralho/LICENCA.txt) -->
+        <div class="whats-new-older whats-new-creditos">
+          <h4>Créditos</h4>
+          <ul class="whats-new-list">
+            <li><strong>Cartas e fichas das atividades:</strong> <a href="https://ivoryred.itch.io/pixel-poker-cards" target="_blank" rel="noopener">(Pixel) Poker Cards</a>, de <a href="https://ivoryred.itch.io" target="_blank" rel="noopener">IvoryRed</a>, licença <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>. As fichas foram recortadas e montadas em pilhas.</li>
+            <li><strong>Sons da mesa:</strong> Casino Audio, de <a href="https://www.kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0).</li>
+          </ul>
+        </div>
       </div>
 
       <div class="modal-actions">
@@ -1620,6 +1810,17 @@
               <small>PNG, JPG ou WebP até 2 MB. Aparece também na abertura do app.</small>
               <p id="server-icon-status" class="form-help" role="status"></p>
             </div>
+            <div id="fichas-admin" class="form-group permission-block hidden">
+              <h4>Fichas das atividades</h4>
+              <p class="form-help">Cada pessoa tem uma carteira que vale pra todas as atividades. Recarregar devolve o saldo pra 1.000.</p>
+              <label for="fichas-admin-pessoa">Pessoa</label>
+              <select id="fichas-admin-pessoa" class="form-input"></select>
+              <div class="admin-row">
+                <button type="button" id="fichas-admin-uma" class="btn-primary" disabled>Recarregar essa pessoa</button>
+                <button type="button" id="fichas-admin-todos" class="btn-secondary" disabled>Recarregar todo mundo</button>
+              </div>
+              <p id="fichas-admin-status" class="form-help" role="status"></p>
+            </div>
             <div id="permission-management" class="hidden">
               <p class="form-help">Cargos e acesso funcionam com ou sem conta. Cada perfil guarda uma identidade privada que permanece nas atualizações. Exporte seu perfil para levar os cargos a outro aparelho ou recuperá-los se apagar os dados. Guarde o backup só com você.</p>
               <div id="permission-role-management" class="hidden">
@@ -1863,5 +2064,32 @@
   <!-- Cliente do Socket.IO junto da interface (no app ela não vem do servidor da sala) -->
   <script src="vendor/socket.io.min.js"></script>
   <script type="module" src="app.js"></script>
+  <!-- Criar aposta (apostas.js) -->
+  <dialog id="dialogo-aposta" class="aposta-dialogo" aria-labelledby="titulo-dialogo-aposta">
+    <form method="dialog" novalidate>
+      <h2 id="titulo-dialogo-aposta">Criar aposta</h2>
+      <p class="form-help">Quem está no canal põe fichas numa opção. Você marca o que aconteceu e o pote vai pra quem acertou.</p>
+      <label for="aposta-titulo">Pergunta</label>
+      <input id="aposta-titulo" name="titulo" class="form-input" maxlength="90" required placeholder="Quem morre primeiro na partida?" autocomplete="off">
+      <fieldset>
+        <legend>Opções</legend>
+        <ol class="aposta-form-opcoes"></ol>
+        <button type="button" class="btn-secondary" data-mais>Adicionar opção</button>
+      </fieldset>
+      <label for="aposta-tempo">Aceita apostas por</label>
+      <select id="aposta-tempo" name="tempo" class="form-input">
+        <option value="60">1 minuto</option>
+        <option value="120" selected>2 minutos</option>
+        <option value="300">5 minutos</option>
+        <option value="600">10 minutos</option>
+        <option value="1800">30 minutos</option>
+      </select>
+      <p class="aposta-form-erro" role="alert"></p>
+      <div class="aposta-form-botoes">
+        <button type="button" class="btn-secondary" data-cancelar>Cancelar</button>
+        <button type="submit" class="btn-primary">Abrir aposta</button>
+      </div>
+    </form>
+  </dialog>
 </body>
 </html>

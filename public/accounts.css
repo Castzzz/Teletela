@@ -66,23 +66,178 @@ body.friends-open #friends-page { display: block; }
 body.friends-open :is(#stage-section, #chat-drawer) { display: none !important; }
 .friends-inner { width: min(100%, 840px); padding: clamp(20px, 4vw, 54px); margin-inline: auto; box-sizing: border-box; }
 #friends-heading { font-size: clamp(24px, 3vw, 36px); line-height: 1.15; color: var(--text-header); }
-#friends-status, #private-dialog p { color: var(--text-muted); margin: 8px 0 20px; }
+#friends-status { color: var(--text-muted); margin: 8px 0 20px; }
 .friends-filters { display: flex; flex-wrap: wrap; gap: 4px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 24px; padding-bottom: 8px; }
 .friends-filters button, #friends-open { background: transparent; color: var(--text-muted); padding: 9px 12px; border: 0; border-radius: 6px; font: inherit; cursor: pointer; }
 .friends-filters button[aria-pressed=true], #friends-open[aria-current] { background: var(--accent-soft); color: var(--text-header); }
 .friends-filters button:hover, #friends-open:hover { background: var(--bg-hover); color: var(--text-header); }
 #friends-page h2 { font-size: 16px; color: var(--text-header); }
-#friends-page [hidden], #private-dialog [hidden] { display: none; }
+#friends-page [hidden], #private-dialog [hidden] { display: none !important; }
 #friends-open { display: flex; align-items: center; gap: 8px; margin: 4px 8px; width: calc(100% - 16px); }
 #friends-page .friend-row { justify-content: flex-start; }
 #friends-page .friend-initials { flex: 0 0 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); }
 #friends-page .friend-actions { flex: 0 0 auto; margin-left: auto; }
 #friends-page .friend-actions .icon-svg { width: 19px; height: 19px; }
-#private-dialog { margin: auto; padding: 24px; width: min(360px, 90vw); border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-secondary); color: var(--text-header); }
-#private-dialog::backdrop { background: rgb(0 0 0 / 55%); }
-#private-dialog h2 { overflow-wrap: anywhere; }
-#private-dialog div { display: flex; flex-wrap: wrap; gap: 8px; }
-#private-dialog p:first-child { margin-top: 0; }
+/* Ligação privada: cartão flutuante no topo, sem bloquear o app enquanto conversa. */
+#private-dialog {
+  position: fixed; inset: 16px 0 auto; z-index: 3000; margin: 0 auto; padding: 14px;
+  width: min(400px, calc(100vw - 24px)); box-sizing: border-box;
+  border: 1px solid var(--border-medium); border-radius: var(--radius-lg, 12px);
+  background: var(--bg-floating); color: var(--text-header);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 38%);
+  display: none; gap: 14px;
+}
+#private-dialog[open] { display: grid; }
+.private-call-who { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.private-call-avatar {
+  position: relative; flex: 0 0 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center; overflow: visible;
+  background: var(--accent-brand); color: #fff; font-weight: 700; font-size: 17px;
+}
+.private-call-photo { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; }
+.private-call-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+/* Ondas saindo do avatar enquanto toca. */
+.private-call-avatar::before, .private-call-avatar::after {
+  content: ''; position: absolute; inset: -4px; border-radius: 50%;
+  border: 2px solid var(--accent-green); opacity: 0; pointer-events: none;
+}
+#private-dialog:is([data-phase=incoming],[data-phase=outgoing]) .private-call-avatar::before,
+#private-dialog:is([data-phase=incoming],[data-phase=outgoing]) .private-call-avatar::after { animation: private-wave 1.8s ease-out infinite; }
+#private-dialog .private-call-avatar::after { animation-delay: .9s !important; }
+#private-dialog[data-phase=active] .private-call-avatar { box-shadow: 0 0 0 2px var(--bg-floating), 0 0 0 4px var(--accent-green); }
+@keyframes private-wave { from { transform: scale(1); opacity: .7; } to { transform: scale(1.55); opacity: 0; } }
+.private-call-text { min-width: 0; }
+.private-call-text p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.private-call-label { text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
+#private-dialog h2 { margin: 2px 0; font-size: 17px; line-height: 1.2; color: var(--text-header); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.private-call-status { font-variant-numeric: tabular-nums; }
+#private-dialog[data-phase=active] .private-call-status { color: var(--accent-green); font-weight: 600; }
+.private-call-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.private-call-btn {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 14px;
+  border: 1px solid var(--border-medium); border-radius: var(--radius-pill, 999px);
+  background: var(--bg-tertiary); color: var(--text-header); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background var(--transition-fast, .15s), transform .1s;
+}
+.private-call-btn:hover { background: var(--bg-hover); }
+.private-call-btn:active { transform: scale(.97); }
+.private-call-btn:focus-visible { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.private-call-btn .icon-svg { width: 18px; height: 18px; }
+.private-call-btn:disabled { opacity: .6; cursor: default; }
+.private-call-answer { background: var(--accent-green); border-color: transparent; color: #fff; }
+.private-call-answer:hover { background: color-mix(in srgb, var(--accent-green) 85%, #000); }
+.private-call-hang { background: var(--accent-red); border-color: transparent; color: #fff; }
+.private-call-hang:hover { background: color-mix(in srgb, var(--accent-red) 85%, #000); }
+.private-hang-icon { transform: rotate(135deg); }
+.private-mic-slash { display: none; }
+#private-mute[aria-pressed=true] { color: var(--accent-red); border-color: color-mix(in srgb, var(--accent-red) 55%, transparent); }
+#private-mute[aria-pressed=true] .private-mic-slash { display: inline; }
+#private-expand { margin-right: auto; }
+/* Com a sala aberta, o cartão some: os controles estão no palco. */
+body.private-room-open #private-dialog:is([data-phase=connecting],[data-phase=active]) { display: none; }
+
+/* Sala da ligação: toma o lugar do palco e do chat da call. */
+#private-room { display: none; flex: 1; min-width: 0; min-height: 0; background: var(--bg-primary); color: var(--text-normal); }
+body.private-room-open #private-room { display: flex; }
+body.private-room-open :is(#stage-section, #chat-drawer, #friends-page) { display: none !important; }
+.private-room-stage { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg-tertiary); }
+.private-room-top { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); background: var(--bg-primary); }
+.private-room-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); flex: none; }
+#private-room-title { margin: 0; font-size: 15px; color: var(--text-header); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.private-room-time { color: var(--accent-green); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.private-room-icon { margin-left: auto; display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.private-room-icon:hover { background: var(--bg-hover); color: var(--text-header); }
+.private-room-icon .icon-svg { width: 18px; height: 18px; }
+.private-room-people { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: clamp(12px, 2vw, 24px); padding: clamp(16px, 3vw, 40px); }
+.private-room-person {
+  margin: 0; flex: 1 1 200px; min-width: 0; max-width: 440px; aspect-ratio: 4 / 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  border-radius: var(--radius-lg, 12px); background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  transition: border-color .15s, box-shadow .15s;
+}
+.private-room-person[data-speaking=true] { border-color: var(--accent-green); box-shadow: inset 0 0 0 1px var(--accent-green); }
+.private-room-avatar {
+  position: relative; width: clamp(72px, 9vw, 112px); aspect-ratio: 1; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent-brand); color: #fff;
+  font-weight: 700; font-size: clamp(22px, 2.6vw, 34px); transition: box-shadow .12s;
+}
+.private-room-person[data-speaking=true] .private-room-avatar { box-shadow: 0 0 0 3px var(--bg-secondary), 0 0 0 6px var(--accent-green); }
+.private-room-person figcaption { display: flex; align-items: center; gap: 6px; max-width: 90%; }
+.private-room-person strong { color: var(--text-header); font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.private-room-flags { display: inline-flex; gap: 4px; color: var(--accent-red); }
+.private-room-flags .icon-svg { width: 16px; height: 16px; display: none; }
+.private-room-person[data-muted=true]:not([data-deafened=true]) .private-flag-muted,
+.private-room-person[data-deafened=true] .private-flag-deafened { display: inline; }
+.private-room-controls { display: flex; justify-content: center; gap: 12px; padding: 14px 16px 20px; }
+.private-room-btn {
+  display: grid; place-items: center; width: 50px; height: 50px; border-radius: 50%;
+  border: 1px solid var(--border-medium); background: var(--bg-primary); color: var(--text-header); cursor: pointer;
+  transition: background var(--transition-fast, .15s), transform .1s;
+}
+.private-room-btn:hover { background: var(--bg-hover); }
+.private-room-btn:active { transform: scale(.95); }
+.private-room-btn:focus-visible, .private-room-icon:focus-visible { outline: 2px solid var(--accent-brand); outline-offset: 2px; }
+.private-room-btn .icon-svg { width: 21px; height: 21px; }
+.private-room-btn .private-slash { display: none; }
+:is(#private-room-mute, #private-room-deafen)[aria-pressed=true] { background: color-mix(in srgb, var(--accent-red) 16%, var(--bg-primary)); color: var(--accent-red); border-color: color-mix(in srgb, var(--accent-red) 50%, transparent); }
+.private-room-btn[aria-pressed=true] .private-slash { display: inline; }
+:is(#private-room-chat-toggle, #private-room-fullscreen)[aria-pressed=true] { background: var(--accent-soft, var(--bg-hover)); }
+.private-room-hang { width: 68px; border-radius: 999px; background: var(--accent-red); border-color: transparent; color: #fff; }
+.private-room-hang:hover { background: color-mix(in srgb, var(--accent-red) 85%, #000); }
+.private-room-chat { display: none; width: clamp(300px, 28vw, 400px); flex: none; border-left: 1px solid var(--border-subtle); background: var(--bg-primary); min-height: 0; }
+#private-room.chat-open .private-room-chat { display: flex; }
+/* A conversa privada encaixada: o mesmo diálogo, sem modal e sem moldura de janela. */
+#dm-dialog.dm-docked {
+  position: static; inset: auto; margin: 0; width: 100%; max-width: none; height: auto; max-height: none;
+  flex: 1; min-height: 0; padding: 12px; border: 0; border-radius: 0; box-shadow: none; background: transparent; animation: none;
+}
+#dm-dialog.dm-docked:has(#dm-thread:not([hidden])) { height: auto; }
+#private-room:fullscreen { background: var(--bg-tertiary); }
+/* Com tela transmitida, ela toma o palco e vocês dois viram uma faixa compacta. */
+.private-room-screens { display: none; }
+#private-room.has-screens .private-room-screens { flex: 1; min-height: 0; display: flex; gap: 12px; padding: 16px 16px 0; }
+.private-room-screen { position: relative; flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; border-radius: var(--radius-lg, 12px); background: #000; }
+.private-room-screen video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.private-room-screen figcaption {
+  position: absolute; left: 10px; bottom: 10px; max-width: calc(100% - 20px); padding: 4px 10px; border-radius: 999px;
+  background: rgb(0 0 0 / 62%); color: #fff; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.private-room-screen:fullscreen { border-radius: 0; }
+#private-room.has-screens .private-room-people { flex: none; flex-wrap: nowrap; justify-content: center; gap: 10px; padding: 12px 16px 0; }
+#private-room.has-screens .private-room-person { flex: 0 1 auto; aspect-ratio: auto; flex-direction: row; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 999px; }
+#private-room.has-screens .private-room-avatar { width: 34px; font-size: 13px; }
+#private-room.has-screens .private-room-person[data-speaking=true] .private-room-avatar { box-shadow: 0 0 0 2px var(--bg-secondary), 0 0 0 4px var(--accent-green); }
+#private-room-share[aria-pressed=true] { background: var(--accent-green); border-color: transparent; color: #fff; }
+#private-room-share[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) { .private-room-person, .private-room-avatar { transition: none; } }
+@media (max-width: 760px) {
+  body.private-room-open #private-room { position: fixed; inset: 0; z-index: 2500; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+  .private-room-people { flex-direction: column; flex-wrap: nowrap; padding: 16px; }
+  .private-room-person { flex: 1 1 0; width: 100%; max-width: none; aspect-ratio: auto; min-height: 0; }
+  .private-room-controls { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+  #private-room.chat-open .private-room-stage { flex: 0 0 auto; }
+  #private-room.chat-open .private-room-people { flex-direction: row; padding: 10px; }
+  #private-room.chat-open .private-room-person { min-height: 110px; }
+  .private-room-chat { width: auto; flex: 1; border-left: 0; border-top: 1px solid var(--border-subtle); }
+  #private-room.has-screens .private-room-screens { flex-direction: column; padding: 10px 10px 0; }
+  #private-room.has-screens.chat-open .private-room-stage { flex: 1 1 55%; min-height: 0; }
+}
+[data-visual="terminal"] :is(.private-room-person, .private-room-btn, .private-room-icon, .private-room-screen) { border-radius: var(--interface-radius, 2px); }
+[data-visual="terminal"] .private-room-avatar { border-radius: var(--interface-radius, 2px); }
+[data-visual="terminal"] #private-room { font-family: var(--term-fonte); }
+[data-visual="terminal"] #private-dialog { border-radius: var(--interface-radius, 2px); font-family: var(--term-fonte); }
+[data-visual="terminal"] .private-call-btn { border-radius: var(--interface-radius, 2px); }
+[data-visual="terminal"] .private-call-avatar { border-radius: var(--interface-radius, 2px); }
+[data-visual="terminal"] .private-call-avatar::before, [data-visual="terminal"] .private-call-avatar::after { border-radius: var(--interface-radius, 2px); }
+@media (prefers-reduced-motion: reduce) {
+  #private-dialog .private-call-avatar::before, #private-dialog .private-call-avatar::after { animation: none !important; }
+  #private-dialog:is([data-phase=incoming],[data-phase=outgoing]) .private-call-avatar { box-shadow: 0 0 0 3px var(--accent-green); }
+}
+@media (max-width: 760px) {
+  #private-dialog { inset: calc(env(safe-area-inset-top, 0px) + 8px) 0 auto; }
+  .private-call-actions { justify-content: stretch; }
+  .private-call-actions .private-call-btn { flex: 1; justify-content: center; }
+}
 @media (max-width: 760px), (max-width: 1100px) and (max-height: 540px) and (pointer: coarse) {
   #friends-open, #friends-heading, body.friends-open #friends-page { display: none; }
   body[data-mobile-view=amigos] #friends-page { display: block; width: 100%; }

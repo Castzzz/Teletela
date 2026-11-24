@@ -1,5 +1,81 @@
 # Pendências atuais
 
+## 24/11/2026 — ideia pra 5.1 (ou depois): minigame pra farmar fichas
+
+Pedido do dono: um minigame estilo cookie clicker ou idle nas Atividades, pra ganhar fichas sem depender só dos +1.000 da segunda. Ainda sem desenho; pensar num teto (por dia ou por hora) pra não desequilibrar o ranking, e o servidor contar o ganho (não confiar no cliente).
+
+## 24/11/2026 — 5.0 commitada e na `main` (local)
+
+O dono aprovou o salão e mandou commitar a `visual-unico` e juntar na `main`, porque tudo entra na 5.0. Feito localmente (sem push, sem release). `.impeccable/` (imagens de referência de terceiros e relatórios das revisões) foi pro `.gitignore` por ser repositório público; continua no disco. Falta pra publicar: `version` 5.0.0, popup de novidades (manter os Créditos), release + deploy juntos na janela das 03h.
+
+## 24/11/2026 — salão das Atividades em tela grande (local, branch `visual-unico`)
+
+O dono achou o salão estranho em 1440p e 1080p (três cartões pequenos no canto, o resto vazio). Agora o grupo fica centralizado com o letreiro "Cassino Colheita" e uma frase em cima. A arte em pixel sobe pra 3× quando o salão tem 1000 px ou mais e pra 4× a partir de 1800 px (tela cheia em 1440p), sempre em múltiplo inteiro pra não borrar. O salão mede a si mesmo (`container: salao`), porque em tela cheia o palco da call deixa de servir de medida. Conferido em janela de 1280/1920/2560, tela cheia de 1920 e 2560 (Clássico e Terminal) e no celular. Testes: 62/62, atividades e ligações (21) e `poker-browser.cjs`. Só `public/`.
+
+## 24/11/2026 — poker: embaralhar, nome da mão e tabela de mãos (local, branch `visual-unico`)
+
+Pedido do dono depois de jogar no modo de teste: embaralhar como no 21, mostrar perto do nome como está a mão a cada carta, e um "i" com as mãos do poker usando os sprites das cartas.
+
+- **Embaralhar:** o servidor manda `proxima` no resultado; ~2,6 s antes da próxima mão as cartas voam de volta pro monte, ele faz o riffle de duas passadas e a mão nova é dada sem repetir o som.
+- **Nome da mão:** selo sob o seu nome ("Par de 10", "Flush, ás alto"), troca quando as cartas novas pousam, dourado a partir da sequência e com brilho quando melhora. Quem assiste não vê selo.
+- **Mãos:** botão no topo (só com o poker aberto) abre a tabela das 10 categorias com 5 cartas de exemplo cada e a sua marcada ("sua mão agora"); abre uma de cada vez com Ranking e Apostas. Avaliador movido pra `public/poker-maos.js` (servidor e app usam o mesmo).
+- **Monte do poker:** tinha sumido (o 21 marca o palco com `data-fase="abertura"` quando não há mesa de 21, e a regra do poker escondia o monte por isso). Agora fica do lado esquerdo das cartas da mesa, do tamanho delas.
+- **Testes:** 62/62, poker/fichas/apostas/ligações (21), integração canais/admin, `poker-browser.cjs` estendido (selo, tabela com 50 cartas e a sua marcada, limpeza antes da próxima mão) com prints conferidos.
+- **Falta:** o dono ver no modo de teste. Vai junto no release + deploy da 5.0 (mexeu em `poker.js` do servidor).
+
+## 24/11/2026 — K7 encontra a música, mas falha ao preparar o áudio
+
+Na Oracle, o yt-dlp 2026.10.26 retornou cinco resultados na busca por “a-ha Take On Me”, mas falhou ao processar o player do YouTube e listou só imagens para o vídeo. Com o yt-dlp oficial 2026.11.23 em pasta temporária (SHA-256 conferido), o módulo instalado, a sessão e o proxy da sala, o FFmpeg decodificou três segundos de áudio de cada vídeo (`djV11Xbc914` e `jNQXAC9IVRw`). Os 19 testes locais de música passaram. Versão padrão do deploy atualizada no repositório local. O dono autorizou trocar só o executável para testar. A Oracle está com a 2026.11.23 instalada por troca atômica, com a anterior guardada em `/opt/telinha/backup-k7-20261124-aic1j4ro/yt-dlp`. Depois da troca, o bot encontrou cinco resultados e o FFmpeg decodificou três segundos de cada um dos dois vídeos com o executável instalado. Servidor e SFU mantiveram os mesmos PIDs. Falta ouvir pelo app na call.
+
+## 24/11/2026 — ligação privada entre amigos (local, branch `visual-unico`)
+
+Pedido do dono: não tocava, era feia, não dava para ligar estando em call nem para quem estava em call (e ligar deveria tirar a pessoa da call).
+
+- **Toque:** antes era um único "plim" que dependia do áudio da call já estar ligado. Agora toca em loop até atender/recusar (recebendo: notas subindo; ligando: "tuu" de 425 Hz a cada 5 s), pela saída de áudio escolhida. No Não perturbe aparece sem tocar. Com o app fora de foco, sai notificação do sistema.
+- **Visual:** cartão flutuante no topo (não trava mais o app), com foto do amigo, ondas no avatar enquanto chama, botões redondos verde/vermelho, tempo de ligação e Mutar. Ajustes pro visual Terminal e pro celular.
+- **Em call:** dá para ligar e receber estando num canal (o cartão avisa que atender tira do canal). Ao atender, o servidor tira os dois dos canais e o app toca o som de saída. Quem já está em outra ligação dá "Seu amigo já está em outra ligação.".
+- **Testes:** 62/62, `private-calls.test.js` (2, um novo) e `controls-friends-browser.cjs` com `PRIVATE_CALL_TEST=1` e SFU compilado do código atual: voz nos dois sentidos, recusa, mute, desligar e quem ligou saindo do Geral. Prints conferidos.
+- **Sala da ligação (etapa 1, pedida depois de ele aprovar o cartão):** ao atender, o palco vira a sala "tipo Discord com a cara do Teletela": os dois em cartões com anel verde de quem fala e ícones de mutado/sem áudio, conversa privada encaixada do lado (aberta por padrão no PC, escondida no celular — ele não escolheu, ficou assim), controles mutar/ensurdecer/conversa/tela cheia/desligar, minimizar volta pro cartão com **Abrir**. No celular cobre a tela. Testado em duas janelas com SFU: sala nos dois lados, mutado aparecendo pro outro, esconder conversa, minimizar/abrir, desligar devolvendo a conversa; prints no escuro, claro e celular.
+- **Etapa 2 — tela (feita, a pedido dele só a tela por enquanto):** botão Transmitir tela na sala; mesma escolha de tela/qualidade/som do canal (captura extraída pra `captureScreen()`); a tela toma o palco, os dois viram faixa; duplo clique abre a tela em tela cheia. Testado com SFU em duas janelas (tela chega do outro lado e some ao parar) e `test:stream:ui` passando depois da extração. **Câmera na ligação ainda não** (mesmo caminho: `kind: 'camera'`).
+- **Falta:** o dono testar com um amigo. Mexeu em `public/` e `server.js`/`private-calls.js`: precisa de **release + deploy juntos** (cliente antigo com servidor novo continua funcionando; servidor antigo recusa ligar em call).
+
+## 24/11/2026 — poker, fichas semanais e sons nas apostas (local, branch `visual-unico`)
+
+Decisões do dono pro poker: blinds 5/10; 60 s por vez (acabou: passa se der, senão larga); 21 e poker abertos ao mesmo tempo no canal, com abas nas Atividades ("quem quiser joga um, quem quiser joga outro").
+
+- **Fichas semanais:** toda segunda à 00h de Brasília cada carteira ganha +1.000 (soma, não reseta). `FichasStore` guarda `semana` (última segunda creditada) e credita ao ler; semanas sem abrir somam. Textos trocados ("Na segunda você ganha mais 1.000"). Teste atualizado.
+- **Sons nas apostas:** abrir (`bater`), pôr fichas (as suas: `fichas`; dos outros: uma ficha baixinho), fechar (`virar`), resultado (ganhou: `pote` + `fichas`; perdeu: `bater` baixo; devolvido: `fichas`). Tocam pra quem está vendo o card e obedecem ao botão de som da mesa e ao ensurdecer. O tocador saiu do 21 pra `public/sons-mesa.js`.
+- **Poker:** `poker.js` + `public/poker.js`/`.css`, aba ao lado do 21. Sentar com quanto quiser da carteira (mín. 10), pôr mais entre mãos, levantar; check/call/raise/fold/all-in com barra e atalhos (Mínimo, ½ pote, Pote, Tudo); potes paralelos; avaliação de 7 cartas; dealer girando; ausente depois de 2 tempos esgotados; toast e selo na aba quando a vez chega e você não está olhando; Só diversão. As fichas só saem da carteira quando vão pro pote. Peças da mesa extraídas pra `public/mesa-pecas.js`. Detalhes em PROJETO ("Poker").
+- **Testes:** 62/62, m1–m3 (81), integração canais/admin, `poker.test.js` (9, incluindo 300 mãos aleatórias; rodado também com 100 sementes = 30 mil mãos sem sumir ficha nem travar), fichas e apostas, `vinte-e-um-browser.cjs` e `poker-browser.cjs` (duas janelas + celular). Prints conferidos no escuro, claro e celular.
+- **Cartas e fichas em pixel art (pedido do dono):** comparou Kerenel, IvoryRed e Screaming Brain na mesa e escolheu o IvoryRed completo ("(Pixel) Poker Cards", CC BY 4.0, crédito em `public/baralho/LICENCA.txt` e no README). Fichas em 1× (32 px) depois de ele achar 2× gigante. Depois ele aprovou: pilhas prontas do pacote (uma coluna por cor, inclusive no 21, que antes empilhava na ordem do clique), leque reto, virada retrô, ficha caindo ao apostar, fichas voando em arco e brilho em quem ganha. A bandeja da banca usa as pilhas de 10. Também pediu que o 21 limpe a mesa ao fim de cada rodada e que a aposta seja montada de novo (antes ela ficava guardada): a mesa espera 5 s com o placar (contados de quando o placar aparece) e, na limpeza, o monte embaralha em riffle (ideia dele). Crédito do IvoryRed (e da Kenney) também dentro do app, a pedido dele: pé do Ranking e seção fixa "Créditos" no fim das Novidades (Configurações → Novidades); ao reescrever as novidades da 5.0, manter essa seção. Entrada das Atividades virou um salão (pedido dele: não cair direto no 21): cartões de 21, Poker e Apostas com arte em pixel e status ao vivo; sentado numa mesa, abre direto nela; as abas do título saíram. Só interface (`public/salao.js`/`salao.css`). O `m1-challenger-stress` falhou nesta máquina com carga alta (load ~8), igual no último commit sem as mudanças: instabilidade de tempo do teste, não regressão e se limpa sozinha (mudou `vinte-e-um.js` do servidor também, então vai em release + deploy juntos). O baralho ilustrado antigo saiu do `public/` (não estava no git; a fonte era o playing-cards-assets de Howard Yeh, MIT). Pro futuro ele guardou o pacote de dados https://dani-maccari.itch.io/cute-dice.
+- **Falta:** o dono jogar com a turma e ouvir os sons no app (`npm run app`). Antes do release: subir `version`, popup de novidades (`WHATS_NEW_VERSION` + `#modal-whats-new`) falando de 21, poker, apostas e fichas semanais. Precisa de **release + deploy juntos** (servidor novo: `poker.js` já está no `deploy.sh` e no `package.json`). Um reinício do servidor no meio de uma mão perde só o pote dela, por isso o deploy na janela das 03h com o canal vazio.
+
+## 23/11/2026 — 21 na call (5.0, local na branch `visual-unico`)
+
+O dono escolheu os dois modos. Em **Atividades**, a banca joga contra cada participante e para em 17. Entre amigos, quem chegar mais perto de 21 ganha, e todos os empatados no maior valor válido vencem. O ás conta como 1 ou 11. Cada canal tem uma mesa para até oito pessoas. Quem chega durante a rodada pode acompanhar e entrar na próxima.
+
+A pedido do dono, a mesa ganhou feltro verde com borda de madeira, baralho ilustrado local, versos estampados e uma animação curta ao distribuir. A banca e os amigos ficam do outro lado da mesa. O visual foi conferido no Electron em tamanho de desktop e de celular.
+
+A mesa agora ocupa o palco da call como uma transmissão, com tela cheia opcional. O chat lateral recolhe ao abrir e pode ser reaberto durante a partida. Voltar à call mantém a mão; os testes conferem a retomada.
+
+Em 23/11, o dono pediu apostas. Implementadas como fichas virtuais por mesa: 100 por pessoa, entrada opcional de 5, 10 ou 25, confirmação individual em cada rodada e liquidação pelo servidor. Testados cancelamento, desistência, reentrada com o mesmo saldo, divisão de pote ímpar e os três resultados contra a banca.
+
+Validação local com dois clientes Electron em display isolado, cartas ocultas e conclusão dos dois modos. Passaram os 62 testes gerais e a integração de canais/admin. Falta o dono experimentar a dinâmica com a turma. A mudança está só no repositório local, sem release ou deploy.
+
+Ainda em 23/11, o dono achou o visual sem graça e sem áudio e pediu uma revisão com as skills (impeccable). Escolheu "cassino caprichado", sons gravados livres e som só para quem está com a mesa aberta. Feito: assentos com avatar, placa (nome, situação, saldo, +/− da rodada) e pilha de fichas da aposta; selo de pontos sobre o leque (vermelho ao estourar, dourado no 21); monte no canto de onde as cartas voam; frase em arco impressa no feltro; carta da banca virando em 3D e compras uma por vez; resultado grande no meio do feltro; entrada escolhida em fichas de 5/10/25. Sons do pacote Kenney Casino Audio (CC0) em `public/mesa-sons/` com botão de ligar/desligar. Conferido com prints no escuro, claro e celular; 62 testes, fichas e `vinte-e-um-browser.cjs` passaram. Falta o dono ouvir os sons no app de verdade (`npm run app`). Tudo local, sem release.
+
+O dono testou, gostou e pediu os jogadores sentados ao redor da mesa e fichas melhores. Feito: lugares na borda em elipse (você embaixo, banca em cima com bandeja e monte), cartas e aposta viradas pro centro, amigos com rosto grande e crachá; círculo de aposta com fichas vistas de cima empilhadas por cor; fichas voando (apostas pro pote, banca recolhe e paga, pote pro vencedor). No celular volta pra grade. Conferido com 3, 4 e 5 jogadores, tela cheia e celular; 62 testes e `vinte-e-um-browser.cjs` passaram.
+
+Depois o dono pediu fichas de valores variados, 1000 iniciais com recarga semanal e competição na sala. Decisões dele: recarga só pra quem zerou (segunda 00h de Brasília), aposta livre sem limite contra a banca, aposta livre entre amigos com pote dividido na proporção da aposta, ranking na tela de Atividades. Feito: `fichas-store.js` (`fichas.json`, carteira por `accessId` pra todas as atividades), aposta montada clicando em fichas de 5/10/25/50/100 (empilha no círculo na ordem posta, Tudo/Limpar, repete na rodada seguinte), carteira no topo da mesa, painel Ranking (top 20 + sua posição). Mesa criada como Fichas ou Só diversão. `deploy.sh` e `package.json` incluem o arquivo novo. Testes: 62, fichas (5 casos novos: pilha, empate/all-in, proporção, recarga na segunda, ranking), canais/admin e `vinte-e-um-browser.cjs` passaram. Precisa de release + deploy juntos.
+
+Ajustes pedidos depois de testar no monitor 1440p: o feltro agora diz "Cassino Colheita" (maior); sem aviso enquanto a mesa espera (só "precisa de pelo menos duas pessoas" entre amigos) e sem a dica de clicar nas fichas; banca maior, mão dos amigos menor; cartas, fichas, círculo, placas e selo de pontos crescem até telas grandes (limites em `cqw`); a pilha montada mantém a ordem durante a rodada.
+
+Recarga pelo dono: em Configurações → Servidor e cargos aparece "Fichas das atividades" (só pro dono), com a lista de carteiras e os botões "Recarregar essa pessoa" e "Recarregar todo mundo" (volta pra 1.000, com confirmação; mesas abertas atualizam na hora). Testado: 6/6 fichas, 62/62, integração e o fluxo no app (Lia zerou, dono recarregou, a mesa dela mostrou 1.000). Precisa de release + deploy juntos.
+
+Apostas estilo Twitch (23/11, local). Decisões do dono: quem cria marca o resultado e também pode apostar; aparece no chat da call e nas Atividades; poker depois (Texas Hold'em, blinds fixos, cada um entra com quanto quiser). Feito: `apostas.js` + `apostas.json`, `public/apostas.js`/`.css`, botão de moeda no chat, painel Apostas nas Atividades, diálogo de criar. Ninguém acertou/cancelou devolve; fecha sozinha no tempo; resultado só depois de fechar. Testes: `tests/apostas.test.js` (3), 62/62, fichas, integração e o fluxo no app com 3 pessoas. Falta: poker. Lançar tudo junto (release + deploy).
+
+Ajustes depois do teste do dono (23/11): carteira sincronizada entre 21 e apostas (evento `teletela-carteira` no app; o servidor reenvia as mesas de 21 quando uma aposta mexe nas fichas); confirmações no visual do app (`public/confirmar.js`) no lugar do `window.confirm` nas apostas e na recarga de fichas.
+
 ## 23/11/2026 — visual único (branch `visual-unico`, só local)
 
 O dono pediu a revisão de design do Clássico (impeccable critique, nota 24/40, relatório em

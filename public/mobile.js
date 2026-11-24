@@ -89,10 +89,12 @@ function renderChrome(state) {
   if ($('#btn-mobile-audio-output')) $('#btn-mobile-audio-output').disabled = !inCall;
 }
 
-export function setMobileView(view) {
+export function setMobileView(view, { automatic = false } = {}) {
   if (!smallScreen.matches || !['canais', 'sala', 'chat', 'amigos', 'voce'].includes(view)) return;
   const previous = document.body.dataset.mobileView || 'canais';
   document.body.classList.remove('friends-open');
+  // Só a navegação da pessoa fecha a sala da ligação privada.
+  if (!automatic) document.body.classList.remove('private-room-open');
   $('#friends-open').removeAttribute('aria-current');
   if (view !== previous) hooks?.closeMusic?.();
   if (view === 'chat' && previous !== 'chat') chatReturnView = previous === 'sala' ? 'sala' : 'canais';
@@ -105,7 +107,7 @@ export function syncMobileState(state) {
   currentState = state;
   syncMobilePip(state);
   const view = document.body.dataset.mobileView;
-  if ((!state.currentChannelId && view === 'sala') || (!state.currentChannelId && !state.textView && view === 'chat')) setMobileView('canais');
+  if ((!state.currentChannelId && view === 'sala') || (!state.currentChannelId && !state.textView && view === 'chat')) setMobileView('canais', { automatic: true });
   renderChrome(state);
   // Mudar de tela não interfere na captura nem no serviço da call.
   const detail = { inCall: Boolean(state.currentChannelId || state.privateVoice), microphone: Boolean(state.privateVoice || state.localMicStream), name: state.privateVoice ? 'Ligação privada' : state.channels.get(state.currentChannelId)?.name || 'Call' };
@@ -153,7 +155,7 @@ export function setupMobileUI(options) {
     if (view === 'canais') options.showRoom();
   }));
   all('[data-mobile-proxy]').forEach(button => button.addEventListener('click', () => {
-    if (button.dataset.mobileProxy === 'btn-mobile-flip-camera') $('#mobile-call-options').close();
+    if (['btn-mobile-flip-camera', 'btn-atividades'].includes(button.dataset.mobileProxy)) $('#mobile-call-options').close();
     document.getElementById(button.dataset.mobileProxy)?.click();
     renderChrome(options.getState());
   }));

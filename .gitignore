@@ -14,3 +14,6 @@ android/*.jks
 android/*.keystore
 android/**/*.jks
 android/**/*.keystore
+
+# Referências e relatórios das revisões de design (imagens de terceiros; repositório público)
+.impeccable/

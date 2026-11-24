@@ -1,0 +1,393 @@
+/* Mesa de 21. A mesa é um objeto (feltro, madeira, cartas, fichas) e tem as
+   próprias cores nos 3 temas; o que fica fora dela usa os tokens do app. */
+#mesa-21 {
+  --feltro: #17503f;
+  --feltro-claro: #2a7358;
+  --sombra-feltro: #0b2c24;
+  --marfim: #fbf5e6;
+  --tinta-feltro: #d9ead9;
+  --filete: #cdb57c;
+  --ouro: #e9c15a;
+  --madeira: #5f4130;
+  --verso: #7a2b44;
+  --borda-ficha: #f3ead6;
+  box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+  padding: clamp(.8rem, 2cqw, 1.6rem) clamp(.8rem, 2cqw, 2rem);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  color: var(--text-normal);
+  font: inherit;
+}
+#mesa-21[hidden] { display: none; }
+#mesa-21:fullscreen { width: 100%; height: 100%; }
+#stage-section:has(> #mesa-21:not([hidden])) > :is(#voice-lounge, #videos-grid, #server-home) { display: none !important; }
+#stage-section:has(> #mesa-21:not([hidden])) :is(.stage-controls-left, #btn-stage-fullscreen, #btn-stage-pip) { display: none; }
+#btn-atividades[aria-expanded="true"] { color: var(--text-link); }
+
+.cabecalho-21, .navegar-21 { display: flex; align-items: center; gap: .45rem; }
+.cabecalho-21 { justify-content: space-between; flex-wrap: wrap; margin-bottom: .8rem; }
+.navegar-21 button { min-height: 40px; }
+:is(#ampliar-21, #som-21) { min-width: 40px; display: inline-grid; place-items: center; padding-inline: .55rem; }
+:is(#ampliar-21, #som-21) .icon-svg { width: 18px; height: 18px; }
+#som-21[aria-pressed="true"] .som-desligado, #som-21[aria-pressed="false"] .som-ligado { display: none; }
+#mesa-21 h2 { color: var(--text-header); font-family: var(--fonte-titulo, inherit); font-size: clamp(1.4rem, 2.6vw, 2rem); line-height: 1.1; letter-spacing: -.01em; }
+
+/* ---------- A mesa ---------- */
+.trilho-21 {
+  display: flex; flex: 1 0 auto;
+  padding: clamp(7px, 1.1vw, 13px);
+  border-radius: 26% / 40%;
+  background:
+    repeating-linear-gradient(100deg, rgb(255 255 255 / 3%) 0 2px, transparent 2px 9px),
+    linear-gradient(172deg, #b48c62, var(--madeira) 28%, #3a271c 70%, #93704f);
+  box-shadow: inset 0 1px 1px #dcbf9f, inset 0 -2px 3px rgb(0 0 0 / 35%), 0 10px 24px -8px rgb(0 0 0 / 45%);
+}
+.feltro-21 {
+  flex: 1; min-width: 0; display: flex;
+  position: relative;
+  isolation: isolate;
+  border-radius: inherit;
+  padding: .9rem clamp(.8rem, 3vw, 2.4rem);
+  color: var(--marfim);
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 42%, var(--feltro-claro), transparent 70%),
+    radial-gradient(ellipse at 50% 50%, var(--feltro) 55%, var(--sombra-feltro));
+  box-shadow: inset 0 4px 12px rgb(0 0 0 / 55%), inset 0 0 0 1px rgb(0 0 0 / 30%);
+}
+/* Fio dourado impresso no feltro */
+.feltro-21::before { content: ''; position: absolute; inset: 11px; border: 1.5px solid color-mix(in srgb, var(--filete) 45%, transparent); border-radius: inherit; pointer-events: none; z-index: -1; }
+
+/* O monte: as cartas saem daqui voando */
+:is(#monte-21, .monte-poker) { position: relative; flex: none; margin-top: .4rem; width: clamp(2.6rem, 4.6cqw, 5.4rem); aspect-ratio: 5/7; transform: rotate(8deg); }
+:is(#monte-21, .monte-poker) span {
+  position: absolute; inset: 0;
+  border-radius: 9%;
+  background: var(--verso);
+  box-shadow: inset 0 0 0 3px var(--marfim), inset 0 0 0 5px var(--verso), inset 0 0 0 6px color-mix(in srgb, var(--marfim) 60%, transparent), 0 1px 2px rgb(0 0 0 / 40%);
+}
+:is(#monte-21, .monte-poker) span:nth-child(2) { translate: -2px -2px; }
+:is(#monte-21, .monte-poker) span:nth-child(3) { translate: -4px -4px; }
+/* Embaralhando: um bolo de cartas por cima do monte faz o riffle (embaralharMonte). */
+:is(#monte-21, .monte-poker) .embaralhando { position: absolute; inset: 0; }
+:is(#monte-21, .monte-poker) .embaralhando span { translate: none; }
+:is(#monte-21, .monte-poker).embaralhando-monte > span { visibility: hidden; }
+[data-fase="abertura"] :is(#monte-21, #bandeja-21) { display: none; }
+
+/* Os lugares ficam na borda, numa elipse; as cartas e a aposta apontam pro centro. */
+#maos-21 {
+  flex: 1; min-width: 0; position: relative;
+  min-height: clamp(27rem, 58vh, 46rem);
+}
+.topo-21 { position: absolute; top: 0; left: 50%; translate: -50% 0; display: flex; align-items: flex-start; gap: clamp(.8rem, 2.5cqw, 2rem); }
+.centro-21 { position: absolute; top: 47%; left: 50%; translate: -50% -50%; width: min(100%, 62rem); display: flex; flex-direction: column; align-items: center; gap: .7rem; }
+[data-modo="banca"] .centro-21 { top: 44%; }
+[data-modo="amigos"] .centro-21 { top: 51%; }
+[data-fase="abertura"] .centro-21 { top: 50%; }
+.lugar-21.ao-redor {
+  position: absolute;
+  left: calc(50% + var(--cos) * 48%);
+  top: calc(50% + var(--sin) * 48%);
+  translate: calc(-50% - 50% * var(--cos)) calc(-50% - 50% * var(--sin));
+  width: max-content;
+}
+.meio-21 { display: flex; align-items: center; gap: 1.4rem; }
+
+/* A frase impressa em arco entre a banca e os jogadores */
+#faixa-21 { width: clamp(18rem, 42cqw, 62rem); max-width: 100%; height: auto; overflow: visible; }
+#faixa-21 text { fill: color-mix(in srgb, var(--filete) 75%, transparent); font: 750 25px var(--fonte-titulo, inherit); letter-spacing: 7px; text-transform: uppercase; }
+#maos-21:has(#placar-21:not([hidden])) #faixa-21 { display: none; }
+
+/* ---------- Assentos ---------- */
+.lugar-21 { --largura: clamp(2.7rem, 4.4cqw, 5.6rem); display: flex; flex-direction: column; align-items: center; min-width: 0; gap: .4rem; }
+.lugar-21.em-cima { flex-direction: column-reverse; }
+.jogo-21 { display: flex; align-items: center; gap: .55rem; }
+.minha-mao { --largura: clamp(4rem, 7.6cqw, 9rem); }
+.amostra-21 { --largura: clamp(5.4rem, 15cqw, 9.5rem); }
+.banca-21 { --largura: clamp(3.6rem, 6.2cqw, 7.6rem); }
+
+.leque-21 { position: relative; display: flex; align-items: center; justify-content: center; max-width: 100%; flex-wrap: wrap; padding: .3rem .45rem; transition: opacity .3s, filter .3s; }
+.amigo-21 .leque-21:not(:has(.carta-21)), .minha-mao .leque-21:not(:has(.carta-21)), .banca-21 .leque-21:not(:has(.carta-21)) { width: var(--largura); aspect-ratio: 5/7; border: 1.5px dashed color-mix(in srgb, var(--marfim) 35%, transparent); border-radius: 9%; }
+
+.carta-21 {
+  position: relative;
+  flex: none;
+  width: var(--largura);
+  aspect-ratio: 5/7;
+  transform: rotate(var(--giro));
+  transform-origin: 50% 88%;
+  perspective: 700px;
+}
+.carta-21 + .carta-21 { margin-left: calc(var(--largura) * -.44); }
+.miolo-21 { position: absolute; inset: 0; transform-style: preserve-3d; }
+:is(.frente-21, .verso-21) {
+  position: absolute; inset: 0;
+  box-sizing: border-box;
+  width: 100%; height: 100%;
+  border-radius: calc(var(--largura) * .075);
+  backface-visibility: hidden;
+  box-shadow: 0 1px 1px rgb(4 18 12 / 30%), 0 4px 8px -2px rgb(4 18 12 / 45%);
+}
+.frente-21 { object-fit: fill; padding: calc(var(--largura) * .07); background: var(--marfim); }
+.verso-21 {
+  transform: rotateY(180deg);
+  border: calc(var(--largura) * .055) solid var(--marfim);
+  background-color: var(--verso);
+  background-image:
+    repeating-linear-gradient(55deg, transparent 0 4px, #e3cdb980 4px 5px),
+    repeating-linear-gradient(-55deg, transparent 0 4px, #e3cdb980 4px 5px);
+  box-shadow: inset 0 0 0 2px var(--verso), inset 0 0 0 3px #e3cdb9aa, 0 1px 1px rgb(4 18 12 / 30%), 0 4px 8px -2px rgb(4 18 12 / 45%);
+}
+.coberta .verso-21 { transform: none; }
+.amostra-21 .carta-21:first-child { transform: translateY(.45rem) rotate(-16deg); }
+.amostra-21 .carta-21:last-child { transform: translateY(.35rem) rotate(13deg); }
+
+/* Pontos num selo sobre o canto do leque */
+.pontos-21 {
+  position: absolute; top: -.2rem; right: -.35rem;
+  min-width: clamp(1.85rem, 2.2cqw, 2.7rem); height: clamp(1.85rem, 2.2cqw, 2.7rem); padding-inline: .35rem;
+  box-sizing: border-box;
+  display: grid; place-items: center;
+  border-radius: 1rem;
+  background: #0f2b23;
+  color: var(--marfim);
+  border: 1.5px solid var(--filete);
+  font: 750 clamp(.95rem, 1.15cqw, 1.3rem)/1 var(--fonte-titulo, inherit);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 4px rgb(0 0 0 / 40%);
+  transition: opacity .3s;
+}
+.pontos-21.estouro { background: #b8322f; border-color: #f4b3a8; }
+.pontos-21.vinte-e-um { background: var(--ouro); color: #2c1f04; border-color: #fff2c4; }
+
+/* Placa do assento: rosto, nome, situação e o que ganhou na rodada */
+.placa-21 {
+  display: inline-flex; align-items: center; gap: .5rem;
+  max-width: 100%;
+  min-width: 0;
+  padding: .25rem .75rem .25rem .25rem;
+  border-radius: 2rem;
+  background: rgb(5 24 19 / 45%);
+  border: 1px solid rgb(251 245 230 / 12%);
+  transition: border-color .3s, background-color .3s;
+}
+.rosto-21 {
+  flex: none;
+  width: 1.9rem; height: 1.9rem;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid; place-items: center;
+  background: var(--accent-brand);
+  color: #fff;
+  font-size: .72rem; font-weight: 750;
+  box-shadow: 0 0 0 2px rgb(251 245 230 / 25%);
+  transition: box-shadow .3s;
+}
+.rosto-21 > .avatar-static { display: none; }
+.rosto-21.banca { background: #0f2b23; color: var(--filete); }
+.rosto-21.banca .icon-svg { width: 1.05rem; height: 1.05rem; }
+.minha-mao .rosto-21 { width: clamp(2.3rem, 2.8cqw, 3.2rem); height: clamp(2.3rem, 2.8cqw, 3.2rem); }
+/* Os amigos sentam na borda: rosto grande e o nome embaixo, como um crachá */
+.amigo-21 .placa-21 { flex-direction: column; gap: 0; padding: 0; border: 0; background: none; max-width: clamp(9.5rem, 12cqw, 14rem); }
+.amigo-21 .rosto-21 { position: relative; z-index: 1; width: clamp(2.8rem, 3.4cqw, 4rem); height: clamp(2.8rem, 3.4cqw, 4rem); font-size: .85rem; margin-bottom: -.45rem; }
+.amigo-21 .textos-21 { text-align: center; justify-items: center; max-width: 100%; padding: .5rem .7rem .3rem; border-radius: .8rem; background: rgb(5 24 19 / 50%); border: 1px solid rgb(251 245 230 / 12%); transition: border-color .3s, background-color .3s; }
+#maos-21:not(.revelando) .amigo-21[data-estado="ganhou"] .textos-21 { border-color: var(--ouro); background: rgb(58 44 8 / 55%); }
+.amigo-21 .ganho-21 { margin-top: .1rem; }
+.textos-21 { display: grid; min-width: 0; text-align: left; }
+.lugar-21 h3 { color: var(--marfim); font-size: clamp(.92rem, 1.05cqw, 1.25rem); font-weight: 700; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.textos-21 small { color: var(--tinta-feltro); font-size: clamp(.78rem, .9cqw, 1.02rem); font-weight: 500; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .3s; }
+.ganho-21 { flex: none; padding: .15rem .45rem; border-radius: 1rem; font: 750 .82rem/1.2 var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums; background: rgb(251 245 230 / 12%); color: var(--marfim); transition: opacity .3s; }
+
+
+/* Estados do assento. Enquanto a banca compra, o resultado ainda não aparece. */
+.lugar-21[data-estado="vez"] .rosto-21 { box-shadow: 0 0 0 2px var(--marfim); animation: vez-21 1.6s ease-in-out infinite; }
+.lugar-21[data-estado="pronto"] .rosto-21 { box-shadow: 0 0 0 2px var(--accent-green); }
+#maos-21:not(.revelando) .lugar-21:not(.amigo-21)[data-estado="ganhou"] .placa-21 { border-color: var(--ouro); background: rgb(58 44 8 / 55%); }
+#maos-21:not(.revelando) .lugar-21[data-estado="ganhou"] .rosto-21 { box-shadow: 0 0 0 2px var(--ouro); }
+#maos-21:not(.revelando) .lugar-21[data-estado="ganhou"] .ganho-21 { background: var(--ouro); color: #2c1f04; }
+#maos-21:not(.revelando) .lugar-21:is([data-estado="perdeu"], [data-estado="estourou"]) .leque-21,
+.lugar-21[data-estado="estourou"] .leque-21 { opacity: .6; filter: saturate(.55) brightness(.85); }
+#maos-21.revelando :is(.textos-21 small, .ganho-21, .banca-21 .pontos-21) { opacity: 0; }
+@keyframes vez-21 { 50% { box-shadow: 0 0 0 4px rgb(251 245 230 / 35%); } }
+
+/* ---------- Fichas ----------
+   As pilhas são imagens prontas (mesa-pixel.css); aqui fica o desenho dos botões. */
+.pilhas-21 { display: inline-flex; align-items: flex-end; gap: 2px; }
+.ficha-solta-21, .ficha-botao-21 {
+  --cor: #745af6;
+  background:
+    radial-gradient(circle closest-side, var(--cor) 0 58%, var(--borda-ficha) 60% 64%, transparent 66%),
+    repeating-conic-gradient(var(--cor) 0 22.5deg, var(--borda-ficha) 22.5deg 45deg);
+}
+:is(.ficha-botao-21, #bandeja-21 span).azul { --cor: #2b5eb8; }
+:is(.ficha-botao-21, #bandeja-21 span).roxa { --cor: #745af6; }
+:is(.ficha-botao-21, #bandeja-21 span).vermelha { --cor: #c43b32; }
+:is(.ficha-botao-21, #bandeja-21 span).verde { --cor: #2f8f55; }
+:is(.ficha-botao-21, #bandeja-21 span).preta { --cor: #2a2a30; }
+
+/* Círculo de aposta impresso no feltro */
+.aposta-21 {
+  position: relative; flex: none;
+  width: clamp(3.4rem, 5.6cqw, 6.6rem); aspect-ratio: 1;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  border: 1.5px solid color-mix(in srgb, var(--filete) 55%, transparent);
+  box-shadow: inset 0 0 0 4px rgb(0 0 0 / 8%);
+}
+.aposta-21 small { position: absolute; bottom: -1.4rem; color: var(--tinta-feltro); font: 750 clamp(.85rem, 1cqw, 1.15rem) var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums; }
+.voando-21 { position: absolute; z-index: 5; pointer-events: none; transform: translate(-50%, -50%); }
+
+/* Bandeja da banca: colunas de fichas deitadas, vistas de cima */
+#bandeja-21 {
+  display: flex; gap: 3px; padding: 4px;
+  margin-top: .4rem;
+  border-radius: 6px;
+  background: rgb(4 18 14 / 55%);
+  box-shadow: inset 0 2px 4px rgb(0 0 0 / 55%), 0 1px 0 rgb(251 245 230 / 10%);
+}
+#bandeja-21 span {
+  width: clamp(.95rem, 1.4cqw, 1.7rem); height: clamp(2.8rem, 5cqw, 6.2rem);
+  border-radius: 4px;
+  background: repeating-linear-gradient(180deg, var(--cor) 0 3px, color-mix(in srgb, var(--cor) 60%, #000) 3px 4px);
+  box-shadow: inset 2px 0 2px rgb(255 255 255 / 18%), inset -2px 0 2px rgb(0 0 0 / 35%);
+}
+[data-modo="amigos"] #bandeja-21, [data-fase="abertura"] #bandeja-21 { display: none; }
+
+.pote-21 { display: grid; justify-items: center; gap: .35rem; }
+.pote-21 small { color: var(--tinta-feltro); font: 700 .8rem var(--fonte-titulo, inherit); letter-spacing: .04em; }
+
+/* ---------- Resultado no meio do feltro ---------- */
+:is(#placar-21, #placar-poker) {
+  grid-column: 1 / -1; order: -1; justify-self: center;
+  display: grid; justify-items: center; gap: .1rem;
+  padding: .55rem 1.6rem .6rem;
+  border-radius: .8rem;
+  background: rgb(6 26 20 / 78%);
+  border: 1.5px solid color-mix(in srgb, var(--filete) 70%, transparent);
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 55%);
+  text-align: center;
+}
+:is(#placar-21, #placar-poker)[hidden] { display: none; }
+:is(#placar-21, #placar-poker) strong { font: 800 clamp(1.35rem, 2.8cqw, 3.2rem)/1.05 var(--fonte-titulo, inherit); letter-spacing: -.01em; color: var(--marfim); }
+:is(#placar-21, #placar-poker) span { font-weight: 650; font-size: clamp(.9rem, 1.1cqw, 1.25rem); color: var(--tinta-feltro); font-variant-numeric: tabular-nums; }
+:is(#placar-21, #placar-poker) span:empty { display: none; }
+:is(#placar-21, #placar-poker)[data-tom="ganhou"] { border-color: var(--ouro); }
+:is(#placar-21, #placar-poker)[data-tom="ganhou"] :is(strong, span) { color: var(--ouro); }
+:is(#placar-21, #placar-poker)[data-tom="perdeu"] strong { color: #f1d6cf; }
+
+/* ---------- Painel embaixo da mesa ---------- */
+.painel-21 { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem; margin-top: 1rem; }
+.estado-21 { flex: 1 1 18rem; min-width: 0; }
+#aviso-21 { margin: 0; line-height: 1.45; color: var(--text-normal); }
+#fichas-na-mesa:not([hidden]) { display: flex; align-items: center; gap: .6rem; margin-bottom: .3rem; color: var(--text-header); font-weight: 650; font-variant-numeric: tabular-nums; }
+.ficha-solta-21 { flex: none; width: 1.3rem; height: 1.3rem; border-radius: 50%; box-shadow: 0 1px 2px rgb(0 0 0 / 40%); }
+:is(#acoes-21, #acoes-poker) { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; }
+:is(#acoes-21, #acoes-poker) button { min-height: 44px; }
+#acoes-21 [data-acao="pedir"] { min-width: 8.5rem; }
+#mesa-21 button:focus-visible { outline: 2px solid var(--text-link); outline-offset: 2px; }
+
+/* A entrada se escolhe pegando a ficha */
+:is(#entrada-21, #entrada-poker) { border: 0; padding: 0; margin: 0; display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+:is(#entrada-21, #entrada-poker)[hidden] { display: none; }
+:is(#entrada-21, #entrada-poker) legend { float: left; margin-right: .3rem; color: var(--text-header); font-weight: 650; font-size: .9rem; }
+:is(#entrada-21, #entrada-poker) input { position: absolute; opacity: 0; pointer-events: none; }
+:is(#entrada-21, #entrada-poker) label {
+  display: inline-flex; align-items: center;
+  min-height: 2.4rem; padding: 0 .95rem;
+  border-radius: 2rem;
+  border: 1.5px solid var(--border-medium);
+  color: var(--text-normal);
+  font-weight: 600; font-size: .9rem;
+  cursor: pointer;
+}
+:is(#entrada-21, #entrada-poker) label:has(:checked) { border-color: var(--accent-brand); color: var(--text-header); background: color-mix(in srgb, var(--accent-brand) 14%, transparent); }
+:is(#entrada-21, #entrada-poker) label:has(:focus-visible) { outline: 2px solid var(--text-link); outline-offset: 3px; }
+
+/* Montar a aposta: cada ficha é um botão; a pilha cresce no seu círculo */
+#montar-21 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+#montar-21[hidden] { display: none; }
+#montar-21 .btn-secondary { min-height: 40px; }
+.ficha-botao-21 {
+  position: relative;
+  display: grid; place-items: center;
+  width: 3rem; height: 3rem; padding: 0;
+  border: 0; border-radius: 50%;
+  cursor: pointer;
+  color: #fff;
+  font: 800 .9rem var(--fonte-titulo, inherit);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 45%);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--cor) 55%, #000), 0 5px 8px -2px rgb(0 0 0 / 45%);
+  transition: transform .16s cubic-bezier(.16, 1, .3, 1), box-shadow .16s, opacity .2s;
+}
+.ficha-botao-21:hover:not(:disabled) { transform: translateY(-3px); }
+.ficha-botao-21:active:not(:disabled) { transform: translateY(1px) scale(.94); box-shadow: 0 1px 0 color-mix(in srgb, var(--cor) 55%, #000); }
+.ficha-botao-21:disabled { opacity: .35; cursor: not-allowed; }
+.ficha-botao-21:focus-visible { outline: 2px solid var(--text-link); outline-offset: 3px; }
+
+/* Carteira no topo */
+#carteira-21:not([hidden]) { display: inline-flex; align-items: center; gap: .4rem; padding: 0 .75rem; min-height: 40px; border-radius: 2rem; background: var(--bg-secondary); color: var(--text-header); font-weight: 750; font-variant-numeric: tabular-nums; }
+#ranking-21-botao { display: inline-flex; align-items: center; gap: .4rem; }
+#ranking-21-botao .icon-svg { width: 18px; height: 18px; }
+#ranking-21-botao[aria-expanded="true"] { color: var(--text-link); }
+
+/* Ranking por cima da mesa, à direita */
+#mesa-21 { position: relative; }
+#ranking-21 {
+  position: absolute; z-index: 20;
+  top: 4.2rem; right: clamp(.8rem, 2cqw, 2rem);
+  width: min(21rem, calc(100% - 1.6rem));
+  max-height: calc(100% - 5.5rem); overflow: auto;
+  box-sizing: border-box;
+  padding: .9rem 1rem 1rem;
+  border-radius: 14px;
+  background: var(--bg-floating);
+  border: 1px solid var(--border-medium);
+  box-shadow: 0 18px 40px -12px rgb(0 0 0 / 55%);
+}
+#ranking-21[hidden] { display: none; }
+/* Crédito dos desenhos e sons, pequeno, no pé do ranking */
+#ranking-21 .creditos-21 { margin-top: .8rem; padding-top: .6rem; border-top: 1px solid var(--border-subtle, var(--border-medium)); font-size: .75rem; color: var(--text-muted); }
+#ranking-21 .creditos-21 a { color: var(--text-link); }
+#ranking-21 header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .6rem; }
+#ranking-21 h3 { color: var(--text-header); font: 750 1.1rem var(--fonte-titulo, inherit); }
+#ranking-21 header button { min-width: 36px; min-height: 36px; padding: 0; display: grid; place-items: center; }
+#ranking-21 header .icon-svg { width: 16px; height: 16px; }
+#ranking-21 ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+#ranking-21 ol[aria-busy="true"]::before { content: 'Carregando…'; color: var(--text-muted); }
+#ranking-21 li { display: grid; grid-template-columns: 1.8rem 1fr auto; align-items: center; gap: .5rem; padding: .45rem .5rem; border-radius: 8px; }
+#ranking-21 li.voce { background: color-mix(in srgb, var(--accent-brand) 16%, transparent); }
+#ranking-21 li.vazio-21 { display: block; color: var(--text-muted); }
+.posicao-21 { display: grid; place-items: center; width: 1.6rem; height: 1.6rem; border-radius: 50%; color: var(--text-muted); font-weight: 750; font-size: .85rem; font-variant-numeric: tabular-nums; }
+[data-podio="1"] .posicao-21 { background: #e9c15a; color: #2c1f04; }
+[data-podio="2"] .posicao-21 { background: #c9ced6; color: #22262d; }
+[data-podio="3"] .posicao-21 { background: #c98a55; color: #2b1607; }
+.nome-21 { display: grid; min-width: 0; color: var(--text-normal); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nome-21 small { color: var(--text-muted); font-weight: 500; font-size: .75rem; }
+.saldo-21 { color: var(--text-header); font-weight: 750; font-variant-numeric: tabular-nums; }
+#ranking-21 > p { margin: .8rem 0 0; color: var(--text-muted); font-size: .8rem; line-height: 1.4; }
+
+@container (max-width: 600px) {
+  #mesa-21 { padding: .8rem; }
+  .trilho-21 { border-radius: 18% / 10%; }
+  .feltro-21 { padding: 1.2rem .8rem 1.4rem; }
+  #maos-21 { min-height: 0; display: grid; grid-template-columns: repeat(var(--lugares-movel, 1), minmax(0, 1fr)); gap: 1rem .35rem; align-content: space-evenly; }
+  :is(.topo-21, .centro-21, .lugar-21.ao-redor) { position: static; translate: none; }
+  :is(.topo-21, .centro-21, .minha-mao, .amostra-21) { grid-column: 1 / -1; }
+  .topo-21 { order: -2; justify-self: center; gap: .6rem; }
+  .centro-21 { order: -1; width: 100%; }
+  .minha-mao { order: 1; }
+  .lugar-21.em-cima { flex-direction: column; }
+  .lugar-21 { justify-self: center; }
+  #bandeja-21 { display: none; }
+  .placa-21 { padding-right: .55rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lugar-21[data-estado="vez"] .rosto-21 { animation: none; }
+  .ficha-botao-21 { transition: none; }
+}

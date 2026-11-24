@@ -139,12 +139,26 @@ export function setupDirectMessages({ socket, getAccount, serverUrl, assetKey, o
     } finally { if (turn === generation) $('dm-older').disabled = false; }
   }
 
-  function open(id) {
+  // Na ligação, a conversa vira painel fixo ao lado do palco (sem modal).
+  const home = { parent: dialog.parentNode, next: dialog.nextSibling };
+  function undock() {
+    if (!dialog.classList.contains('dm-docked')) return;
+    if (dialog.open) dialog.close();
+    dialog.classList.remove('dm-docked');
+    home.parent.insertBefore(dialog, home.next);
+  }
+  function dock(id, container) {
+    if (dialog.open) dialog.close();
+    container.append(dialog); dialog.classList.add('dm-docked');
+    open(id, true);
+  }
+  function open(id, docked = false) {
     if (!owner || !socket.connected) return;
     const person = friends.find(friend => friend.id === id);
     if (!person) return;
+    if (!docked) undock();
     reset();
-    if (!dialog.open) dialog.showModal();
+    if (!dialog.open) docked ? dialog.show() : dialog.showModal();
     peer = id;
 
     $('dm-title').textContent = person.name || person.username;
@@ -152,7 +166,7 @@ export function setupDirectMessages({ socket, getAccount, serverUrl, assetKey, o
     $('dm-older').hidden = true;
     send.disabled = false;
     $('dm-status').textContent = 'Carregando conversa…';
-    loadHistory(); input.focus();
+    loadHistory(); if (!docked) input.focus();
   }
 
   function sync(list) {
@@ -228,5 +242,5 @@ export function setupDirectMessages({ socket, getAccount, serverUrl, assetKey, o
     }
     onUnreadChanged(unread);
   });
-  return { open, sync, unread };
+  return { open, dock, undock, sync, unread };
 }

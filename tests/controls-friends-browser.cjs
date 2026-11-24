@@ -52,13 +52,51 @@ app.whenReady().then(async () => {
     await until(b, "document.querySelector('#private-dialog').open");
     await click(b, '#private-end');
     await until(a, "!document.querySelector('#private-dialog').open");
+    // Quem está num canal pode ligar; ao atender, sai do canal.
+    await js(a, "document.querySelector('#channel-geral .channel-row').click();void 0");
+    await until(a, 'Boolean(appState.currentChannelId)'); await click(a, '#friends-open');
     await click(a, '#friends-list [aria-label^="Ligar"]');
-    await until(b, "document.querySelector('#private-dialog').open");
+    await until(b, "document.querySelector('#private-dialog').dataset.phase === 'incoming'");
+    assert.equal(await js(a, "document.querySelector('#private-dialog').dataset.phase"), 'outgoing');
+    await pause(400); fs.writeFileSync('/tmp/teletela-ligacao-tocando.png', (await b.webContents.capturePage()).toPNG());
     await click(b, '#private-answer');
     for (const win of [a, b]) await until(win, "document.querySelector('#private-audio').currentTime > 0.2");
-    await click(a, '#private-mute');
+    await until(a, "document.querySelector('#private-dialog').dataset.phase === 'active'");
+    assert.equal(await js(a, 'appState.currentChannelId'), null);
+    // Atendida, vira a sala da ligação com a conversa ao lado.
+    for (const win of [a, b]) await until(win, "document.body.classList.contains('private-room-open') && Boolean(document.querySelector('#private-room-chat #dm-dialog[open]'))");
+    await pause(1200); fs.writeFileSync('/tmp/teletela-ligacao-sala.png', (await a.webContents.capturePage()).toPNG());
+    await click(a, '#private-room-mute');
+    await until(b, "document.querySelector('#private-room-peer').dataset.muted === 'true'");
     assert.equal(await js(a, "document.querySelector('#private-mute').getAttribute('aria-pressed')"), 'true');
-    await click(b, '#private-end'); await until(a, "!document.querySelector('#private-dialog').open");
+    await click(a, '#private-room-chat-toggle');
+    assert.equal(await js(a, "document.querySelector('#private-room').classList.contains('chat-open')"), false);
+    await click(a, '#private-room-minimize');
+    await until(a, "!document.body.classList.contains('private-room-open') && !document.querySelector('#private-expand').hidden");
+    await pause(400); fs.writeFileSync('/tmp/teletela-ligacao-ativa.png', (await a.webContents.capturePage()).toPNG());
+    await click(a, '#private-expand'); await until(a, "document.body.classList.contains('private-room-open')");
+    // Transmitir tela na ligação: a mesma escolha de som do canal, e a tela aparece do outro lado.
+    await js(a, `(()=>{const c=document.createElement('canvas');c.width=1280;c.height=720;const x=c.getContext('2d');let n=0;
+      setInterval(()=>{x.fillStyle='#1d3b5a';x.fillRect(0,0,1280,720);x.fillStyle='#ffd166';x.font='64px sans-serif';x.fillText('Tela do Cast '+(n++),120,380);},100);
+      navigator.mediaDevices.getDisplayMedia=async()=>c.captureStream(10);})();void 0`);
+    await click(a, '#private-room-share');
+    await until(a, "!document.querySelector('#modal-audio-picker').classList.contains('hidden')");
+    await js(a, "[...document.querySelectorAll('#modal-audio-picker .audio-source')].find(b=>b.textContent.includes('PC inteiro')).click();void 0");
+    await until(a, "document.querySelector('#private-room-share').getAttribute('aria-pressed') === 'true' && document.querySelector('#private-room').classList.contains('has-screens')");
+    await until(b, "document.querySelector('#private-room-screens [data-key=peer] video')?.videoWidth > 0");
+    await pause(800); fs.writeFileSync('/tmp/teletela-ligacao-tela.png', (await b.webContents.capturePage()).toPNG());
+    fs.writeFileSync('/tmp/teletela-ligacao-tela-quem-transmite.png', (await a.webContents.capturePage()).toPNG());
+    await click(a, '#private-room-share');
+    await until(b, "!document.querySelector('#private-room-screens [data-key=peer]') && !document.querySelector('#private-room').classList.contains('has-screens')");
+    await js(b, "document.documentElement.dataset.theme='claro';void 0");
+    await pause(600); fs.writeFileSync('/tmp/teletela-ligacao-sala-claro.png', (await b.webContents.capturePage()).toPNG());
+    await js(b, "document.documentElement.dataset.theme='escuro';void 0");
+    const tamanho = b.getSize(); b.setSize(390, 844);
+    await pause(700); fs.writeFileSync('/tmp/teletela-ligacao-sala-celular.png', (await b.webContents.capturePage()).toPNG());
+    b.setSize(...tamanho); await pause(300);
+    await click(b, '#private-room-end'); await until(a, "!document.querySelector('#private-dialog').open && !document.body.classList.contains('private-room-open')");
+    assert.equal(await js(a, "document.querySelector('#dm-dialog').parentElement.id"), '');
+    assert.equal(await js(b, "document.querySelector('#private-room-chat').children.length"), 0);
     console.log('Voz recebida nos dois sentidos pelo SFU, recusa, mute e desligamento conferidos.');
   }
   const friendAvatar = await js(b, `(()=>{

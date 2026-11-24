@@ -157,10 +157,20 @@ export function setupFriends({ socket, calls, getAccount, openSettings, showToas
     } finally { busy = false; render(); }
   }
   calls.onReady = render;
+  // A conversa privada encaixa ao lado do palco da ligação.
+  calls.chat = { dock: (id, container) => direct.dock(id, container), undock: () => direct.undock() };
+  // Foto e apelido do amigo no cartão da ligação.
+  calls.lookup = id => {
+    const person = state.friends.find(friend => friend.id === id), key = assetKey();
+    if (!person) return null;
+    return { name: person.name || person.username, avatarStyle: imageCropStyle(person.avatarCrop),
+      avatarUrl: serverUrl && key ? `${serverUrl}/api/friend-avatar/${encodeURIComponent(person.id)}?access=${encodeURIComponent(key)}&v=${encodeURIComponent(person.avatarV || 0)}` : '' };
+  };
   for (const button of tabs) button.addEventListener('click', () => {
     if (direct.unread.size) $('[data-filter="friends"]').click();
   });
   tab.addEventListener('click', () => {
+    document.body.classList.remove('private-room-open');
     document.body.classList.add('friends-open');
     tab.setAttribute('aria-current', 'page');
     $('#friends-heading').focus();

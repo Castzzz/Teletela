@@ -47,6 +47,11 @@ import { setupMobileUI, setMobileView, syncMobileState } from './mobile.js';
 import { setupPermissions, hasPermission } from './permissions.js';
 import { setupMusic } from './music.js';
 import { setupWatchTogether } from './watch-together.js';
+import { configurarMesa21 } from './vinte-e-um.js';
+import { configurarFichasAdmin } from './fichas-admin.js';
+import { configurarApostas } from './apostas.js';
+import { configurarPoker } from './poker.js';
+import { configurarSalao } from './salao.js';
 import { setupDice } from './dice.js';
 import { setupStageSocial } from './stage-social.js';
 import { setupStageControls } from './stage-controls.js';
@@ -566,7 +571,15 @@ appState.legacyAdmin = false;
 appState.ownershipSupported = false;
 appState.serverHasAdmin = false;
 const privateCalls = setupPrivateCalls({ socket, showToast, mic: openMicrophone,
-  ring: () => { if (savedPresence(prefs) !== 'dnd') playMentionPing(); },
+  // Não perturbe: a ligação aparece, mas sem o toque.
+  ring: () => savedPresence(prefs) !== 'dnd',
+  inChannel: () => Boolean(appState.currentChannelId),
+  // Atender tira do canal: o servidor já saiu, o app só desliga a voz e toca a saída.
+  leftChannel: seed => { leaveCallLocally(); playCallSound(seed, '', { kind: 'leave' }); },
+  // Mesma escolha de tela, qualidade e som da transmissão do canal.
+  screen: { start: options => captureScreen(options).then(capture => capture?.stream || null), release: releaseScreenCapture },
+  me: () => ({ name: appState.myUser.name, color: safeColor(appState.myUser.color), avatarUrl: myProfile.avatar || '',
+    avatarStyle: myProfile.avatar ? imageCropStyle(normalizeImageCrop(myProfile.avatarCrop)) : '' }),
   mobileState: active => { appState.privateVoice = active; syncMobileState(appState); },
   output: () => appState.audioManager.selectedOutputId, createSession: options => new SfuSession(options) });
 const accountUI = setupAccounts({
@@ -1322,6 +1335,7 @@ function activateVoiceChannel(cleanId) {
   updateTopBar();
   renderChannelChat(cleanId);
   updateVoiceLounge();
+  window.dispatchEvent(new Event('teletela-call-joined'));
 }
 
 // Sair da call sem fechar o app: desliga voz e transmissões e fica fora de todos os canais.
@@ -1741,7 +1755,8 @@ function renderServerHome() {
 
 // Navegar pelo início não altera a participação na call nem as conexões de mídia.
 function closeFriendsPage() {
-  document.body.classList.remove('friends-open');
+  // A ligação continua; a sala dela some e volta a ser o cartão do topo.
+  document.body.classList.remove('friends-open', 'private-room-open');
   $('#friends-open').removeAttribute('aria-current');
 }
 
@@ -3360,11 +3375,13 @@ function openCallChat() {
 
 function openTextChannel(id) {
   if (!appState.textChannels.has(id)) return;
+  mesa21UI?.recolher();
   musicUI?.fecharConversa();
   setBrowsingHome(false);
   setMobileView('chat');
   if (appState.textView !== id) setReplyTo(null);
   appState.textView = id;
+  window.dispatchEvent(new Event('teletela-chat-view'));
   appState.textMentions.delete(id);
   const drawer = $('#chat-drawer');
   drawer?.classList.remove('collapsed');
@@ -3382,6 +3399,7 @@ function openTextChannel(id) {
 function closeTextView() {
   if (!appState.textView) return;
   appState.textView = null;
+  window.dispatchEvent(new Event('teletela-chat-view'));
   setReplyTo(null);
   markCallChatSeen();
   renderTextChannels();
@@ -5532,6 +5550,7 @@ function renderAdminSettings() {
   const status = $('#room-password-status');
   if (status) status.textContent = appState.roomHasPassword ? '🔒 A sala tem senha.' : '🔓 A sala está aberta (sem senha).';
   $('#btn-room-password-remove')?.classList.toggle('hidden', !appState.roomHasPassword);
+  fichasAdminUI?.render();
 }
 
 function setupRoomPasswordAdmin() {
@@ -5559,8 +5578,12 @@ function setupRoomPasswordAdmin() {
   });
 }
 
+let fichasAdminUI;
 function setupAdminSettings() {
   setupRoomPasswordAdmin();
+  fichasAdminUI = configurarFichasAdmin({ socket, appState, showToast });
+  // A lista de fichas muda o tempo todo: busca de novo a cada vez que a aba abre.
+  $('#settings-tab-admin')?.addEventListener('click', () => fichasAdminUI.carregar());
   const input = $('#input-admin-key');
   const loginBtn = $('#btn-admin-login');
   const login = () => {
@@ -5880,6 +5903,7 @@ function unwatchScreen(userId) {
 
 // Abas do topo: abre essa transmissão (com várias, sai do mosaico)
 function focusStream(userId) {
+  mesa21UI?.recolher();
   setBrowsingHome(false);
   setMobileView('sala');
   appState.focusedStreamUserId = userId;
@@ -6603,7 +6627,9 @@ function transmissoesParaFechar() {
 }
 
 // Cada controle aparece junto da ação que está disponível na sala.
+let mesa21UI;
 function updateStageControls() {
+  mesa21UI?.sincronizar();
   musicUI?.syncChannel();
   stageSocialUI?.update();
   const inCall = Boolean(appState.currentChannelId);
@@ -6614,7 +6640,7 @@ function updateStageControls() {
   $('.stage-controls-left')?.classList.toggle('hidden', !watching);
   $('.reactions-bar')?.classList.toggle('hidden', !inCall);
   $('.lounge-cta')?.classList.toggle('hidden', !inCall);
-  for (const id of ['btn-share-screen', 'btn-share-camera', 'btn-soundboard', 'btn-voice-clip']) {
+  for (const id of ['btn-share-screen', 'btn-share-camera', 'btn-soundboard', 'btn-voice-clip', 'btn-atividades']) {
     document.getElementById(id)?.classList.toggle('hidden', !inCall);
   }
   const parar = $('#btn-stage-stop-watching');
@@ -7878,216 +7904,231 @@ function promptShareQuality() {
 
 let screenCaptureRun = 0;
 let mobileScreenSource = null;
+let screenCaptureEnded = () => {};
+// Escolhe tela, qualidade e som e devolve a captura pronta (null se a pessoa cancelar).
+// Serve à transmissão do canal e à da ligação privada; isCurrent descarta capturas antigas.
+async function captureScreen({ isCurrent, onEnded }) {
+  const nativeScreen = Boolean(window.TeletelaAndroid?.startScreenCapture);
+  screenCaptureEnded = onEnded;
+  if (!nativeScreen && (!navigator.mediaDevices || (!navigator.mediaDevices.getDisplayMedia && !window.electronAPI))) {
+    showToast('❌ Captura de tela não suportada ou bloqueada pelo navegador.', 'error');
+    return null;
+  }
+
+  if (nativeScreen && !['720p30', '1080p30'].includes(appState.myUser.streamQuality)) appState.myUser.streamQuality = '720p30';
+  if (!window.electronAPI && !(await promptShareQuality())) {
+    return null;
+  }
+
+  let audioChoice = { mode: 'system' };
+  if (window.electronAPI?.platform === 'linux') {
+    audioChoice = await promptAudioSource();
+    if (audioChoice === false) {
+      return null;
+    }
+  }
+
+  let selectedElectronSourceId = null;
+  if (
+    window.electronAPI &&
+    !window.electronAPI.isWayland &&
+    typeof window.electronAPI.getDesktopSources === 'function'
+  ) {
+    selectedElectronSourceId = await promptElectronDesktopSource();
+    if (selectedElectronSourceId === false) {
+      // Usuário cancelou no modal
+      return null;
+    }
+  }
+
+  // Lida só agora: a qualidade pode ter sido trocada nos modais acima
+  const presetKey = appState.myUser.streamQuality;
+  const preset = QUALITY_PRESETS[presetKey] || QUALITY_PRESETS['1080p60'];
+  if (!isCurrent()) return null;
+  console.log(`[WebRTC] Starting screen share with preset: ${presetKey}`);
+
+  const isWindowsElectron = window.electronAPI?.platform === 'win32';
+  let winAudioError = null;
+
+  // Windows 10 2004+/11: som só do app da janela escolhida, ou do PC menos o Telinha.
+  // Se o telinha-audio.exe falhar, cai no loopback do Chromium (som do PC inteiro).
+  let processAudioTrack = null;
+  if (isWindowsElectron) {
+    processAudioTrack = await acquireWinProcessAudioTrack(selectedElectronSourceId).catch((err) => {
+      console.warn('[WebRTC] Per-app audio unavailable, using system loopback:', err);
+      return null;
+    });
+  }
+  const wantLoopback = !processAudioTrack;
+
+  let stream;
+  if (nativeScreen) {
+    mobileScreenSource ||= new MobileScreenSource({ onEnded: message => {
+      screenCaptureEnded();
+      if (message) showToast(message, 'error');
+    } });
+    stream = await mobileScreenSource.start(preset);
+  } else {
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: preset.width },
+          height: { ideal: preset.height },
+          frameRate: { ideal: preset.frameRate }
+        },
+        // getDisplayMedia rejeita constraints com min/exact (TypeError), só "ideal"
+        audio: wantLoopback && {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: { ideal: 2 },
+          sampleRate: { ideal: 48000 }
+        },
+        systemAudio: 'include',
+        selfBrowserSurface: 'exclude'
+      });
+    } catch (innerErr) {
+      if (innerErr.name === 'NotAllowedError') throw innerErr;
+      console.warn('[WebRTC] getDisplayMedia with constraints failed, retrying plain:', innerErr);
+      // Tentativa simples: ainda passa pelo handler do Electron (Windows = loopback com som do PC)
+      try {
+        if (selectedElectronSourceId) await window.electronAPI.selectDesktopSource(selectedElectronSourceId);
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: wantLoopback });
+      } catch (plainErr) {
+        if (plainErr.name === 'NotAllowedError') throw plainErr;
+        console.warn('[WebRTC] Plain getDisplayMedia failed too:', plainErr);
+      }
+    }
+    if (!stream) {
+      if (selectedElectronSourceId) {
+        const legacyVideo = {
+          mandatory: {
+            chromeMediaSource: 'desktop',
+            chromeMediaSourceId: selectedElectronSourceId,
+            maxWidth: preset.width,
+            maxHeight: preset.height,
+            maxFrameRate: preset.frameRate
+          }
+        };
+        // Windows: o caminho antigo também pega o som do PC (loopback); se falhar, vai só a imagem
+        if (isWindowsElectron && wantLoopback) {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              audio: { mandatory: { chromeMediaSource: 'desktop' } },
+              video: legacyVideo
+            });
+          } catch (legacyErr) {
+            winAudioError = legacyErr;
+            console.warn('[WebRTC] Legacy desktop capture with audio failed:', legacyErr);
+          }
+        }
+        if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: legacyVideo });
+      } else {
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      }
+    }
+  }
+
+  if (!isCurrent()) {
+    stream.getTracks().forEach(track => track.stop());
+    if (nativeScreen) mobileScreenSource.stop();
+    return null;
+  }
+
+  if (processAudioTrack) stream.addTrack(processAudioTrack);
+
+  // Windows: a imagem veio mas o som não (loopback recusado) → pega o som do PC à parte
+  if (isWindowsElectron && stream.getAudioTracks().length === 0) {
+    const winTrack = await acquireWindowsLoopbackTrack(selectedElectronSourceId).catch((err) => {
+      winAudioError = err;
+      console.warn('[WebRTC] Windows loopback audio failed:', err);
+      return null;
+    });
+    if (winTrack) stream.addTrack(winTrack);
+  }
+
+  // Linux: som de um app só, via saída virtual criada pelo app desktop
+  if (audioChoice.mode === 'app') {
+    let appTrack = null;
+    try {
+      const routed = await window.electronAPI.routeAppAudio(audioChoice.key);
+      if (routed?.ok) {
+        appState.appAudioRouted = true;
+        appTrack = await appState.audioManager?.acquireAppAudioTrack();
+      }
+    } catch (appErr) {
+      console.warn('[WebRTC] Could not capture app audio:', appErr);
+    }
+    if (appTrack) {
+      stream.addTrack(appTrack);
+    } else {
+      showToast(`⚠️ Não consegui pegar o som de ${audioChoice.name}. Transmitindo só a imagem.`, 'error');
+    }
+  }
+
+  // Linux PipeWire / PulseAudio System Audio Loopback fallback
+  if (!nativeScreen && audioChoice.mode === 'system' && stream.getAudioTracks().length === 0) {
+    try {
+      let sysTrack = null;
+      if (appState.audioManager) {
+        sysTrack = await appState.audioManager.acquireSystemAudioTrack();
+      } else {
+        const devs = await refreshAudioDevices(true);
+        const sysDev = devs.defaultSystemAudio;
+        if (sysDev) {
+          const sysStream = await navigator.mediaDevices.getUserMedia(
+            generateSystemAudioConstraints(sysDev.deviceId)
+          );
+          sysTrack = sysStream.getAudioTracks()[0];
+        }
+      }
+
+      if (sysTrack) {
+        sysTrack.contentHint = 'music';
+        stream.addTrack(sysTrack);
+        console.log('[WebRTC] Attached Linux system audio loopback to screen stream.');
+      }
+    } catch (sysErr) {
+      console.warn('[WebRTC] Could not capture Linux system audio loopback:', sysErr);
+    }
+  }
+
+  const videoTrack = stream.getVideoTracks()[0];
+  if (videoTrack) {
+    videoTrack.contentHint = preset.frameRate >= 60 ? 'motion' : 'detail';
+    videoTrack.onended = () => onEnded();
+  }
+
+  const audioTrack = stream.getAudioTracks()[0];
+  if (audioTrack) {
+    audioTrack.contentHint = 'music';
+  }
+  return { stream, presetKey, nativeScreen, audioChoice, processAudioTrack, selectedElectronSourceId, winAudioError };
+}
+
+// Desfaz o que a captura prendeu fora da MediaStream (rota de som do app, áudio por processo, Android).
+function releaseScreenCapture() {
+  mobileScreenSource?.stop();
+  if (appState.appAudioRouted) {
+    appState.appAudioRouted = false;
+    window.electronAPI?.unrouteAppAudio?.().catch(() => {});
+  }
+  stopWinProcessAudio();
+}
+
 async function onStartScreenShare() {
   if (!streamAccess.podeTransmitir('screen')) { appState.myUser.isSharing = false; updateShareButton(); return; }
   const nativeScreen = Boolean(window.TeletelaAndroid?.startScreenCapture);
   const run = ++screenCaptureRun, channelId = appState.currentChannelId;
-  if (!nativeScreen && (!navigator.mediaDevices || (!navigator.mediaDevices.getDisplayMedia && !window.electronAPI))) {
-    showToast('❌ Captura de tela não suportada ou bloqueada pelo navegador.', 'error');
-    appState.myUser.isSharing = false;
-    updateShareButton();
-    return;
-  }
-
+  const isCurrent = () => run === screenCaptureRun && channelId === appState.currentChannelId;
   try {
-    if (nativeScreen && !['720p30', '1080p30'].includes(appState.myUser.streamQuality)) appState.myUser.streamQuality = '720p30';
-    if (!window.electronAPI && !(await promptShareQuality())) {
-      appState.myUser.isSharing = false;
-      updateShareButton();
+    const capture = await captureScreen({ isCurrent, onEnded: onStopScreenShare });
+    if (!capture) {
+      if (isCurrent()) { appState.myUser.isSharing = false; updateShareButton(); }
       return;
     }
-
-    let audioChoice = { mode: 'system' };
-    if (window.electronAPI?.platform === 'linux') {
-      audioChoice = await promptAudioSource();
-      if (audioChoice === false) {
-        appState.myUser.isSharing = false;
-        updateShareButton();
-        return;
-      }
-    }
-
-    let selectedElectronSourceId = null;
-    if (
-      window.electronAPI &&
-      !window.electronAPI.isWayland &&
-      typeof window.electronAPI.getDesktopSources === 'function'
-    ) {
-      selectedElectronSourceId = await promptElectronDesktopSource();
-      if (selectedElectronSourceId === false) {
-        // Usuário cancelou no modal
-        appState.myUser.isSharing = false;
-        updateShareButton();
-        return;
-      }
-    }
-
-    // Lida só agora: a qualidade pode ter sido trocada nos modais acima
-    const presetKey = appState.myUser.streamQuality;
-    const preset = QUALITY_PRESETS[presetKey] || QUALITY_PRESETS['1080p60'];
-    if (run !== screenCaptureRun || channelId !== appState.currentChannelId) return;
-    console.log(`[WebRTC] Starting screen share with preset: ${presetKey}`);
-
-    const isWindowsElectron = window.electronAPI?.platform === 'win32';
-    let winAudioError = null;
-
-    // Windows 10 2004+/11: som só do app da janela escolhida, ou do PC menos o Telinha.
-    // Se o telinha-audio.exe falhar, cai no loopback do Chromium (som do PC inteiro).
-    let processAudioTrack = null;
-    if (isWindowsElectron) {
-      processAudioTrack = await acquireWinProcessAudioTrack(selectedElectronSourceId).catch((err) => {
-        console.warn('[WebRTC] Per-app audio unavailable, using system loopback:', err);
-        return null;
-      });
-    }
-    const wantLoopback = !processAudioTrack;
-
-    let stream;
-    if (nativeScreen) {
-      mobileScreenSource ||= new MobileScreenSource({ onEnded: message => {
-        onStopScreenShare();
-        if (message) showToast(message, 'error');
-      } });
-      stream = await mobileScreenSource.start(preset);
-    } else {
-      try {
-        stream = await navigator.mediaDevices.getDisplayMedia({
-          video: {
-            width: { ideal: preset.width },
-            height: { ideal: preset.height },
-            frameRate: { ideal: preset.frameRate }
-          },
-          // getDisplayMedia rejeita constraints com min/exact (TypeError), só "ideal"
-          audio: wantLoopback && {
-            echoCancellation: false,
-            noiseSuppression: false,
-            autoGainControl: false,
-            channelCount: { ideal: 2 },
-            sampleRate: { ideal: 48000 }
-          },
-          systemAudio: 'include',
-          selfBrowserSurface: 'exclude'
-        });
-      } catch (innerErr) {
-        if (innerErr.name === 'NotAllowedError') throw innerErr;
-        console.warn('[WebRTC] getDisplayMedia with constraints failed, retrying plain:', innerErr);
-        // Tentativa simples: ainda passa pelo handler do Electron (Windows = loopback com som do PC)
-        try {
-          if (selectedElectronSourceId) await window.electronAPI.selectDesktopSource(selectedElectronSourceId);
-          stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: wantLoopback });
-        } catch (plainErr) {
-          if (plainErr.name === 'NotAllowedError') throw plainErr;
-          console.warn('[WebRTC] Plain getDisplayMedia failed too:', plainErr);
-        }
-      }
-      if (!stream) {
-        if (selectedElectronSourceId) {
-          const legacyVideo = {
-            mandatory: {
-              chromeMediaSource: 'desktop',
-              chromeMediaSourceId: selectedElectronSourceId,
-              maxWidth: preset.width,
-              maxHeight: preset.height,
-              maxFrameRate: preset.frameRate
-            }
-          };
-          // Windows: o caminho antigo também pega o som do PC (loopback); se falhar, vai só a imagem
-          if (isWindowsElectron && wantLoopback) {
-            try {
-              stream = await navigator.mediaDevices.getUserMedia({
-                audio: { mandatory: { chromeMediaSource: 'desktop' } },
-                video: legacyVideo
-              });
-            } catch (legacyErr) {
-              winAudioError = legacyErr;
-              console.warn('[WebRTC] Legacy desktop capture with audio failed:', legacyErr);
-            }
-          }
-          if (!stream) stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: legacyVideo });
-        } else {
-          stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-        }
-      }
-    }
-
-    if (run !== screenCaptureRun || channelId !== appState.currentChannelId) {
-      stream.getTracks().forEach(track => track.stop());
-      if (nativeScreen) mobileScreenSource.stop();
-      return;
-    }
-
-    if (processAudioTrack) stream.addTrack(processAudioTrack);
-
-    // Windows: a imagem veio mas o som não (loopback recusado) → pega o som do PC à parte
-    if (isWindowsElectron && stream.getAudioTracks().length === 0) {
-      const winTrack = await acquireWindowsLoopbackTrack(selectedElectronSourceId).catch((err) => {
-        winAudioError = err;
-        console.warn('[WebRTC] Windows loopback audio failed:', err);
-        return null;
-      });
-      if (winTrack) stream.addTrack(winTrack);
-    }
-
-    // Linux: som de um app só, via saída virtual criada pelo app desktop
-    if (audioChoice.mode === 'app') {
-      let appTrack = null;
-      try {
-        const routed = await window.electronAPI.routeAppAudio(audioChoice.key);
-        if (routed?.ok) {
-          appState.appAudioRouted = true;
-          appTrack = await appState.audioManager?.acquireAppAudioTrack();
-        }
-      } catch (appErr) {
-        console.warn('[WebRTC] Could not capture app audio:', appErr);
-      }
-      if (appTrack) {
-        stream.addTrack(appTrack);
-      } else {
-        showToast(`⚠️ Não consegui pegar o som de ${audioChoice.name}. Transmitindo só a imagem.`, 'error');
-      }
-    }
-
-    // Linux PipeWire / PulseAudio System Audio Loopback fallback
-    if (!nativeScreen && audioChoice.mode === 'system' && stream.getAudioTracks().length === 0) {
-      try {
-        let sysTrack = null;
-        if (appState.audioManager) {
-          sysTrack = await appState.audioManager.acquireSystemAudioTrack();
-        } else {
-          const devs = await refreshAudioDevices(true);
-          const sysDev = devs.defaultSystemAudio;
-          if (sysDev) {
-            const sysStream = await navigator.mediaDevices.getUserMedia(
-              generateSystemAudioConstraints(sysDev.deviceId)
-            );
-            sysTrack = sysStream.getAudioTracks()[0];
-          }
-        }
-
-        if (sysTrack) {
-          sysTrack.contentHint = 'music';
-          stream.addTrack(sysTrack);
-          console.log('[WebRTC] Attached Linux system audio loopback to screen stream.');
-        }
-      } catch (sysErr) {
-        console.warn('[WebRTC] Could not capture Linux system audio loopback:', sysErr);
-      }
-    }
-
-    const videoTrack = stream.getVideoTracks()[0];
-    if (videoTrack) {
-      videoTrack.contentHint = preset.frameRate >= 60 ? 'motion' : 'detail';
-      videoTrack.onended = () => {
-        onStopScreenShare();
-      };
-    }
-
-    const audioTrack = stream.getAudioTracks()[0];
-    if (audioTrack) {
-      audioTrack.contentHint = 'music';
-    }
-
-    if (run !== screenCaptureRun || channelId !== appState.currentChannelId || !streamAccess.podeTransmitir('screen')) {
+    const { stream, presetKey, audioChoice, processAudioTrack, selectedElectronSourceId, winAudioError } = capture;
+    if (!isCurrent() || !streamAccess.podeTransmitir('screen')) {
       stream.getTracks().forEach(track => track.stop());
       return;
     }
@@ -8668,6 +8709,30 @@ function initApp() {
   voiceClips = setupVoiceClips({ appState, socket, showToast });
   musicUI = setupMusic({ socket, appState, prefs, savePrefs, showToast, createSfuSession: options => new SfuSession(options),
     onPanelChange: () => { updateTextLayout(); serverMembersUI?.renderVisibility(); } });
+  configurarApostas({ socket, appState, showToast });
+  // O salão é a entrada das Atividades: escolhe qual jogo aparece no palco.
+  configurarSalao({ socket, appState });
+  // Rosto de quem está na call, pros assentos do 21 e do poker.
+  const pessoaDaCall = (id) => {
+    const u = id === appState.myId ? { ...appState.myUser, id } : findUser(id);
+    return u && { html: avatarInnerHtml(u), cor: safeColor(u.color) };
+  };
+  mesa21UI = configurarMesa21(socket, appState, () => {
+    if (isStageFullscreen()) exitStageFullscreen();
+    closeTextView();
+    setBrowsingHome(false);
+    setMobileView('sala');
+    const chat = $('#chat-drawer');
+    if (!chat.classList.contains('collapsed')) {
+      chat.classList.add('collapsed');
+      updateTextLayout();
+      return () => {
+        chat.classList.remove('collapsed');
+        updateTextLayout();
+      };
+    }
+  }, pessoaDaCall);
+  configurarPoker({ socket, appState, showToast, pessoaDaCall });
   diceUI = setupDice({ socket, appState, showToast, escapeHtml, mountStageOverlay });
   watchTogetherUI = setupWatchTogether({ socket, appState, serverUrl: SERVER_URL, mountStageOverlay, showToast });
   stageSocialUI = setupStageSocial({ appState, prefs, savePrefs, music: musicUI,

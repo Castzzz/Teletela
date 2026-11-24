@@ -529,7 +529,7 @@ do processo sem rajadas de recuperação.
 O deploy compila a ponte para a arquitetura da VM e instala em
 `/opt/telinha/bin/telinha-music-publisher`. Instala Python 3.10+ e FFmpeg/libopus via apt
 na Ubuntu antes de parar a sala. Baixa o yt-dlp oficial com SHA-256, versão fixada em
-`2026.10.26` (altere com `YTDLP_VERSION`), e instala em `/opt/telinha/bin/yt-dlp`.
+`2026.11.23` (altere com `YTDLP_VERSION`), e instala em `/opt/telinha/bin/yt-dlp`.
 Para evitar o bloqueio de IP de nuvem (`Sign in to confirm you're not a bot`) do YouTube na Oracle,
 `install.sh` também instala `wireproxy` em `/opt/telinha/bin/wireproxy`, gera uma credencial
 Cloudflare WARP em `/opt/telinha/data/warp.conf` (uma vez, modo `0600`) e sobe o serviço
@@ -825,6 +825,9 @@ trocar: apague a linha `OWNER_KEY` desse arquivo e rode o deploy. **Ela nunca va
 | `member-avatars/<memberId>.json` | última foto/GIF, recorte, perfil público e versão por identidade; arquivo atômico, até 15 MB por arquivo/256 MB no conjunto; entra no backup |
 | `conversas/anexos/` | mídia das DMs. Até 15 MB por imagem e 20 MB por arquivo. A cota compartilhada de 5 GB recusa novos anexos quando cheia e preserva os anteriores. |
 | `accounts.json` | contas opcionais, accessId original, perfil completo, scrypt e hashes dos códigos/tokens; arquivo atômico 0600, falha fechada se ilegível |
+| `fichas.json` | carteira de fichas virtuais por `accessId` (nome, saldo, `semana` = última segunda creditada); vale pra todas as atividades; arquivo atômico 0600 |
+| (poker) | nada em disco: mesas em memória; as fichas já estão na carteira, só o pote da mão em andamento some num reinício |
+| `apostas.json` | aposta ativa (ou o último resultado, por 15 min) de cada canal de voz, com os palpites; arquivo atômico 0600, recarregado no início pra um reinício não sumir com fichas |
 | `dice.json` | últimas 30 rolagens gerais do servidor (formato v2); autor, horário, dados individuais, modificador e total; arquivo atômico 0600 |
 | `permissions.json` | segredo HMAC, dono (`ownerId`), cargos, nomes, vínculos e hash das chaves públicas; acesso 0600 |
 | `chat-images/` | imagens/GIFs da call (15 MB por envio, até 2 GB; **apagadas a cada reinício**) |
@@ -1046,6 +1049,17 @@ requer o aplicativo e o Node da 3.8.0. O deploy pode vincular o proprietário an
 
 ## 10. Protocolo: eventos do Socket.IO
 
+### Atividade 21 (5.0 em desenvolvimento)
+
+Cada canal de voz comporta uma mesa em memória. O módulo `vinte-e-um.js` mantém o baralho e calcula os resultados. O evento `jogar-21` consulta ou altera a mesa do canal atual. O evento `mesa-21` envia a cada membro do canal sua visão da rodada. Só o próprio jogador recebe os valores da sua mão até o resultado, e a banca mostra uma carta. Depois do resultado a mesa espera `tempoDoResultado` (as compras da banca, que a tela anima antes do placar, mais `PAUSA_RESULTADO` de 5 s; timer pelo `relogio` injetável) e volta sozinha pra `espera` sem cartas, pote nem pilhas; só nessa fase se aposta (`iniciar`/`cancelar` exigem `espera`). A interface detecta `resultado → espera` na mesma rodada, devolve as cartas ao monte, voa as fichas dos círculos pras placas, zera `montando` e embaralha o monte (`embaralharMonte` em `mesa-pecas.js`: riffle em quadros, duas passadas, com o som de embaralhar, que aí não toca de novo ao dar as cartas). Sair ou desconectar libera o lugar. O último a sair desfaz a mesa (e cancela a limpeza). A interface está em `public/vinte-e-um.js` e `public/vinte-e-um.css`. A publicação requer release e deploy juntos.
+
+As fichas ficam em `fichas-store.js` (`FichasStore`, arquivo `fichas.json`), uma carteira por `accessId` compartilhada por todas as atividades, começando com 1000. Toda segunda à 00h de Brasília (UTC−3 fixo) cada carteira ganha +1000: ao ser lida (`pegar`, `lista`, `ranking`), soma 1000 por segunda passada desde `semana` e atualiza o campo. Carteira antiga sem `semana` começa a contar da semana em que foi lida. A mesa é criada com `fichas: true/false`. Cada pessoa manda a aposta como a pilha montada (`pilha`, só valores 5/10/25/50/100), validada contra o saldo, sem limite. O servidor espera todas as confirmações, debita ao distribuir e liquida uma vez ao concluir. Contra a banca a vitória paga 2× e o empate devolve. Entre amigos o pote (incluindo apostas de quem saiu) é dividido entre os vencedores na proporção da aposta de cada um, com a sobra pela ordem dos assentos; se todos estourarem, ninguém recebe. O evento `ranking-fichas` devolve o top 20 (mais a posição de quem pediu). `jogar-21` e `mesa-21` mandam também `carteira` (`saldo`, `voltaEm`). O dono do servidor (só `permissions.isOwner`) vê as carteiras em Configurações → Servidor e cargos (`public/fichas-admin.js`): `fichas-admin-lista` devolve todas e `fichas-admin-resetar` (`{ chave }` ou `{ todos: true }`) volta o saldo pra 1000 e reenvia as mesas abertas.
+
+A interface compara cada `mesa-21` com o anterior para decidir o que animar: cartas novas voam de `#monte-21` (ordem de mesa de verdade na distribuição), a carta escondida da banca vira no estilo retrô (cada `.carta-21` tem frente e verso dentro de `.miolo-21`; `virarRetro` em `mesa-pecas.js`), as compras da banca saem uma a uma e o resultado (`#placar-21`, no lugar da frase do feltro) só aparece depois da última carta (`.revelando` esconde o resultado até lá). Os sons ficam em `public/mesa-sons/` (Kenney Casino Audio, CC0, ver `LICENCA.txt`; podem ir pro git, ao contrário de `public/sounds/`). Tocam pelo `masterDeafenGain` do mixer, só com a mesa aberta; o botão `#som-21` guarda a escolha em `localStorage` (`teletela-mesa-sons`). Os avatares dos assentos vêm do callback `pessoaDaCall` passado por `app.js`.
+
+Os lugares ficam na borda da mesa numa elipse (`angulos()` em `public/vinte-e-um.js`, `--cos`/`--sin` no CSS): você sempre embaixo no meio; contra a banca a turma se espalha pela metade de baixo e pelos lados (até ±120°), entre amigos a roda fecha. A banca, a bandeja de fichas (`#bandeja-21`) e o monte ficam no alto; entre amigos, o monte e o pote ficam no meio. Cada lugar tem um círculo de aposta (`.aposta-21`) com as fichas empilhadas por cor; `voarFichas()` leva pilhas temporárias pelo feltro (aposta pro pote ao distribuir, banca recolhendo de quem perdeu, pagamento pra quem ganhou) e `liquidar()` deixa o estado final. Abaixo de 600 px de largura a roda vira grade.
+
+
 Cliente → servidor (com callback `cb({ success, error })` quando faz sentido):
 
 | Evento | Pra quê |
@@ -1149,6 +1163,20 @@ de ruído, e 11 inicialização (`initApp`).
 | Som de um app só | Linux: `routeAppAudio` (PipeWire/Pulse); Windows: `native/win-audio` + `start-win-audio` |
 | Auto-update | `electron-updater` no `main.cjs` (lê o `latest*.yml` do release) |
 
+### Poker (5.0 em desenvolvimento)
+
+`poker.js` (servidor) e `public/poker.js` + `public/poker.css` (interface). Texas Hold'em, uma mesa por canal, ao lado da do 21 (as duas existem ao mesmo tempo). Blinds fixos `SMALL`/`BIG` = 5/10, até `LUGARES` = 8, `PRAZO_VEZ` = 60 s. Evento único `jogar-poker` com `{ canal, acao, passo, valor? }`: `ver`, `sentar` (`valor` de 10 até o saldo; sem mesa, cria com `fichas: true/false`; só diversão senta com 1000), `comecar` (só a primeira mão; depois as mãos saem sozinhas com duas pessoas com fichas), `largar`, `passar`, `pagar`, `aumentar` (`valor` = até quanto a aposta da rua vai), `tudo`, `repor` (fora de uma mão em andamento), `ausentar`, `voltar` e `sair`. `passo` sobe a cada mudança e o servidor recusa pedido com `passo` velho (clique duplo, tela atrasada). O servidor manda `mesa-poker` pra todo mundo do canal com a visão de cada um: cartas dos outros só no showdown, `jogadas` (pagar, mínimo, máximo, pode aumentar) só pra quem tem a vez, `maoAtual` (nome da sua melhor mão), `restante` do tempo e, no resultado, `proxima` (ms até a próxima mão; o app recolhe as cartas e embaralha o monte ~2,6 s antes, classe `.mesa-limpa`).
+
+Dinheiro: a pilha da mesa é um teto, não um saque. As fichas só saem da carteira quando vão pro pote (`por()` chama `fichas.mover(-x)`) e o pote volta pra carteira de quem ganhou ao fim da mão. No começo de cada mão a pilha é limitada ao saldo (o 21 e as apostas podem ter gastado). Assim o ranking mostra o saldo real e um reinício do servidor só perde o pote da mão em andamento.
+
+Regras: dealer gira entre quem joga; no mano a mano o dealer é o small blind e fala primeiro antes do flop. Aumento mínimo = último aumento completo (pelo menos o big blind). All-in curto não reabre o aumento pra quem já falou (`nivel`/`nivelVisto`). Ninguém mais pode apostar: a mesa abre até o river de uma vez. `montarPotes()` faz os potes paralelos pelo total que cada um pôs (quem largou paga, mas não concorre); a sobra de divisão vai pra quem senta primeiro depois do dealer. `melhorMao()` avalia as 21 combinações de 5 entre 7 cartas; o avaliador fica em `public/poker-maos.js` (importado pelo servidor e pela mesa) junto com `CATEGORIAS` (tabela do botão **Mãos**, `#maos-poker`, com exemplos conferidos pelo próprio avaliador) e `categoriaDe()` (royal flush vira a categoria 9). Armadilha: o 21 põe `data-fase` no palco inteiro (`#mesa-21`), então regras do poker por fase precisam começar em `#jogo-poker[data-fase=…]`; e a regra comum do monte (`:is(#monte-21, .monte-poker)`) usa id, por isso a posição do monte do poker vai com `#jogo-poker` na frente. No app, o selo `.mao-poker` sob o seu nome mostra `maoAtual` e só troca quando as cartas novas pousam. Tempo esgotado: passa se der, senão larga; `FALTAS_PRA_AUSENTE` = 2 seguidas deixa ausente (não recebe cartas; se estiver numa mão, joga sozinho na hora). Quem sai no meio da mão larga e libera o lugar quando ela acaba.
+
+Interface: a entrada das Atividades é o salão (`public/salao.js` + `public/salao.css`, painel `#salao-jogos`), com um cartão por jogo (21, Poker, Apostas) feito das cartas e fichas em pixel e o status ao vivo (quantos na mesa, "Sua vez!" em dourado, aposta aberta). A arte vai de 2× pra 3× (salão ≥ 1000 px) e 4× (≥ 1800 px); as consultas usam o contêiner próprio `salao`, porque em tela cheia o palco sai do fluxo e a medida pelo palco não muda. O salão escuta `mesa-21`, `mesa-poker` e `aposta` e pede `ver` dos três ao entrar no canal e ao abrir o palco; o servidor não sabe do salão. Abrir o palco cai no salão, a não ser que você esteja sentado numa mesa (aí vai direto pra ela). Dentro de um jogo, `#voltar-salao` ("← Atividades") volta; o cartão de Apostas só abre o painel `#apostas-21`. `palco.dataset.jogo` é `salao`, `21` ou `poker`, e o evento `teletela-aba-jogo` avisa o 21 e o poker (cada um põe o próprio título e só toca som com o seu jogo na frente). O cabeçalho (carteira, apostas, ranking, som, tela cheia) é compartilhado; o 21 fica em `#jogo-21` e o poker em `#jogo-poker`. As peças comuns (carta, pilha de fichas, rosto, fichas voando) estão em `public/mesa-pecas.js`. Cartas e fichas são pixel art do pacote "(Pixel) Poker Cards" de IvoryRed (CC BY 4.0, crédito obrigatório em `public/baralho/LICENCA.txt`, no README e dentro do app: no pé do Ranking (`.creditos-21`) e na seção fixa **Créditos** no fim do `#modal-whats-new` (`.whats-new-creditos`), que não pode sumir quando as novidades forem reescritas a cada versão): `public/baralho/<valor>_of_<naipe>.png` (48×64, verso em `verso.png`) e `public/fichas/<cor>-<n>.png` (pilhas prontas de 1 a 10 fichas, 32 px de largura, 30 px + 2 px por ficha; as de 3, 5–7, 9 e 10 foram geradas repetindo a faixa lateral da pilha de 8 do pacote). `public/mesa-pixel.css` vem depois de `vinte-e-um.css`/`poker.css` e troca o desenho em CSS pelas imagens. As fichas ficam em 1× (32 px), porque menores que isso o pixel art perde pixel. `pilha()` monta uma coluna por cor (empilhar fichas soltas mostraria a emenda de cada uma); no círculo de aposta as colunas viram um montinho. Pixel art não pode inclinar (fica serrilhado): o leque é reto, as cartas voam sem girar e viram no estilo retrô (`virarRetro`: achata, troca a face e abre em quadros). Também em `mesa-pecas.js`: `voarFichas` (arco, uma coluna de cada vez), `cairFicha` (a ficha clicada cai na coluna da cor dela) e `brilhar` (estrelinhas em quem ganhou); tudo respeita o "reduzir movimento" do sistema e os sons em `public/sons-mesa.js` (mesmo botão de som; ensurdecer cala). Se a vez chega com o palco fechado, no salão ou no 21, aparece um toast. Testes: `tests/poker.test.js` (avaliador, potes, fluxo, tempo, saída e 300 mãos aleatórias conferindo que nenhuma ficha some; `POKER_SEMENTE=n` troca a semente) e `tests/poker-browser.cjs` (duas janelas e um celular de ponta a ponta; `PRINTS=/pasta` salva prints).
+
+### Apostas estilo Twitch (5.0 em desenvolvimento)
+
+`apostas.js` (servidor) e `public/apostas.js` + `public/apostas.css` (interface). Uma aposta por canal de voz, num só evento `aposta` com `{ canal, id, acao }`: `ver`, `criar` (`titulo`, 2 a 10 `opcoes`, `segundos` em 60/120/300/600/1800), `palpitar` (`opcao`, `valor` inteiro até o saldo; dá pra pôr mais na mesma opção, não trocar), `fechar`, `resolver` (`opcao`) e `cancelar`. Quem criou (ou o dono do servidor) fecha, marca e cancela; quem criou também pode apostar. Fecha sozinha no tempo. O pote vai pra quem acertou na proporção do que pôs (sobra pela ordem dos palpites); ninguém acertou ou cancelou devolve tudo. O servidor responde e manda `aposta` pro canal com `{ aposta, carteira }`; o resultado fica 15 min e some. Os sons (abrir, pôr fichas, fechar, resultado) usam `public/sons-mesa.js` e tocam pra quem está vendo o card. Na interface o card fica no topo do chat da call (`#aposta-chat`, some no canal de texto, recolhe e esconde o resultado), no botão de moeda do cabeçalho do chat (`#btn-chat-aposta`) e no painel Apostas das Atividades (`#apostas-21`). Quem cria usa o `<dialog id="dialogo-aposta">`. O app dispara `teletela-call-joined` e `teletela-chat-view` pra o card acompanhar canal e chat.
+
 ### Contas, privacidade e dados (branch de testes)
 
 - A conta é opcional, local à sala, sem e-mail/telefone. Usuário único de 3–24 letras,
@@ -1219,6 +1247,42 @@ para duas salas efêmeras do SFU, uma por sentido da voz. Ao desligar, perder a
 conexão ou remover a amizade, o servidor revoga as duas identidades de mídia.
 A ligação fica em memória e exige SFU configurado. O P2P do servidor local de
 desenvolvimento continua disponível para testar canais comuns.
+
+Convite e toque valem mesmo com uma das pessoas num canal de voz (inclusive o de
+ausentes): `reachable` só exige `private-ready` e nenhum bloqueio da moderação
+(`moderated`, que ignora o mutado automático do canal de ausentes). Ao atender, o
+servidor chama `leaveCurrentChannel` para os dois aparelhos e manda o `soundSeed` em
+`private-active.leftSeed`; o cliente só desliga a voz do canal (`leaveCallLocally`).
+Ligação atendida exige os dois fora de canal (`available`), e só ela bloqueia o
+`join-channel` (`busy`); tocando, a pessoa ainda pode trocar de canal. O cliente
+mostra um `<dialog>` não modal no topo, com toque sintetizado em Web Audio
+(recebendo: notas subindo; ligando: tom de chamada de 425 Hz), sem tocar no Não
+perturbe. A foto vem de `calls.lookup`, preenchido por `friends.js`.
+
+Atendida, a ligação abre a sala `#private-room` (`body.private-room-open`), que esconde
+palco, chat da call e Amigos. Qualquer navegação da pessoa (`closeFriendsPage`,
+`setMobileView` sem `automatic`, aba Amigos) só fecha a sala; a ligação segue no cartão,
+com o botão **Abrir**. A conversa privada é o mesmo `#dm-dialog`, movido para dentro da
+sala por `direct.dock()` (aberto com `show()`, classe `dm-docked`) e devolvido por
+`undock()` ao desligar ou ao abrir uma conversa pela lista. Quem fala é medido localmente
+(AnalyserNode no microfone e no áudio recebido); mutado e ensurdecido vão ao outro lado
+por `private-state` (`{ id, muted, deafened }`), repassado pelo servidor só dentro da
+ligação atendida. Ensurdecer silencia o `<audio>` da ligação e muta o microfone.
+
+Tela na ligação: `private-token` aceita `kind: 'screen'` (sala `priv-<id>-<lado>-tela`,
+mesma identidade de mídia da voz, revogada junto). A captura é `captureScreen()` em
+`app.js`, extraída de `onStartScreenShare` e usada pelos dois (qualidade, fonte, som do
+PC/app, Android); `releaseScreenCapture()` desfaz rota de som e áudio por processo.
+Quem transmite manda `sharing: true` no `private-state`; o outro abre uma `SfuSession`
+viewer `kind: 'screen'` com o socket do par (`private-active.peer`) e fecha ao receber
+`false`. O som da tela recebida segue o "desativar áudio" da ligação.
+
+Teste completo com voz: `PRIVATE_CALL_TEST=1` em `tests/controls-friends-browser.cjs`
+precisa de um SFU compilado do código atual (`go build -o <pasta temporária>/sfu ./sfu`;
+o `telinha-sfu` antigo da raiz recusa as senhas novas) e de
+`SFU_SECRET`, `SFU_PATH=ws://127.0.0.1:<porta>/ws` e `SFU_INTERNAL_URL`. O offscreen
+headless captura imagens 1×1; para prints, rode num compositor virtual separado
+(`kwin_wayland --virtual --socket <nome>`) com `--ozone-platform=wayland`.
 
 `public/accounts.js` restaura as preferências em memória se a gravação da sessão falhar.
 `public/stage-controls.js` esconde a barra após 3 s em tela cheia nativa ou alternativa CSS,

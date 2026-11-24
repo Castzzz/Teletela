@@ -21,6 +21,10 @@ import { fileURLToPath } from 'node:url';
 import { normalizeImageCrop } from './public/image-crop.js';
 import { PermissionStore, PERMISSIONS } from './permission-store.js';
 import { DiceStore, installDice } from './dice-store.js';
+import { criarMesas21 } from './vinte-e-um.js';
+import { FichasStore } from './fichas-store.js';
+import { criarApostas } from './apostas.js';
+import { criarMesasPoker } from './poker.js';
 import { installWatchTogether } from './watch-together.js';
 import { normalizePresence, effectivePresence, presencePriority, PRESENCE_IDLE_MS } from './public/presence.js';
 import { SERVER_NAME, MAX_SERVER_ICON_BYTES, SERVER_ICON_RE, validServerIcon } from './public/server-branding.js';
@@ -79,7 +83,8 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
   maxHttpBufferSize: 3e7 // 30MB (acomoda GIFs de 10MB em base64)
 });
-const privateCalls = createPrivateCalls({ io, accounts, secret: SFU_SECRET, path: SFU_PATH, revoke: revokeSfuMedia, limit: accountLimit });
+const privateCalls = createPrivateCalls({ io, accounts, secret: SFU_SECRET, path: SFU_PATH, revoke: revokeSfuMedia, limit: accountLimit,
+  leave: leaveCurrentChannel, moderated: user => serverMutedMembers.has(user.accessId) || serverDeafenedMembers.has(user.accessId) });
 const streamAccess = createStreamAccess({ io, revoke: revokeSfuMedia, limit: accountLimit, changed: broadcastChannels });
 app.get('/api/identity', (_req, res) => {
   const challenge = `${Date.now() + 60000}.${randomBytes(16).toString('hex')}`;
@@ -1770,6 +1775,15 @@ installAccountHttp({ app, store: accounts, limit: accountLimit, onRevoke: revoke
 
 const dice = new DiceStore(DATA_DIR);
 const setupDiceSocket = installDice({ io, store: dice });
+// Fichas de cada pessoa, valem pra todas as atividades (fichas.json)
+const fichas = new FichasStore(DATA_DIR);
+const mesas21 = criarMesas21({ io, channels, fichas });
+// Poker (Texas Hold'em) na call, ao lado do 21; usa a mesma carteira
+const mesasPoker = criarMesasPoker({ io, channels, fichas });
+// Apostas estilo Twitch nos canais de voz (apostas.json)
+const apostas = criarApostas({ io, channels, fichas, isOwner: u => permissions.isOwner(u), diretorio: DATA_DIR,
+  // Saldo mudou na aposta: as mesas de 21 abertas mostram o valor novo nos assentos.
+  aoMudarFichas: () => { mesas21.atualizarTodas(); mesasPoker.atualizarTodas(); } });
 const watchTogether = installWatchTogether({ app, io, channels, server });
 
 // Quem não tem a senha nem chega a entrar (a senha de admin também abre a porta)
@@ -1873,6 +1887,9 @@ io.on('connection', (socket) => {
     }
   }
   socket.data.user = user;
+  mesas21.conectar(socket, user);
+  mesasPoker.conectar(socket, user);
+  apostas.conectar(socket, user);
   scheduleMembers();
   socket.use((_packet, next) => {
     if ((accountSession && !accounts.resolveSessionMeta(socket.handshake.auth?.accountToken))
@@ -1917,6 +1934,25 @@ io.on('connection', (socket) => {
 
 
   // Clientes antigos continuam reconhecendo o dono por sua identidade, sem promover admins.
+  // Fichas das atividades: só o dono vê a lista e recarrega uma pessoa ou todo mundo.
+  socket.on('fichas-admin-lista', safeHandler((_raw, callback) => {
+    const cb = safeCallback(callback);
+    if (!permissions.isOwner(user)) return cb({ success: false, error: 'Só o dono do servidor.' });
+    cb({ success: true, lista: fichas.lista() });
+  }));
+  socket.on('fichas-admin-resetar', safeHandler((raw, callback) => {
+    const cb = safeCallback(callback);
+    if (!permissions.isOwner(user)) return cb({ success: false, error: 'Só o dono do servidor.' });
+    const { chave, todos } = safeObject(raw);
+    let quantos;
+    if (todos === true) quantos = fichas.resetarTodas();
+    else if (typeof chave === 'string' && fichas.resetar(chave)) quantos = 1;
+    else return cb({ success: false, error: 'Essa pessoa não tem fichas ainda.' });
+    mesas21.atualizarTodas();
+    mesasPoker.atualizarTodas();
+    apostas.atualizarTodas();
+    cb({ success: true, quantos, lista: fichas.lista() });
+  }));
   socket.on('admin-login', safeHandler((raw, callback) => {
     const cb = safeCallback(callback);
     if (permissions.isOwner(user)) return cb({ success: true });
@@ -3451,6 +3487,8 @@ function leaveCurrentChannel(socket) {
   if (!user || !user.channelId) return;
   streamAccess.leave(user);
   socket.data.screenPreviews?.clear();
+  mesas21.sair(user.channelId, socket.id);
+  mesasPoker.sair(user.channelId, socket.id);
   watchTogether.leave(socket.id);
   if (SFU_SECRET) for (const id of [user.mediaId, user.voiceHostId, user.voiceViewerId]) revokeSfuMedia(id);
 

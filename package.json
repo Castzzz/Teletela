@@ -85,6 +85,10 @@
       "accounts-protocol.js",
       "dice-store.js",
       "watch-together.js",
+      "vinte-e-um.js",
+      "fichas-store.js",
+      "apostas.js",
+      "poker.js",
       "music/**",
       "package.json"
     ],

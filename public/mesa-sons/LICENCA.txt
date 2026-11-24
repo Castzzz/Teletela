@@ -1,0 +1,5 @@
+Sons da mesa de 21: "Casino Audio" de Kenney (www.kenney.nl), licença CC0 1.0
+(domínio público, https://creativecommons.org/publicdomain/zero/1.0/).
+Convertidos para mono; o embaralhar foi encurtado. Nomes originais:
+embaralhar=cardShuffle, carta-1..3=cardSlide1..3, virar=cardPlace1, leque=cardFan1,
+ficha-1..2=chipLay1..2, fichas=chipsStack3, pote=chipsHandle1, bater=chipsCollide1.
