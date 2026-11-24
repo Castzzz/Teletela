@@ -1,5 +1,9 @@
 # Pendências atuais
 
+## 24/11/2026 — 5.0.0 preparada (local, `main`)
+
+`version` 5.0.0 (package.json e package-lock), `WHATS_NEW_VERSION = '5.0.0'` e novidades novas (Atividades, 21, Poker, Apostas, Fichas, Ligações entre amigos, Visual novo); a lista da 4.9.0 virou o bloco `#whats-new-4-9-0`; os Créditos ficaram. Conferido: quem vinha da 4.9.0 vê só a 5.0 e os Créditos. 62/62. Falta: push da `main` e, quando o dono pedir, `npm run release` + `npm run deploy:oracle` juntos na janela das 03h às 04h com os canais vazios.
+
 ## 24/11/2026 — ideia pra 5.1 (ou depois): minigame pra farmar fichas
 
 Pedido do dono: um minigame estilo cookie clicker ou idle nas Atividades, pra ganhar fichas sem depender só dos +1.000 da segunda. Ainda sem desenho; pensar num teto (por dia ou por hora) pra não desequilibrar o ranking, e o servidor contar o ganho (não confiar no cliente).
