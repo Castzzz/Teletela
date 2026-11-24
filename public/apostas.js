@@ -69,6 +69,7 @@ export function configurarApostas({ socket, appState, showToast }) {
   function resumoMeu() {
     const meu = aposta.meu;
     const saldo = carteira ? ' · você tem ' + numero(carteira.saldo) + ' fichas' : '';
+    if (!appState.myUser.accountId && aposta.fase === 'aberta') return 'Entre na sua conta pra apostar.';
     if (!meu) return aposta.fase === 'aberta' ? 'Escolha uma opção e quantas fichas.' + saldo : 'Você ficou de fora dessa.';
     const nome = aposta.opcoes.find(o => o.id === meu.opcao)?.texto;
     if (aposta.fase === 'resolvida' && !aposta.devolvida) {
@@ -117,7 +118,7 @@ export function configurarApostas({ socket, appState, showToast }) {
       if (aposta.meu?.opcao === o.id) linha.classList.add('minha');
       const selecionada = (travada || escolhida) === o.id;
       linha.setAttribute('aria-pressed', String(Boolean(aberta && selecionada)));
-      linha.disabled = !aberta || Boolean(travada && travada !== o.id) || !canal;
+      linha.disabled = !appState.myUser.accountId || !aberta || Boolean(travada && travada !== o.id) || !canal;
       const nome = el('span', 'aposta-nome', o.texto);
       if (venceu) nome.prepend(icone(ICONE_CERTO));
       const pct = aposta.total ? Math.round(o.total / aposta.total * 100) : 0;
@@ -143,7 +144,7 @@ export function configurarApostas({ socket, appState, showToast }) {
     raiz.append(lista);
 
     const saldo = carteira?.saldo || 0;
-    if (aberta && canal) {
+    if (aberta && canal && appState.myUser.accountId) {
       const opcao = travada || escolhida;
       const form = el('form', 'aposta-valor');
       const rotulo = el('label', 'sr-only', 'Quantas fichas');
@@ -199,8 +200,8 @@ export function configurarApostas({ socket, appState, showToast }) {
 
   function vazio() {
     const raiz = el('div', 'aposta-vazia');
-    raiz.append(el('p', '', canal ? 'Nenhuma aposta rolando neste canal. Pergunte algo que vai acontecer na call ou no jogo e a turma aposta fichas.' : 'Entre num canal de voz pra ver e criar apostas.'));
-    if (canal) {
+    raiz.append(el('p', '', canal && !appState.myUser.accountId ? 'Nenhuma aposta rolando neste canal. Entre na sua conta pra criar uma.' : canal ? 'Nenhuma aposta rolando neste canal. Pergunte algo que vai acontecer na call ou no jogo e a turma aposta fichas.' : 'Entre num canal de voz pra ver e criar apostas.'));
+    if (canal && appState.myUser.accountId) {
       const criar = botao('Criar aposta', 'btn-primary');
       criar.onclick = abrirDialogo;
       raiz.append(criar);
@@ -220,12 +221,12 @@ export function configurarApostas({ socket, appState, showToast }) {
     hostChat.hidden = !mostrarChat;
     hostChat.replaceChildren(...(mostrarChat ? [card(true)] : []));
     hostAtividades.replaceChildren(aposta ? card(false) : vazio());
-    if (aposta && !ativa()) {
+    if (appState.myUser.accountId && aposta && !ativa()) {
       const nova = botao('Criar outra aposta', 'btn-secondary aposta-outra');
       nova.onclick = abrirDialogo;
       hostAtividades.append(nova);
     }
-    botaoChat.hidden = !canal || noTexto;
+    botaoChat.hidden = !canal || noTexto || (!ativa() && !appState.myUser.accountId);
     const rotulo = ativa() ? 'Ver a aposta' : 'Criar aposta';
     botaoChat.title = rotulo;
     botaoChat.setAttribute('aria-label', rotulo);
@@ -322,6 +323,7 @@ export function configurarApostas({ socket, appState, showToast }) {
   }
   function abrirDialogo() {
     if (!canal) return showToast('Entre num canal de voz pra criar uma aposta.');
+    if (!appState.myUser.accountId) return showToast('Entre na sua conta pra apostar.');
     if (ativa()) return showToast('Já tem uma aposta rolando neste canal.');
     form.reset();
     erroForm.textContent = '';

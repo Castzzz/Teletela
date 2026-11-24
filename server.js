@@ -1776,7 +1776,7 @@ installAccountHttp({ app, store: accounts, limit: accountLimit, onRevoke: revoke
 const dice = new DiceStore(DATA_DIR);
 const setupDiceSocket = installDice({ io, store: dice });
 // Fichas de cada pessoa, valem pra todas as atividades (fichas.json)
-const fichas = new FichasStore(DATA_DIR);
+const fichas = new FichasStore(DATA_DIR, Date.now, () => accounts.referencedAccessIds());
 const mesas21 = criarMesas21({ io, channels, fichas });
 // Poker (Texas Hold'em) na call, ao lado do 21; usa a mesma carteira
 const mesasPoker = criarMesasPoker({ io, channels, fichas });

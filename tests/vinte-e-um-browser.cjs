@@ -28,6 +28,7 @@ app.whenReady().then(async () => {
     await win.loadURL(roomUrl(`http://127.0.0.1:${server.address().port}`));
     await until(win, 'Boolean(window.appState && document.querySelector("#channel-geral"))');
     await js(win, `document.querySelector('#input-profile-name').value=${JSON.stringify(name)};document.querySelector('#form-profile').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));document.querySelectorAll('.modal-backdrop').forEach(el=>el.classList.add('hidden'));void 0`);
+    await require('./conta-atividades.cjs')(win, name, { click, js, until });
     return win;
   }
   const a = await open('Lia'), b = await open('Davi');

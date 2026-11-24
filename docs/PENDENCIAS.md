@@ -1,5 +1,15 @@
 # Pendências atuais
 
+## 24/11/2026 — 5.0.0 aprovada e agendada (`ambos`) pra 25/11 às 03h
+
+O dono aprovou a 5.0.0 com as apostas vinculadas à conta e mandou agendar pra madrugada de 25/11. Antes do commit passaram 62/62, as atividades (23) e a integração de canais/admin. `main` enviada ao GitHub, instaladores gerados com os sons locais, rascunho v5.0.0 apontando pro commit da versão e `agendar.sh ambos` rodado. O timer da VM tenta das 03h às 03h50 com os canais vazios; se ninguém sair da call, fica pra próxima madrugada. Depois conferir no journal de `teletela-madrugada.service` e no GitHub se a v5.0.0 saiu do rascunho.
+
+## 24/11/2026 — apostas da 5.0 vinculadas à conta (local)
+
+O servidor exige conta para criar apostas da call, palpitar e jogar 21 ou poker valendo fichas. Visitantes podem assistir, consultar o ranking e jogar só por diversão. A carteira usa o accessId estável da conta e o ranking filtra carteiras antigas de visitantes. Testados os dois jogos no Electron isolado, inclusive com visitante assistindo ao poker. Passaram 23 testes das atividades, 62 gerais, integração de canais/admin e 81 de M1–M3 em série (o teste de estresse falhou na execução paralela).
+
+Conferência na Oracle em 24/11 por volta das 20h de Brasília: timer ativo para 25/11 às 03h, sem pedido na fila. GitHub sem rascunho v5.0.0, última publicação v4.9.0. A correção está no PC. Falta confirmar e agendar a versão corrigida.
+
 ## 24/11/2026 — 5.0.0 preparada (local, `main`)
 
 `version` 5.0.0 (package.json e package-lock), `WHATS_NEW_VERSION = '5.0.0'` e novidades novas (Atividades, 21, Poker, Apostas, Fichas, Ligações entre amigos, Visual novo); a lista da 4.9.0 virou o bloco `#whats-new-4-9-0`; os Créditos ficaram. Conferido: quem vinha da 4.9.0 vê só a 5.0 e os Créditos. 62/62. Falta: push da `main` e, quando o dono pedir, `npm run release` + `npm run deploy:oracle` juntos na janela das 03h às 04h com os canais vazios.

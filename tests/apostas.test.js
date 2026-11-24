@@ -10,12 +10,12 @@ function montar({ diretorio = '', agora = () => 1000, dono = 'Dono' } = {}) {
   const users = new Map(), sockets = new Map();
   const fichas = new FichasStore(diretorio, agora);
   const apostas = criarApostas({ io: { sockets: { sockets } }, channels: new Map([['geral', { users }]]), fichas, isOwner: u => u.accessId === dono, diretorio, agora });
-  function conectar(nome) {
+  function conectar(nome, accountId = nome) {
     const ouvintes = {};
     let ultimo;
     const socket = { id: nome, on(ev, fn) { ouvintes[ev] = fn; }, emit(_, dados) { ultimo = dados; } };
     sockets.set(nome, socket); users.set(nome, {});
-    apostas.conectar(socket, { channelId: 'geral', name: nome, accessId: nome });
+    apostas.conectar(socket, { channelId: 'geral', name: nome, accessId: nome, accountId });
     const pedir = (acao, extra = {}) => { let r; ouvintes.aposta({ canal: 'geral', id: ultimo?.aposta?.id, acao, ...extra }, x => { r = x; }); if (acao === 'ver') ultimo = r; return r; };
     pedir('ver');
     return { pedir, get estado() { return ultimo; }, get saldo() { return fichas.resumo(nome).saldo; } };
@@ -79,4 +79,14 @@ test('valida a criação e fecha sozinha no tempo, sobrevivendo a reinício', as
   dois.pedir('resolver', { opcao: 'o1' });
   assert.equal(dois.saldo, 1000);
   fs.rmSync(pasta, { recursive: true, force: true });
+});
+
+test('visitante vê apostas sem carteira e só conta pode criar e palpitar', () => {
+  const { conectar, fichas } = montar();
+  const visita = conectar('Visita', null);
+  assert.match(criar(visita).erro, /conta/);
+  criar(conectar('Ana'));
+  assert.equal(visita.estado.carteira, null);
+  assert.match(visita.pedir('palpitar', { opcao: 'o1', valor: 10, accountId: 'Ana' }).erro, /conta/);
+  assert.deepEqual(fichas.lista().map(c => c.nome), ['Ana']);
 });

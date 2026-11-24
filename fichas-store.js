@@ -25,7 +25,8 @@ export function ultimaSegunda(ms) {
 const SEMANA = 7 * 86400e3;
 
 export class FichasStore {
-  constructor(diretorio = '', agora = Date.now) {
+  constructor(diretorio = '', agora = Date.now, contas = () => null) {
+    this.contas = contas;
     this.agora = agora;
     this.arquivo = diretorio ? path.join(diretorio, 'fichas.json') : null;
     this.carteiras = new Map();
@@ -50,9 +51,9 @@ export class FichasStore {
     return true;
   }
 
-  creditarTodas() {
+  creditarTodas(carteiras = this.carteirasDeContas()) {
     let mudou = false;
-    for (const c of this.carteiras.values()) mudou = this.creditar(c) || mudou;
+    for (const [, c] of carteiras) mudou = this.creditar(c) || mudou;
     if (mudou) this.salvar();
   }
 
@@ -85,28 +86,37 @@ export class FichasStore {
   // Só o dono do servidor chama: devolve a carteira pra FICHAS_INICIAIS.
   resetar(chave) {
     const c = this.carteiras.get(chave);
-    if (!c) return false;
+    const contas = this.contas();
+    if (!c || (contas && !contas.has(chave))) return false;
     c.saldo = FICHAS_INICIAIS;
     this.salvar();
     return true;
   }
 
   resetarTodas() {
-    for (const c of this.carteiras.values()) c.saldo = FICHAS_INICIAIS;
+    const carteiras = this.carteirasDeContas();
+    for (const [, c] of carteiras) c.saldo = FICHAS_INICIAIS;
     this.salvar();
-    return this.carteiras.size;
+    return carteiras.length;
+  }
+
+  carteirasDeContas() {
+    const contas = this.contas();
+    return [...this.carteiras].filter(([chave]) => !contas || contas.has(chave));
   }
 
   lista() {
-    this.creditarTodas();
-    return [...this.carteiras.entries()]
+    const carteiras = this.carteirasDeContas();
+    this.creditarTodas(carteiras);
+    return carteiras
       .map(([chave, c]) => ({ chave, nome: c.nome || 'Alguém', saldo: c.saldo, zerado: c.saldo < MENOR_FICHA }))
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   }
 
   ranking(chave, limite = 20) {
-    this.creditarTodas();
-    const todos = [...this.carteiras.entries()]
+    const carteiras = this.carteirasDeContas();
+    this.creditarTodas(carteiras);
+    const todos = carteiras
       .map(([k, c]) => ({ nome: c.nome || 'Alguém', saldo: c.saldo, voce: k === chave, zerado: c.saldo < MENOR_FICHA }))
       .sort((a, b) => b.saldo - a.saldo || a.nome.localeCompare(b.nome, 'pt-BR'));
     todos.forEach((p, i) => { p.posicao = i + 1; });

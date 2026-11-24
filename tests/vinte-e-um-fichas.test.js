@@ -9,13 +9,13 @@ import { FichasStore, proximaSegunda, ultimaSegunda } from '../fichas-store.js';
 function montar(cartas, fichas = new FichasStore(), relogio) {
   const users = new Map(), sockets = new Map();
   const mesas = criarMesas21({ channels: new Map([['geral', { users }]]), io: { sockets: { sockets } }, novoBaralho: () => cartas.slice(), fichas, relogio });
-  function conectar(id) {
+  function conectar(id, accountId = id, accessId = id) {
     const ouvintes = {};
     let estado;
     const socket = { id, on(nome, fn) { ouvintes[nome] = fn; }, emit(_, dados) { estado = dados.mesa; } };
     sockets.set(id, socket);
     users.set(id, {});
-    mesas.conectar(socket, { channelId: 'geral', name: id, accessId: id });
+    mesas.conectar(socket, { channelId: 'geral', name: id, accessId, accountId });
     return { get mesa() { return estado; }, jogar(acao, opcoes = {}) {
       let resposta;
       ouvintes['jogar-21']({ canal: 'geral', rodada: estado?.rodada, quantidade: estado?.pessoas.find(p => p.id === id)?.cartas.length, acao, ...opcoes }, r => { resposta = r; });
@@ -138,4 +138,31 @@ test('dono recarrega uma pessoa ou todo mundo', () => {
   assert.deepEqual(loja.lista().map(p => [p.nome, p.saldo, p.zerado]), [['Ana', 1000, false], ['Bia', 700, false]]);
   assert.equal(loja.resetarTodas(), 2);
   assert.deepEqual(loja.lista().map(p => p.saldo), [1000, 1000]);
+});
+
+test('visitante acompanha o ranking e joga só por diversão sem abrir carteira', () => {
+  const fichas = new FichasStore();
+  const conectar = montar([], fichas);
+  const visita = conectar('Visita', null);
+  assert.equal(visita.jogar('ver').carteira, null);
+  assert.deepEqual(visita.ranking(), []);
+  assert.match(visita.jogar('criar', { modo: 'banca' }).erro, /conta/);
+  assert.ok(!visita.jogar('criar', { modo: 'banca', fichas: false }).erro);
+  visita.jogar('sair');
+  conectar('Ana').jogar('criar', { modo: 'banca' });
+  assert.match(visita.jogar('entrar', { fichas: false }).erro, /conta/);
+  assert.deepEqual(visita.ranking().map(p => p.nome), ['Ana']);
+});
+
+test('a mesma conta retoma saldo e posição em outro aparelho, mesmo com outro apelido', () => {
+  const contas = new Set(['membro']);
+  const fichas = new FichasStore('', Date.now, () => contas);
+  fichas.pegar('visita-antiga', 'Ana');
+  const conectar = montar([], fichas);
+  const primeiro = conectar('Ana', 'conta', 'membro');
+  assert.equal(primeiro.jogar('ver').carteira.saldo, 1000);
+  fichas.mover('membro', -180);
+  const segundo = conectar('Outro apelido', 'conta', 'membro');
+  assert.equal(segundo.jogar('ver').carteira.saldo, 820);
+  assert.deepEqual(segundo.ranking().map(p => [p.nome, p.saldo, p.voce]), [['Outro apelido', 820, true]]);
 });

@@ -259,7 +259,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
 
   function estado(mesa, id) {
     const eu = usuarios.get(id);
-    const carteira = eu ? fichas.resumo(eu.chave, eu.nome) : null;
+    const carteira = eu?.chave ? fichas.resumo(eu.chave, eu.nome) : null;
     if (!mesa) return { mesa: null, carteira };
     const revelar = mesa.fase === 'resultado' && mesa.mostrou;
     const meu = sentados(mesa).find(j => j.id === id);
@@ -330,11 +330,12 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
   }
 
   function conectar(socket, user) {
-    const chave = () => user.accessId || user.profileId || socket.id;
+    const chave = user.accountId ? user.accessId : null;
+    const lugar = chave || user.accessId || socket.id;
     socket.on('disconnect', () => usuarios.delete(socket.id));
     socket.on('jogar-poker', (pedido, cb) => {
       if (typeof cb !== 'function' || !pedido || typeof pedido !== 'object') return;
-      usuarios.set(socket.id, { chave: chave(), nome: user.name });
+      usuarios.set(socket.id, { chave, nome: user.name });
       const canal = user.channelId;
       if (!canal || canal !== pedido.canal || !channels.get(canal)?.users.has(socket.id)) return cb({ erro: 'Entre no canal de voz.' });
       let mesa = mesas.get(canal);
@@ -346,11 +347,12 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
       if (acao === 'sentar') {
         if (eu && !eu.saiu) return cb({ erro: 'Você já está na mesa.' });
         const comFichas = mesa ? mesa.fichas : pedido.fichas !== false;
-        if (mesa && sentados(mesa).some(j => j.chave === chave() && !j.saiu)) return cb({ erro: 'Você já ocupa um lugar nesta mesa.' });
+        if (mesa && sentados(mesa).some(j => j.chave === lugar && !j.saiu)) return cb({ erro: 'Você já ocupa um lugar nesta mesa.' });
         if (mesa && sentados(mesa).length >= LUGARES) return cb({ erro: 'A mesa está cheia.' });
         let pilha = FICHAS_DIVERSAO;
         if (comFichas) {
-          const tem = fichas.pegar(chave(), user.name).saldo;
+          if (!chave) return cb({ erro: 'Entre na sua conta pra jogar valendo fichas.' });
+          const tem = fichas.pegar(chave, user.name).saldo;
           if (tem < BIG) return cb({ erro: 'Precisa de pelo menos ' + BIG + ' fichas pra sentar.' });
           if (!Number.isSafeInteger(valor) || valor < BIG || valor > tem) return cb({ erro: 'Escolha de ' + BIG + ' até ' + tem.toLocaleString('pt-BR') + ' fichas.' });
           pilha = valor;
@@ -361,7 +363,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
           mesas.set(canal, mesa);
         }
         if (eu?.saiu) mesa.lugares[eu.lugar] = null;
-        const j = { id: socket.id, chave: chave(), nome: user.name, pilha, cartas: [], naRua: 0, total: 0, foldou: false, allin: false,
+        const j = { id: socket.id, chave: lugar, nome: user.name, pilha, cartas: [], naRua: 0, total: 0, foldou: false, allin: false,
           agiu: false, nivelVisto: -1, ausente: false, saiu: false, faltas: 0, ganho: 0, acao: '', melhores: [] };
         sentar(mesa, j);
         if (mesa.fase === 'espera') mesa.passo++;

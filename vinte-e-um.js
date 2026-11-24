@@ -116,7 +116,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
 
   function estado(mesa, id) {
     const eu = usuarios.get(id);
-    const carteira = eu ? fichas.resumo(eu.chave, eu.nome) : null;
+    const carteira = eu?.chave ? fichas.resumo(eu.chave, eu.nome) : null;
     if (!mesa) return { mesa: null, carteira };
     const revelar = mesa.fase === 'resultado';
     return {
@@ -127,7 +127,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
         banca: mesa.banca.map((c, i) => i === 0 || revelar ? c : null),
         pessoas: [...mesa.pessoas.values()].map(p => {
           const visivel = revelar || p.id === id;
-          return { id: p.id, nome: p.nome, saldo: saldo(p), confirmou: p.confirmou, pilha: p.confirmou || p.aposta ? p.pilha : [],
+          return { id: p.id, nome: p.nome, saldo: mesa.fichas ? saldo(p) : null, confirmou: p.confirmou, pilha: p.confirmou || p.aposta ? p.pilha : [],
             aposta: p.aposta, ganho: p.ganho, cartas: p.cartas.map(c => visivel ? c : null),
             pontos: visivel ? pontos(p.cartas) : null, parou: p.parou, resultado: p.resultado };
         })
@@ -148,21 +148,26 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
     atualizar(canal);
   }
   function conectar(socket, user) {
-    const chave = () => user.accessId || user.profileId || socket.id;
+    const chave = user.accountId ? user.accessId : null;
+    const lugar = chave || user.accessId || socket.id;
     socket.on('ranking-fichas', cb => {
       if (typeof cb !== 'function') return;
-      fichas.pegar(chave(), user.name);
-      cb({ lista: fichas.ranking(chave()) });
+      if (chave) fichas.pegar(chave, user.name);
+      cb({ lista: fichas.ranking(chave) });
     });
     socket.on('disconnect', () => usuarios.delete(socket.id));
     socket.on('jogar-21', (pedido, cb) => {
       if (typeof cb !== 'function') return;
-      usuarios.set(socket.id, { chave: chave(), nome: user.name });
+      usuarios.set(socket.id, { chave, nome: user.name });
       const canal = user.channelId;
       if (!canal || canal !== pedido?.canal || !channels.get(canal)?.users.has(socket.id)) return cb({ erro: 'Entre no canal de voz.' });
       let mesa = mesas.get(canal);
       const { acao, modo } = pedido;
       if (acao === 'ver') return cb(estado(mesa, socket.id));
+      const comFichas = mesa ? mesa.fichas : pedido.fichas !== false;
+      if (comFichas && !chave && ['criar', 'entrar'].includes(acao)) {
+        return cb({ erro: 'Entre na sua conta pra jogar valendo fichas.' });
+      }
       if (acao === 'criar') {
         if (mesa || !['banca', 'amigos'].includes(modo)) return cb({ erro: 'Escolha uma mesa disponível.' });
         mesa = { canal, fichas: pedido.fichas !== false, pote: 0, modo, fase: 'espera', rodada: randomUUID(), banca: [], pessoas: new Map() };
@@ -171,13 +176,13 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
       const pessoa = mesa.pessoas.get(socket.id);
       const minimo = mesa.modo === 'amigos' ? 2 : 1;
       if (['criar', 'entrar'].includes(acao) && !pessoa && mesa.fase !== 'jogando' && mesa.pessoas.size < 8) {
-        if ([...mesa.pessoas.values()].some(p => p.chave === chave())) return cb({ erro: 'Você já ocupa um lugar nesta mesa.' });
-        if (mesa.fichas && fichas.pegar(chave(), user.name).saldo < MENOR_FICHA) {
+        if ([...mesa.pessoas.values()].some(p => p.chave === lugar)) return cb({ erro: 'Você já ocupa um lugar nesta mesa.' });
+        if (mesa.fichas && fichas.pegar(chave, user.name).saldo < MENOR_FICHA) {
           if (!mesa.pessoas.size) mesas.delete(canal);
           return cb({ erro: 'Suas fichas acabaram. Na segunda você ganha mais 1.000.' });
         }
         for (const p of mesa.pessoas.values()) p.confirmou = false;
-        mesa.pessoas.set(socket.id, { chave: chave(), confirmou: false, pilha: [], aposta: 0, ganho: 0, id: socket.id, nome: user.name, cartas: [], parou: false, resultado: '' });
+        mesa.pessoas.set(socket.id, { chave: lugar, confirmou: false, pilha: [], aposta: 0, ganho: 0, id: socket.id, nome: user.name, cartas: [], parou: false, resultado: '' });
       } else if (acao === 'sair' && pessoa) {
         sair(canal, socket.id);
         return cb({});

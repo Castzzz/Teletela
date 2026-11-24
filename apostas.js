@@ -23,7 +23,7 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
     fs.renameSync(tmp, arquivo);
   }
 
-  const chaveDe = user => user.accessId || user.profileId || user.id;
+  const chaveDe = user => user.accountId ? user.accessId : null;
 
   function agendar(aposta) {
     clearTimeout(timers.get(aposta.canal));
@@ -43,7 +43,7 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
 
   function estado(aposta, user) {
     const chave = user ? chaveDe(user) : null;
-    const carteira = user ? fichas.resumo(chave, user.name) : null;
+    const carteira = chave ? fichas.resumo(chave, user.name) : null;
     if (!aposta) return { aposta: null, carteira };
     const total = aposta.palpites.reduce((s, p) => s + p.valor, 0);
     const meu = aposta.palpites.find(p => p.chave === chave);
@@ -114,6 +114,7 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
       const { acao } = pedido;
       if (acao === 'ver') return cb(estado(aposta, user));
 
+      if (!chave && ['criar', 'palpitar'].includes(acao)) return cb({ erro: 'Entre na sua conta pra apostar.' });
       if (acao === 'criar') {
         if (aposta && ['aberta', 'fechada'].includes(aposta.fase)) return cb({ erro: 'Já tem uma aposta rolando neste canal.' });
         const titulo = texto(pedido.titulo, 90);

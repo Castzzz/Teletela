@@ -615,12 +615,18 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       // Quem ainda não sentou: escolhe quanto leva da carteira.
       const cheia = mesa && sentados().length >= LUGARES;
       entrada.hidden = Boolean(mesa);
+      entrada.querySelector('[value="1"]').disabled = !appState.myUser.accountId;
+      if (!appState.myUser.accountId) entrada.querySelector('[value="0"]').checked = true;
       const valendo = mesa ? mesa.fichas : entrada.querySelector(':checked').value === '1';
       info.textContent = mesa
         ? sentados().length + (sentados().length === 1 ? ' pessoa na mesa' : ' pessoas na mesa') + (mesa.fase === 'jogando' ? ' · ' + ETAPAS[mesa.etapa] : '')
         : "Texas Hold'em com blinds de 5 e 10. Cada um senta com quanto quiser e levanta quando quiser.";
       aviso.textContent = cheia ? 'A mesa está cheia. Dá pra assistir.' : mesa?.fase === 'jogando' ? 'Sentando agora, você entra na próxima mão.' : '';
       if (cheia) return;
+      if (!appState.myUser.accountId) {
+        aviso.textContent = 'Entre na sua conta pra jogar valendo fichas.';
+        if (valendo) return;
+      }
       if (valendo) {
         if (saldo < 10) {
           aviso.textContent = mesa ? 'Você precisa de pelo menos 10 fichas pra sentar nesta mesa.' : 'Você precisa de pelo menos 10 fichas. Dá pra abrir uma mesa só por diversão.';

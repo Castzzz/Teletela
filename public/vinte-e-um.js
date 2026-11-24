@@ -235,6 +235,8 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     maos.style.setProperty('--lugares', Math.min(4, outros));
     maos.style.setProperty('--lugares-movel', Math.min(2, outros));
     entrada.hidden = Boolean(mesa);
+    entrada.querySelector('[value="1"]').disabled = !appState.myUser.accountId;
+    if (!appState.myUser.accountId) entrada.querySelector('[value="0"]').checked = true;
     montar.hidden = true;
     mostrarCarteira();
     faixa.textContent = 'Cassino Colheita';
@@ -245,7 +247,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       maos.append(centro);
       assento({ cartas: [null, 'K♥', 'A♠'], lugar: 'amostra-21' }, null, centro);
       centro.append(arco);
-      aviso.textContent = semFichas() ? 'Suas fichas acabaram. ' + quandoVolta() + ' Dá pra jogar só por diversão.' : 'Chegue perto de 21 sem passar. Escolha se vale fichas e o jeito de jogar.';
+      aviso.textContent = !appState.myUser.accountId ? 'Jogue só por diversão ou entre na sua conta pra apostar fichas.' : semFichas() ? 'Suas fichas acabaram. ' + quandoVolta() + ' Dá pra jogar só por diversão.' : 'Chegue perto de 21 sem passar. Escolha se vale fichas e o jeito de jogar.';
       fichas.hidden = true;
       botao('Contra a banca', 'criar', 'banca');
       botao('Entre amigos', 'criar', 'amigos', true);
@@ -378,7 +380,8 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     voar(novas);
     anterior = mesa;
 
-    if (!eu && !jogando && mesa.pessoas.length < 8) botao('Entrar na mesa', 'entrar');
+    if (!eu && mesa.fichas && !appState.myUser.accountId) aviso.textContent = 'Entre na sua conta pra jogar valendo fichas.';
+    else if (!eu && !jogando && mesa.pessoas.length < 8) botao('Entrar na mesa', 'entrar');
     const comFichas = mesa.pessoas.filter(p => !mesa.fichas || p.saldo >= MENOR_FICHA).length;
     if (eu && espera && comFichas >= minimo && (!mesa.fichas || eu.saldo >= MENOR_FICHA)) {
       if (eu.confirmou) botao('Cancelar aposta', 'cancelar', undefined, true);

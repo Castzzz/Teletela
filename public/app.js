@@ -796,6 +796,7 @@ socket.on('channel-state', ({ channelId, channelName, callStartedAt, me, users, 
   playCallSound(soundSeed, joinSoundUrl(myProfile));
   const wasMicLocked = isMicLockedByAdmin();
   if (me) {
+    appState.myUser.accountId = me.accountId;
     if (me.id) appState.myId = me.id;
     if (me.name) appState.myUser.name = me.name;
     if (me.color) appState.myUser.color = me.color;

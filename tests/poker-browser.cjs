@@ -32,7 +32,7 @@ async function print(win, nome) {
 app.whenReady().then(async () => {
   const backend = await import('../server.js'); io = backend.io;
   const server = await backend.startServer(0, '127.0.0.1'); handleAppProtocol();
-  async function open(name, largura = 1440, altura = 960) {
+  async function open(name, largura = 1440, altura = 960, visitante = false) {
     const win = new BrowserWindow({ width: largura, height: altura, show: false, webPreferences: { partition: `poker-${name}`, offscreen: true, backgroundThrottling: false } });
     handleAppProtocol(win.webContents.session);
     win.webContents.on('console-message', event => { if (event.level === 'error') { errors.push(event.message); console.error('[Interface]', event.sourceId, event.lineNumber, event.message); } });
@@ -40,9 +40,10 @@ app.whenReady().then(async () => {
     win.setSize(largura + 1, altura); await wait(100); win.setSize(largura, altura); // o offscreen só pinta depois de um resize
     await until(win, 'Boolean(window.appState && document.querySelector("#channel-geral"))');
     await js(win, `document.querySelector('#input-profile-name').value=${JSON.stringify(name)};document.querySelector('#form-profile').dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));document.querySelectorAll('.modal-backdrop').forEach(el=>el.classList.add('hidden'));void 0`);
+    if (!visitante) await require('./conta-atividades.cjs')(win, name, { click, js, until });
     return win;
   }
-  const a = await open('Lia'), b = await open('Davi'), c = await open('Caio', 420, 860);
+  const a = await open('Lia'), b = await open('Davi'), c = await open('Caio', 420, 860, true);
   for (const w of [a, b, c]) {
     await click(w, '#channel-geral .channel-row');
     await until(w, 'appState.currentChannelId === "geral"');
@@ -53,6 +54,7 @@ app.whenReady().then(async () => {
       // O cartão das Apostas abre o painel por cima do salão.
       await click(c, '.salao-cartao[data-jogo="apostas"]');
       await until(c, '!document.querySelector("#apostas-21").hidden');
+      await until(c, 'document.querySelector("#apostas-21").textContent.includes("Entre na sua conta")');
       await click(c, '#fechar-apostas-21');
       await until(c, 'document.querySelector("#apostas-21").hidden');
     }

@@ -42,11 +42,11 @@ function montar(cartas, fichas = new FichasStore()) {
   };
   const mesas = criarMesasPoker({ io: { sockets: { sockets } }, channels: new Map([['geral', { users }]]),
     novoBaralho: Array.isArray(cartas) ? () => cartas.shift()() : cartas, fichas, relogio });
-  function conectar(id) {
+  function conectar(id, accountId = id) {
     const ouvintes = {};
     let estado;
     const socket = { id, on(n, fn) { ouvintes[n] = fn; }, emit(_, d) { estado = d.mesa; } };
-    const user = { channelId: 'geral', name: id, accessId: id };
+    const user = { channelId: 'geral', name: id, accessId: id, accountId };
     sockets.set(id, socket);
     users.set(id, {});
     mesas.conectar(socket, user);
@@ -274,4 +274,16 @@ test('300 mãos aleatórias: nenhuma ficha some ou aparece e a mesa nunca trava'
     assert.equal(resp.erro, undefined, acao + ' recusado: ' + resp.erro);
   }
   assert.ok(maos >= 300, 'só jogou ' + maos + ' mãos');
+});
+
+test('visitante só senta no poker por diversão e pode assistir sem carteira', () => {
+  const t = montar([]);
+  const visita = t.conectar('Visita', null);
+  assert.equal(visita.jogar('ver').carteira, null);
+  assert.match(visita.jogar('sentar', { valor: 10 }).erro, /conta/);
+  assert.ok(!visita.jogar('sentar', { fichas: false }).erro);
+  visita.sair();
+  t.conectar('Ana').jogar('sentar', { valor: 10 });
+  assert.match(visita.jogar('sentar', { fichas: false }).erro, /conta/);
+  assert.deepEqual(t.fichas.lista().map(c => c.nome), ['Ana']);
 });
