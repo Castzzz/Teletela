@@ -6,11 +6,11 @@
 
 /* ---------- A mesa ---------- */
 /* Um pouco mais baixa que a do 21: o painel de jogadas precisa de espaço embaixo. */
-#lugares-poker { flex: 1; min-width: 0; position: relative; min-height: clamp(24rem, 52vh, 44rem); }
+#lugares-poker { flex: 1; min-width: 0; position: relative; min-height: clamp(25rem, 50vh, 52rem); }
 .centro-poker {
   position: absolute; top: 50%; left: 50%; translate: -50% -50%;
   width: min(100%, 46rem);
-  --largura: clamp(3.2rem, 5.4cqw, 6.6rem); --vao: clamp(.3rem, .7cqw, .7rem);
+  --largura: 96px; --vao: clamp(.3rem, .7cqw, .7rem);
   display: flex; flex-direction: column; align-items: center; gap: .8rem;
 }
 /* #jogo-poker: a regra comum do monte (vinte-e-um.css) usa id e venceria o absolute. */
@@ -37,9 +37,24 @@
 #placar-poker { order: -1; }
 
 /* ---------- Lugares ---------- */
-.lugar-poker.amigo-21 { --largura: clamp(2.3rem, 3.5cqw, 4.3rem); }
-.lugar-poker.minha-mao { --largura: clamp(3.6rem, 6cqw, 7.4rem); }
+/* A carta é pixel art de 48×64 e o número do canto tem 5 px de altura: abaixo de 2×
+   não dá pra ler (relato de amigo: "o 8"). Tamanhos em múltiplos da arte (1,5×, 2×, 3×)
+   pra não borrar; a mesa e a sua mão crescem junto com o palco. */
+.lugar-poker.amigo-21 { --largura: 72px; }
+.lugar-poker.minha-mao { --largura: 96px; }
+@container (min-width: 1500px) {
+  .centro-poker, .lugar-poker.minha-mao { --largura: 144px; }
+  .lugar-poker.amigo-21 { --largura: 96px; }
+}
+@container (min-width: 601px) and (max-width: 900px) {
+  .centro-poker, .lugar-poker.minha-mao { --largura: 72px; }
+  .lugar-poker.amigo-21 { --largura: 48px; }
+}
 .lugar-poker .placa-21 { position: relative; }
+/* Cartas ao lado do nome, não em cima: com as cartas maiores, empilhar comia a altura
+   da mesa e as mãos encostavam nas cartas do meio. */
+.lugar-21.lugar-poker.ao-redor { flex-direction: row; align-items: center; gap: .5rem; }
+.lugar-21.lugar-poker.ao-redor.a-esquerda { flex-direction: row-reverse; }
 .lugar-poker .leque-21:empty { display: none; }
 .aposta-poker {
   position: relative; flex: none;
@@ -88,14 +103,89 @@
 #info-poker { margin: 0 0 .2rem; color: var(--text-muted); font-size: .88rem; font-weight: 600; }
 #info-poker:empty { display: none; }
 #aviso-poker { margin: 0; line-height: 1.45; color: var(--text-normal); font-variant-numeric: tabular-nums; }
-#valor-poker { display: flex; align-items: center; gap: .5rem .6rem; flex-wrap: wrap; }
+#acoes-poker [data-acao="sentar"] { min-width: 10rem; }
+
+/* Escolher o valor: um bloco só, com o número grande em cima, faixa com − e +, e os
+   valores prontos embaixo. A tinta segue a jogada: amarelo no aumentar, marca no resto. */
+#valor-poker {
+  --tinta-valor: var(--accent-brand);
+  flex: 0 1 30rem; min-width: min(100%, 22rem); box-sizing: border-box;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .55rem .8rem;
+  padding: .6rem .75rem;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+}
 #valor-poker[hidden] { display: none; }
-.valor-poker-rotulo { color: var(--text-header); font-weight: 650; font-size: .9rem; }
-#valor-poker-faixa { width: clamp(7rem, 11vw, 12rem); accent-color: var(--accent-brand); }
-#valor-poker-numero { width: 6.5rem; min-height: 40px; font-variant-numeric: tabular-nums; }
-.valor-poker-rapidos { display: flex; gap: .35rem; flex-wrap: wrap; }
-.valor-poker-rapidos button { min-height: 36px; padding-inline: .55rem; }
-#acoes-poker [data-acao="aumentar"], #acoes-poker [data-acao="sentar"] { min-width: 10rem; }
+#valor-poker[data-modo="aumentar"] { --tinta-valor: var(--accent-yellow); }
+/* topo (rótulo + número) é desmontado: rótulo à esquerda, número à direita da faixa. */
+.valor-poker-topo { display: contents; }
+.valor-poker-rotulo { grid-column: 1; grid-row: 1; }
+.valor-poker-campo { grid-column: 3; grid-row: 1; }
+.valor-poker-ajuste { grid-column: 2; grid-row: 1; }
+.valor-poker-rapidos { grid-column: 1 / -1; }
+.valor-poker-rotulo { color: var(--text-muted); font-weight: 650; font-size: .85rem; }
+.valor-poker-campo { display: inline-flex; align-items: baseline; gap: .35rem; color: var(--text-muted); font-size: .8rem; font-weight: 650; }
+#valor-poker-numero {
+  field-sizing: content; min-width: 3ch; max-width: 8ch;
+  margin: 0; padding: 0 .1rem;
+  border: 0; border-bottom: 1.5px dashed var(--border-medium); border-radius: 0;
+  background: none; color: var(--text-header);
+  font: 800 1.35rem/1.15 var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums;
+  text-align: right; appearance: textfield;
+}
+#valor-poker-numero::-webkit-inner-spin-button, #valor-poker-numero::-webkit-outer-spin-button { appearance: none; margin: 0; }
+#valor-poker-numero:focus { outline: none; border-bottom-style: solid; border-bottom-color: var(--tinta-valor); }
+#valor-poker-numero:disabled { color: var(--text-muted); border-bottom-color: transparent; }
+
+.valor-poker-ajuste { display: grid; grid-template-columns: auto minmax(4rem, 1fr) auto; align-items: center; gap: .5rem; }
+.valor-poker-passo {
+  width: 32px; height: 32px; padding: 0;
+  display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid var(--border-medium);
+  background: var(--bg-tertiary); color: var(--text-header);
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, transform .1s;
+}
+.valor-poker-passo .icon-svg { width: 16px; height: 16px; }
+.valor-poker-passo:hover:not(:disabled) { border-color: var(--tinta-valor); background: color-mix(in srgb, var(--tinta-valor) 18%, var(--bg-tertiary)); }
+.valor-poker-passo:active:not(:disabled) { transform: scale(.92); }
+.valor-poker-passo:disabled { opacity: .4; cursor: default; }
+
+/* Faixa desenhada: trilho preenchido até o valor (--cheio vem do poker.js) e pino claro. */
+#valor-poker-faixa { appearance: none; width: 100%; height: 24px; margin: 0; background: none; cursor: pointer; }
+#valor-poker-faixa:disabled { cursor: default; opacity: .5; }
+#valor-poker-faixa::-webkit-slider-runnable-track {
+  height: 6px; border-radius: 3px;
+  background: linear-gradient(to right, var(--tinta-valor) var(--cheio, 0%), var(--bg-tertiary) var(--cheio, 0%));
+}
+#valor-poker-faixa::-webkit-slider-thumb {
+  appearance: none; width: 20px; height: 20px; margin-top: -7px;
+  border-radius: 50%; border: 3px solid var(--tinta-valor); background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
+  transition: transform .12s;
+}
+#valor-poker-faixa:active::-webkit-slider-thumb { transform: scale(1.12); }
+#valor-poker-faixa::-moz-range-track { height: 6px; border-radius: 3px; background: var(--bg-tertiary); }
+#valor-poker-faixa::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--tinta-valor); }
+#valor-poker-faixa::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; border: 3px solid var(--tinta-valor); background: #fff; }
+
+.valor-poker-rapidos { display: grid; grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr)); gap: .4rem; }
+.valor-poker-rapidos:empty { display: none; }
+/* Valor pronto escolhido: tinta da jogada, igual ao trilho. */
+.atalho-mesa[aria-pressed="true"] { border-color: var(--tinta-valor, var(--accent-brand)); background: color-mix(in srgb, var(--tinta-valor, var(--accent-brand)) 20%, var(--bg-tertiary)); }
+.atalho-mesa[aria-pressed="true"] small { color: var(--text-normal); }
+
+/* Sua vez: as três jogadas embaixo (largar, passar/pagar, apostar/aumentar) e o valor
+   em cima das duas últimas. */
+.painel-poker[data-vez] { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
+.painel-poker[data-vez] .estado-21 { grid-column: 1; grid-row: 1; align-self: end; padding-bottom: .2rem; }
+.painel-poker[data-vez] #valor-poker { grid-column: 2 / -1; grid-row: 1; }
+.painel-poker[data-vez] #acoes-poker {
+  grid-column: 1 / -1; grid-row: 2;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem;
+}
+.painel-poker[data-vez] #aviso-poker { color: var(--text-header); font-weight: 700; font-size: 1.05rem; }
 
 @container (max-width: 600px) {
   #lugares-poker { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem .35rem; align-content: space-evenly; }
@@ -103,11 +193,16 @@
   .centro-poker { grid-column: 1 / -1; order: -1; width: 100%; }
   .centro-poker > .monte-poker { display: none; }
   .lugar-poker.minha-mao { grid-column: 1 / -1; order: 1; }
-  .lugar-poker.em-cima { flex-direction: column; }
+  .lugar-21.lugar-poker.ao-redor { flex-direction: column; }
   .lugar-poker { justify-self: center; }
   #mesa-cartas-poker { --largura: clamp(2.6rem, 15cqw, 4.2rem); }
-  /* No celular o número e os atalhos bastam. */
-  #valor-poker-faixa { display: none; }
+  .lugar-poker.minha-mao { --largura: 72px; }
+  .lugar-poker.amigo-21 { --largura: 48px; }
+  .painel-poker[data-vez] { grid-template-columns: minmax(0, 1fr); }
+  .painel-poker[data-vez] #valor-poker { grid-column: 1; grid-row: 2; }
+  .painel-poker[data-vez] #acoes-poker { grid-row: 3; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .painel-poker[data-vez] .jogada-mesa { padding-inline: .4rem; font-size: .9rem; }
+  #valor-poker { flex-basis: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

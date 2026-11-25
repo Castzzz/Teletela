@@ -129,7 +129,7 @@ test('ranking ordena por fichas e marca quem pediu', () => {
   assert.deepEqual(b.ranking().map(p => [p.nome, p.saldo, p.voce]), [['Ana', 1100, false], ['Bia', 1000, true]]);
 });
 
-test('dono recarrega uma pessoa ou todo mundo', () => {
+test('dono recarrega todo mundo e soma ou tira fichas de uma pessoa', () => {
   const loja = new FichasStore();
   loja.pegar('a', 'Ana'); loja.pegar('b', 'Bia');
   loja.mover('a', -1000); loja.mover('b', -300);
@@ -138,6 +138,12 @@ test('dono recarrega uma pessoa ou todo mundo', () => {
   assert.deepEqual(loja.lista().map(p => [p.nome, p.saldo, p.zerado]), [['Ana', 1000, false], ['Bia', 700, false]]);
   assert.equal(loja.resetarTodas(), 2);
   assert.deepEqual(loja.lista().map(p => p.saldo), [1000, 1000]);
+  // Somar ou tirar qualquer quantidade; tirar demais zera, sem ficar negativo.
+  assert.equal(loja.ajustar('a', 1234), 2234);
+  assert.equal(loja.ajustar('b', -300), 700);
+  assert.equal(loja.ajustar('b', -5000), 0);
+  assert.equal(loja.ajustar('x', 10), null);
+  assert.equal(loja.ajustar('a', 1.5), null);
 });
 
 test('visitante acompanha o ranking e joga só por diversão sem abrir carteira', () => {
@@ -165,4 +171,58 @@ test('a mesma conta retoma saldo e posição em outro aparelho, mesmo com outro 
   const segundo = conectar('Outro apelido', 'conta', 'membro');
   assert.equal(segundo.jogar('ver').carteira.saldo, 820);
   assert.deepEqual(segundo.ranking().map(p => [p.nome, p.saldo, p.voce]), [['Outro apelido', 820, true]]);
+});
+
+test('21 de cara paga 3:2 e ganha de outro 21; o da banca leva o 21 comum', () => {
+  // O fim do baralho sai primeiro: banca, depois você, depois as compras
+  for (const [baralho, aposta, acoes, saldo] of [
+    [['A♠','K♦','10♠','8♥'], [100], [], 1150],
+    [['A♠','K♦','10♠','8♥'], [25], [], 1040],
+    [['5♣','A♠','K♦','10♠','6♥'], [100], [], 1150],
+    [['A♣','10♣','K♦','A♠','K♥'], [100], ['pedir'], 900],
+    [['A♠','K♦','A♥','Q♥'], [100], [], 1000]
+  ]) {
+    const a = montar(baralho)('Ana');
+    a.jogar('criar', { modo: 'banca' });
+    a.jogar('iniciar', { pilha: aposta });
+    for (const acao of acoes) a.jogar(acao);
+    assert.equal(a.mesa.fase, 'resultado');
+    assert.deepEqual(saldos(a.mesa), [saldo], baralho.join(' '));
+  }
+});
+
+test('dobrar: aposta em dobro, uma carta só, e só nas duas primeiras', () => {
+  const a = montar(['10♣','6♣','5♦','10♠','8♥'])('Ana');
+  a.jogar('criar', { modo: 'banca' });
+  a.jogar('iniciar', { pilha: [100] });
+  assert.ok(!a.jogar('dobrar').erro);
+  assert.equal(a.mesa.fase, 'resultado');
+  const eu = a.mesa.pessoas[0];
+  assert.equal(eu.cartas.length, 3);
+  assert.equal(eu.aposta, 200);
+  assert.ok(eu.dobrou);
+  assert.deepEqual(saldos(a.mesa), [1200]);
+
+  const b = montar(['2♣','3♣','6♣','5♦','10♠','8♥'])('Bia');
+  b.jogar('criar', { modo: 'banca' });
+  b.jogar('iniciar', { pilha: [100] });
+  b.jogar('pedir');
+  assert.ok(b.jogar('dobrar').erro, 'depois de pedir não dobra');
+
+  const c = montar(['10♣','6♣','5♦','10♠','8♥'])('Caio');
+  c.jogar('criar', { modo: 'banca' });
+  c.jogar('iniciar', { pilha: Array(6).fill(100) });
+  assert.match(c.jogar('dobrar').erro, /fichas/);
+  assert.deepEqual(saldos(c.mesa), [400]);
+});
+
+test('entre amigos não tem dobrar', () => {
+  const conectar = montar(['6♣','5♦','10♠','8♥']);
+  const a = conectar('Ana'), b = conectar('Bia');
+  a.jogar('criar', { modo: 'amigos' });
+  b.jogar('entrar');
+  a.jogar('iniciar', { pilha: [100] });
+  b.jogar('iniciar', { pilha: [100] });
+  assert.equal(a.mesa.fase, 'jogando');
+  assert.ok(a.jogar('dobrar').erro);
 });

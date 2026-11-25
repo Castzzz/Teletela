@@ -19,6 +19,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getIdleSeconds: () => ipcRenderer.invoke('system-idle-seconds'),
   getAutostart: () => ipcRenderer.invoke('autostart-get'),
   setAutostart: enabled => ipcRenderer.invoke('autostart-set', enabled),
+  // Aceleração por hardware: só muda depois de reiniciar o app
+  getHardwareAcceleration: () => ipcRenderer.invoke('gpu-get'),
+  setHardwareAcceleration: enabled => ipcRenderer.invoke('gpu-set', enabled),
+  relaunchApp: () => ipcRenderer.invoke('app-relaunch'),
+  dismissGpuCrash: () => ipcRenderer.invoke('gpu-crash-dismiss'),
+  showCrashLog: () => ipcRenderer.invoke('crash-log-show'),
   getGameActivity: () => ipcRenderer.invoke('get-game-activity'),
   setPrefs: (patch) => ipcRenderer.invoke('prefs-set', patch),
   setGlobalHotkeys: (hotkeys) => ipcRenderer.invoke('set-global-hotkeys', hotkeys),

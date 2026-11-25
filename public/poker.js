@@ -29,6 +29,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
   const rotuloValor = formValor.querySelector('.valor-poker-rotulo');
   const rapidos = formValor.querySelector('.valor-poker-rapidos');
   const acoes = document.querySelector('#acoes-poker');
+  const painel = acoes.closest('.painel-poker');
   const botaoMaos = document.querySelector('#maos-poker-botao');
   const painelMaos = document.querySelector('#maos-poker');
 
@@ -89,6 +90,8 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     const chave = minhaVez() ? mesa.mao + ':' + mesa.passo : null;
     if (chave && avisouVez !== chave && !ativo() && canal === appState.currentChannelId) {
       showToast('Sua vez no poker. Você tem ' + Math.round(mesa.restante / 1000) + ' segundos.', 'normal', 5000);
+      tocar.vez();
+      tocouVez = chave;
     }
     avisouVez = chave;
     if (ativo()) desenhar();
@@ -157,6 +160,8 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     bloco.style.setProperty('--cos', Math.cos(rad).toFixed(3));
     bloco.style.setProperty('--sin', Math.sin(rad).toFixed(3));
     if (Math.sin(rad) < -.2) bloco.classList.add('em-cima');
+    // Cartas do lado do nome, viradas pro centro (poker.css): quem está à esquerda tem o nome por fora
+    if (Math.cos(rad) < -.2) bloco.classList.add('a-esquerda');
 
     const jogoEl = document.createElement('div');
     jogoEl.className = 'jogo-21';
@@ -346,7 +351,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       if (atraso) revelacao = setTimeout(mostrar, atraso); else mostrar();
     }
     if (minhaVez() && tocouVez !== mesa.mao + ':' + mesa.passo) {
-      tocar('leque', Math.max(fimDaDistribuicao, fimDaMesa), .4);
+      tocar.vez(Math.max(fimDaDistribuicao, fimDaMesa));
       tocouVez = mesa.mao + ':' + mesa.passo;
     }
     // Sua mão: o nome muda quando a distribuição ou as cartas novas da mesa terminam de pousar.
@@ -551,10 +556,12 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
   }
 
   // ---------- Painel de baixo: aviso, valor e botões ----------
-  function botao(texto, acao, { secundario = false, extra, confirmarAntes } = {}) {
+  function botao(texto, acao, { secundario = false, extra, confirmarAntes, cor } = {}) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = secundario ? 'btn-secondary' : 'btn-primary';
+    // Jogada da vez: botão grande com a cor dela (vinte-e-um.css, .jogada-mesa).
+    b.className = cor ? 'jogada-mesa' : secundario ? 'btn-secondary' : 'btn-primary';
+    if (cor) b.dataset.cor = cor;
     b.textContent = texto;
     b.dataset.acao = acao;
     b.disabled = ocupado;
@@ -566,37 +573,69 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     return b;
   }
 
-  // Campo de valor: sentar, pôr mais fichas ou aumentar. Faixa e número andam juntos.
-  function mostrarValor(modo, min, max, sugestao, rotulo, atalhos) {
+  // Campo de valor: sentar, pôr mais fichas ou aumentar. Faixa, número, − / + e os
+  // valores prontos andam juntos, sempre de 5 em 5 (só o all-in vale o que sobrou).
+  let passo = 5;
+  function mostrarValor(modo, min, max, sugestao, rotulo, atalhos, passoDoModo = 5) {
     if (modoValor !== modo || valor == null) valor = sugestao;
     modoValor = modo;
-    valor = Math.max(min, Math.min(max, valor));
+    passo = passoDoModo;
     formValor.hidden = false;
+    formValor.dataset.modo = modo;
     rotuloValor.textContent = rotulo;
-    for (const el of [faixa, campo]) { el.min = min; el.max = max; el.step = 1; el.value = valor; }
+    for (const el of [faixa, campo]) { el.min = min; el.max = max; el.step = 5; }
     faixa.disabled = campo.disabled = min >= max;
+    for (const b of passos) b.setAttribute('aria-label', (b.dataset.passo > 0 ? 'Mais ' : 'Menos ') + passo + ' fichas');
     rapidos.replaceChildren();
     for (const [texto, v] of atalhos) {
       if (v < min || v > max) continue;
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'btn-secondary';
-      b.textContent = texto;
-      b.onclick = () => { valor = v; faixa.value = campo.value = v; aoMudarValor(); tocar(somDeFicha(), 0, .35); };
+      b.className = 'atalho-mesa';
+      b.dataset.valor = v;
+      const nome = document.createElement('span');
+      nome.textContent = texto;
+      b.append(nome);
+      // Atalho com nome (½ pote, All-in) mostra o valor embaixo; o que já é número, não.
+      if (texto !== numero(v)) { const q = document.createElement('small'); q.textContent = numero(v); b.append(q); }
+      b.onclick = () => { definirValor(v); tocar(somDeFicha(), 0, .35); };
       rapidos.append(b);
     }
+    definirValor(valor);
+  }
+  // Arredonda pro múltiplo de 5 mais perto, dentro do mínimo e do máximo.
+  function cinco(v) {
+    const min = Number(campo.min), max = Number(campo.max);
+    if (!(v < max)) return max;
+    return Math.max(min, Math.min(max, Math.round(v / 5) * 5));
+  }
+  function definirValor(v, { digitando = false } = {}) {
+    valor = digitando ? v : cinco(v);
+    if (!digitando) campo.value = valor;
+    faixa.value = valor;
+    const min = Number(faixa.min), max = Number(faixa.max);
+    formValor.style.setProperty('--cheio', max > min ? ((Math.min(max, Math.max(min, valor)) - min) / (max - min) * 100).toFixed(2) + '%' : '100%');
+    for (const b of passos) b.disabled = campo.disabled || (b.dataset.passo > 0 ? valor >= max : valor <= min);
+    for (const b of rapidos.children) b.setAttribute('aria-pressed', String(Number(b.dataset.valor) === valor));
+    aoMudarValor();
   }
   function aoMudarValor() {
     const principal = acoes.querySelector('[data-valor]');
     if (principal) principal.textContent = principal.dataset.valor.replace('#', numero(valor));
   }
-  faixa.oninput = () => { valor = Number(faixa.value); campo.value = valor; aoMudarValor(); };
-  campo.oninput = () => { valor = Math.floor(Number(campo.value)) || 0; faixa.value = valor; aoMudarValor(); };
-  campo.onblur = () => { valor = Math.max(Number(campo.min), Math.min(Number(campo.max), valor || 0)); campo.value = faixa.value = valor; aoMudarValor(); };
-  formValor.onsubmit = ev => { ev.preventDefault(); acoes.querySelector('[data-valor]')?.click(); };
+  const passos = formValor.querySelectorAll('.valor-poker-passo');
+  for (const b of passos) b.onclick = () => {
+    // O − e o + caem sempre num múltiplo do passo: de 285, o + vai pra 290.
+    const v = b.dataset.passo > 0 ? Math.floor(valor / passo) * passo + passo : Math.ceil(valor / passo) * passo - passo;
+    definirValor(v);
+  };
+  faixa.oninput = () => { const v = Number(faixa.value); definirValor(v + 5 > Number(faixa.max) ? Number(faixa.max) : v); };
+  campo.oninput = () => definirValor(Math.floor(Number(campo.value)) || 0, { digitando: true });
+  campo.onblur = () => definirValor(valor || 0);
+  formValor.onsubmit = ev => { ev.preventDefault(); definirValor(valor || 0); acoes.querySelector('[data-valor]')?.click(); };
 
-  function principalComValor(modelo, acao, secundario = false) {
-    const b = botao(modelo.replace('#', numero(valor)), acao, { secundario, extra: () => ({ valor }) });
+  function principalComValor(modelo, acao, cor) {
+    const b = botao(modelo.replace('#', numero(valor)), acao, { cor, extra: () => ({ valor: cinco(valor) }) });
     b.dataset.valor = modelo;
     return b;
   }
@@ -605,6 +644,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
 
   function desenharPainel() {
     acoes.replaceChildren();
+    painel.toggleAttribute('data-vez', minhaVez());
     formValor.hidden = true;
     entrada.hidden = true;
     clearInterval(relogio);
@@ -632,7 +672,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
           aviso.textContent = mesa ? 'Você precisa de pelo menos 10 fichas pra sentar nesta mesa.' : 'Você precisa de pelo menos 10 fichas. Dá pra abrir uma mesa só por diversão.';
           return;
         } else {
-          mostrarValor('sentar', 10, saldo, Math.min(saldo, 500), 'Levar pra mesa', [['100', 100], ['500', 500], ['1.000', 1000], ['Tudo', saldo]]);
+          mostrarValor('sentar', 10, saldo, Math.min(saldo, 500), 'Levar pra mesa', [['100', 100], ['500', 500], ['1.000', 1000], ['Tudo', saldo]], 50);
           principalComValor('Sentar com # fichas', 'sentar');
           return;
         }
@@ -652,17 +692,17 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       const texto = () => 'Sua vez · ' + segundos() + 's' + (j.pagar ? ' · ' + numero(j.pagar) + ' pra pagar' : '');
       aviso.textContent = texto();
       relogio = setInterval(() => { if (minhaVez()) aviso.textContent = texto(); }, 1000);
-      botao('Largar', 'largar', { secundario: true });
-      if (j.podePassar) botao('Passar', 'passar', { secundario: true });
-      else botao(j.pagar >= j.maximo - j.naRua ? 'Pagar ' + numero(j.pagar) + ' (all-in)' : 'Pagar ' + numero(j.pagar), 'pagar');
+      botao('Largar', 'largar', { cor: 'vermelho' });
+      if (j.podePassar) botao('Passar', 'passar', { cor: 'verde' });
+      else botao(j.pagar >= j.maximo - j.naRua ? 'Pagar ' + numero(j.pagar) + ' (all-in)' : 'Pagar ' + numero(j.pagar), 'pagar', { cor: 'verde' });
       if (j.podeAumentar) {
         const apostar = !j.apostaAtual;
         const potePago = j.pote + j.pagar;
         mostrarValor('aumentar', j.minimo, j.maximo, j.minimo, apostar ? 'Apostar' : 'Aumentar pra', [
-          ['Mínimo', j.minimo], ['½ pote', redondo(j.apostaAtual + potePago / 2)], ['Pote', redondo(j.apostaAtual + potePago)], ['Tudo', j.maximo]
+          ['Mínimo', j.minimo], ['½ pote', redondo(j.apostaAtual + potePago / 2)], ['Pote', redondo(j.apostaAtual + potePago)], ['All-in', j.maximo]
         ]);
-        // Com aposta pra pagar, pagar é o caminho comum; aumentar fica do lado, sem destaque.
-        principalComValor(apostar ? 'Apostar #' : 'Aumentar pra #', 'aumentar', !apostar);
+        // Cada jogada tem a sua cor (.jogada-mesa), sempre no mesmo lugar: largar, pagar, aumentar.
+        principalComValor(apostar ? 'Apostar #' : 'Aumentar pra #', 'aumentar', 'amarelo');
       }
       return;
     }
@@ -683,7 +723,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     const teto = mesa.fichas ? saldo : 1000;
     if (!naMao && teto > meu.pilha) {
       if (repondo || !meu.pilha) {
-        mostrarValor('repor', 1, teto - meu.pilha, Math.min(teto - meu.pilha, 500), 'Pôr na mesa', [['100', 100], ['500', 500], ['Tudo', teto - meu.pilha]]);
+        mostrarValor('repor', 5, teto - meu.pilha, Math.min(teto - meu.pilha, 500), 'Pôr na mesa', [['100', 100], ['500', 500], ['Tudo', teto - meu.pilha]], 50);
         principalComValor('Pôr # fichas', 'repor');
         if (meu.pilha) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-secondary'; b.textContent = 'Cancelar'; b.onclick = () => { repondo = false; desenharPainel(); }; acoes.append(b); }
       } else {

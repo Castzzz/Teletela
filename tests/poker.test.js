@@ -94,6 +94,7 @@ test('mão mano a mano até o showdown, com as fichas saindo e voltando pra cart
   assert.equal(ana.mesa.pote, 20);
   assert.equal(ana.mesa.vez, 4, 'depois do flop quem fala primeiro é quem senta depois do dealer');
   assert.ok(bia.jogar('aumentar', { valor: 5 }).erro, 'aposta mínima é o big blind');
+  assert.equal(bia.jogar('aumentar', { valor: 52 }).erro, 'Aposte de 5 em 5 fichas.');
   bia.jogar('aumentar', { valor: 50 });
   assert.ok(ana.jogar('aumentar', { valor: 60 }).erro, 'aumento mínimo dobra a aposta');
   ana.jogar('aumentar', { valor: 150 });
@@ -222,7 +223,7 @@ test('300 mãos aleatórias: nenhuma ficha some ou aparece e a mesa nunca trava'
   let inicial = total();
   // Quando um só ficou com quase tudo, o dono recarrega todo mundo e a soma esperada muda.
   const reviver = () => { if (nomes.filter(n => t.fichas.resumo(n).saldo >= 10).length < 2) { t.fichas.resetarTodas(); inicial = total(); } };
-  for (const [i, p] of gente.entries()) if (i < 3) p.jogar('sentar', { valor: 100 + sorte(900) });
+  for (const [i, p] of gente.entries()) if (i < 3) p.jogar('sentar', { valor: 100 + 5 * sorte(180) });
   gente[0].jogar('comecar');
   let maos = 0, passos = 0;
   while (maos < 300 && passos++ < 20000) {
@@ -230,7 +231,11 @@ test('300 mãos aleatórias: nenhuma ficha some ou aparece e a mesa nunca trava'
     if (!m) {
       reviver();
       const comFichas = gente.filter((p, i) => t.fichas.resumo(nomes[i]).saldo >= 10).slice(0, 3);
-      for (const p of comFichas) p.jogar('sentar', { valor: 10 + sorte(t.fichas.resumo(nomes[gente.indexOf(p)]).saldo - 9) });
+      for (const p of comFichas) {
+        // De 5 em 5 até a carteira; às vezes leva tudo (vale mesmo quebrado).
+        const tem = t.fichas.resumo(nomes[gente.indexOf(p)]).saldo;
+        p.jogar('sentar', { valor: sorte(6) === 0 ? tem : Math.min(tem, 10 + 5 * sorte(Math.floor((tem - 10) / 5) + 1)) });
+      }
       comFichas[0].jogar('comecar');
       continue;
     }
@@ -269,7 +274,9 @@ test('300 mãos aleatórias: nenhuma ficha some ou aparece e a mesa nunca trava'
     if (r === 0) { t.passarTempo(); continue; } // deixou o tempo acabar
     if (r === 1 && sorte(5) === 0) { p.sair(); continue; }
     const acao = r < 3 ? 'largar' : r < 6 ? (j.podePassar ? 'passar' : 'pagar') : r < 8 && j.podeAumentar ? 'aumentar' : r === 8 ? 'tudo' : (j.podePassar ? 'passar' : 'pagar');
-    const valor = j.minimo + sorte(Math.max(1, j.maximo - j.minimo + 1));
+    // De 5 em 5 a partir do mínimo; às vezes all-in, que vale quebrado.
+    const passos5 = Math.floor((j.maximo - j.minimo) / 5);
+    const valor = sorte(8) === 0 ? j.maximo : j.minimo + 5 * sorte(passos5 + 1);
     const resp = p.jogar(acao, { valor });
     assert.equal(resp.erro, undefined, acao + ' recusado: ' + resp.erro);
   }

@@ -1,6 +1,9 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { FichasStore, VALORES_FICHA, MENOR_FICHA } from './fichas-store.js';
 
+// 21 de cara: ás + carta de 10 nas duas primeiras cartas.
+export const natural = cartas => cartas.length === 2 && pontos(cartas) === 21;
+
 export function pontos(cartas) {
   let total = 0, ases = 0;
   for (const carta of cartas) {
@@ -64,6 +67,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
       p.parou = pontos(p.cartas) === 21;
       p.resultado = '';
       p.ganho = 0;
+      p.dobrou = false;
     }
   }
 
@@ -77,27 +81,36 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
     if (banca) while (pontos(mesa.banca) < 17) mesa.banca.push(mesa.baralho.pop());
     const totais = pessoas.map(p => pontos(p.cartas)).filter(v => v <= 21);
     const melhor = banca ? pontos(mesa.banca) : Math.max(...totais);
+    // Como no cassino: 21 de cara ganha de qualquer outro 21, e o da banca leva quem não tem
+    const bancaNatural = banca && natural(mesa.banca);
     for (const p of pessoas) {
       const valor = pontos(p.cartas);
+      const meuNatural = banca && natural(p.cartas);
       if (abandono && valor <= 21) p.resultado = 'Ganhou por desistência';
       else if (valor > 21) p.resultado = 'Estourou';
+      else if (meuNatural !== bancaNatural) p.resultado = meuNatural ? 'Ganhou' : 'Perdeu';
       else if (banca && valor === melhor) p.resultado = 'Empatou';
       else if (banca ? melhor > 21 || valor > melhor : valor === melhor) p.resultado = 'Ganhou';
       else p.resultado = 'Perdeu';
     }
     const vencedores = pessoas.filter(p => p.resultado.startsWith('Ganhou'));
     if (banca) {
-      for (const p of pessoas) p.ganho = p.resultado === 'Ganhou' ? 2 * p.aposta : p.resultado === 'Empatou' ? p.aposta : 0;
+      // 21 de cara paga 3:2 (fichas inteiras: a fração fica com a banca)
+      for (const p of pessoas) {
+        p.ganho = p.resultado === 'Empatou' ? p.aposta : p.resultado !== 'Ganhou' ? 0
+          : natural(p.cartas) ? p.aposta + Math.ceil(p.aposta * 3 / 2 / 5) * 5 : 2 * p.aposta;
+      }
     } else if (vencedores.length) {
       // Entre amigos o pote vai pros vencedores na proporção do que cada um apostou.
-      // Fichas inteiras: a sobra vai pelos assentos. Sem aposta de ninguém, divide igual.
+      // Partes de 5 em 5: a sobra vai pelos assentos, de 5 em 5 (o que não fecha 5, de 1 em 1).
+      // Sem aposta de ninguém, divide igual.
       const base = soma(vencedores.map(p => p.aposta));
       let pago = 0;
       for (const p of vencedores) {
-        p.ganho = base ? Math.floor(mesa.pote * p.aposta / base) : Math.floor(mesa.pote / vencedores.length);
+        p.ganho = Math.floor((base ? mesa.pote * p.aposta / base : mesa.pote / vencedores.length) / 5) * 5;
         pago += p.ganho;
       }
-      for (let i = 0; pago < mesa.pote; i = (i + 1) % vencedores.length, pago++) vencedores[i].ganho++;
+      for (let i = 0; pago < mesa.pote; i = (i + 1) % vencedores.length) { const d = mesa.pote - pago >= 5 ? 5 : 1; vencedores[i].ganho += d; pago += d; }
     }
     for (const p of pessoas) fichas.mover(p.chave, p.ganho);
     relogio.clearTimeout(mesa.limpeza);
@@ -127,7 +140,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
         banca: mesa.banca.map((c, i) => i === 0 || revelar ? c : null),
         pessoas: [...mesa.pessoas.values()].map(p => {
           const visivel = revelar || p.id === id;
-          return { id: p.id, nome: p.nome, saldo: mesa.fichas ? saldo(p) : null, confirmou: p.confirmou, pilha: p.confirmou || p.aposta ? p.pilha : [],
+          return { id: p.id, nome: p.nome, saldo: mesa.fichas ? saldo(p) : null, dobrou: Boolean(p.dobrou), confirmou: p.confirmou, pilha: p.confirmou || p.aposta ? p.pilha : [],
             aposta: p.aposta, ganho: p.ganho, cartas: p.cartas.map(c => visivel ? c : null),
             pontos: visivel ? pontos(p.cartas) : null, parou: p.parou, resultado: p.resultado };
         })
@@ -205,6 +218,18 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
         }
       } else if (acao === 'cancelar' && pessoa?.confirmou && mesa.fase === 'espera') {
         pessoa.confirmou = false;
+      } else if (acao === 'dobrar' && pessoa && !pessoa.parou && mesa.fase === 'jogando' && mesa.modo === 'banca' && pessoa.cartas.length === 2 && pedido.quantidade === 2) {
+        // Dobrar: a aposta dobra e vem só mais uma carta
+        if (mesa.fichas) {
+          if (saldo(pessoa) < pessoa.aposta) return cb({ erro: 'Você não tem fichas para dobrar.' });
+          fichas.mover(pessoa.chave, -pessoa.aposta);
+          mesa.pote += pessoa.aposta;
+          pessoa.aposta *= 2;
+          pessoa.pilha = [...pessoa.pilha, ...pessoa.pilha];
+        }
+        pessoa.dobrou = true;
+        pessoa.cartas.push(mesa.baralho.pop());
+        pessoa.parou = true;
       } else if (pessoa && !pessoa.parou && mesa.fase === 'jogando' && ['pedir', 'parar'].includes(acao) && pedido.quantidade === pessoa.cartas.length) {
         if (acao === 'pedir') pessoa.cartas.push(mesa.baralho.pop());
         pessoa.parou = acao === 'parar' || pontos(pessoa.cartas) >= 21;

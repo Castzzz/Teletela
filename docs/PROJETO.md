@@ -993,6 +993,21 @@ antigos continuam funcionando pelo token por sala, sem receber a semente privada
 A prova assinada requer WebCrypto Ed25519 (disponível no Electron atual e WebViews recentes);
 sem esse suporte, o cliente mantém a identificação pelo token salvo por URL.
 
+A aceleração por hardware fica em `config.json` (mesma pasta, chave
+`disableHardwareAcceleration`), não em `prefs.json`: precisa ser lida em `main.cjs` antes do
+`ready` (`app.disableHardwareAcceleration()` só vale aí), então mudar pede reiniciar
+(`app-relaunch`, só pela interface local). Desligada, o Chromium não codifica na placa e
+`video-codec.js` cai pro VP8.
+
+Falhas do app: `main.cjs` grava `falhas.log` (mesma pasta, uma linha JSON por queda, últimas
+200) para processo da GPU caído, página caída e página travada, e liga o `crashReporter` só
+local (minidumps em `crashDumps`). Página que cai é recarregada (até 3 vezes por minuto, pra
+não entrar em loop). Queda da GPU com aceleração ligada marca `gpuCrash` no `config.json`, e
+ao reabrir a interface mostra `#modal-gpu-crash` oferecendo desligar a aceleração. **Armadilha:**
+tela preta e o app fechando é o processo da GPU caindo várias vezes (o Chromium desiste e
+encerra tudo), não bug de página; o registro sai em Configurações → Transmissão → Abrir
+registro de falhas (`%APPDATA%\Telinha\falhas.log` no Windows).
+
 No desktop, `electron/preferences.cjs` mantém a pasta **Telinha** e grava `prefs.json` com
 arquivo temporário + rename (0600). `identities.json` mantém uma cópia pequena do ID do
 perfil, chaves privadas e tokens por sala, independente das fotos/banners. A leitura recupera

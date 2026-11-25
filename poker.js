@@ -6,6 +6,8 @@ import { randomInt, randomUUID } from 'node:crypto';
 import { FichasStore } from './fichas-store.js';
 
 export const SMALL = 5, BIG = 10;
+// Toda aposta anda de 5 em 5 (pedido do dono); o mínimo e o all-in valem como estão.
+const deCinco = (valor, ...exatos) => valor % 5 === 0 || exatos.includes(valor);
 export const PRAZO_VEZ = 60e3;
 export const LUGARES = 8;
 export const FICHAS_DIVERSAO = 1000;
@@ -188,8 +190,12 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
         const melhor = pote.elegiveis.reduce((a, j) => comparar(j.maoFinal, a) > 0 ? j.maoFinal : a, pote.elegiveis[0].maoFinal);
         return pote.elegiveis.filter(j => comparar(j.maoFinal, melhor) === 0).sort((a, b) => depoisDoDealer(a) - depoisDoDealer(b));
       })();
-      const parte = Math.floor(pote.valor / ganham.length);
-      ganham.forEach((j, i) => { j.ganho += parte + (i < pote.valor - parte * ganham.length ? 1 : 0); });
+      // Pote dividido em partes de 5; a sobra vai de 5 em 5 (e o que não fecha 5, de 1 em 1)
+      // pra quem está logo depois do dealer.
+      const parte = Math.floor(pote.valor / ganham.length / 5) * 5;
+      let sobra = pote.valor - parte * ganham.length;
+      ganham.forEach(j => { j.ganho += parte; });
+      for (let i = 0; sobra > 0; i = (i + 1) % ganham.length) { const d = sobra >= 5 ? 5 : 1; ganham[i].ganho += d; sobra -= d; }
       return { valor: pote.valor, ganhadores: ganham.map(j => j.lugar), devolvido: pote.elegiveis.length === 1 && pote.valor <= pote.elegiveis[0].total };
     });
     for (const j of jogaram) {
@@ -232,6 +238,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
     } else if (acao === 'aumentar') {
       if (!podeAumentar) return 'Agora só dá pra pagar ou largar.';
       if (!Number.isSafeInteger(valor) || valor < minimo || valor > j.naRua + j.pilha) return 'Aposte de ' + minimo + ' a ' + (j.naRua + j.pilha) + '.';
+      if (!deCinco(valor, minimo, j.naRua + j.pilha)) return 'Aposte de 5 em 5 fichas.';
       const antes = mesa.apostaAtual;
       por(mesa, j, valor - j.naRua);
       // Aumento completo reabre a vez de quem já tinha falado; all-in curto só obriga a pagar.
@@ -355,6 +362,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
           const tem = fichas.pegar(chave, user.name).saldo;
           if (tem < BIG) return cb({ erro: 'Precisa de pelo menos ' + BIG + ' fichas pra sentar.' });
           if (!Number.isSafeInteger(valor) || valor < BIG || valor > tem) return cb({ erro: 'Escolha de ' + BIG + ' até ' + tem.toLocaleString('pt-BR') + ' fichas.' });
+          if (!deCinco(valor, tem)) return cb({ erro: 'Escolha um valor de 5 em 5.' });
           pilha = valor;
         }
         if (!mesa) {
@@ -383,6 +391,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
         if (!Number.isSafeInteger(valor) || valor < 1 || eu.pilha + valor > teto) {
           return cb({ erro: mesa.fichas ? 'Sua carteira tem ' + teto.toLocaleString('pt-BR') + ' fichas.' : 'Só diversão vai até ' + FICHAS_DIVERSAO + '.' });
         }
+        if (!deCinco(valor, teto - eu.pilha)) return cb({ erro: 'Escolha um valor de 5 em 5.' });
         eu.pilha += valor;
         mesa.passo++;
       } else if (acao === 'ausentar') {

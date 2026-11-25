@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, clipboard, desktopCapturer, dialog, globalShortcut, ipcMain, net, nativeImage, powerMonitor, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, clipboard, crashReporter, desktopCapturer, dialog, globalShortcut, ipcMain, net, nativeImage, powerMonitor, session, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -22,6 +22,54 @@ app.setDesktopName('telinha.desktop');
 // GlobalShortcutsPortal: atalhos globais (mutar com o app em segundo plano) no Wayland
 app.commandLine.appendSwitch('enable-features', 'WebRTCPipeWireCapturer,PulseaudioLoopbackForScreenShare,GlobalShortcutsPortal');
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
+// Aceleração por hardware desligável: em algumas placas/drivers o vídeo fica melhor sem ela
+// (relato de amigo, igual ao navegador com ela desligada). Só vale ao abrir o app, por isso
+// é lida aqui, antes do "ready", e mudar pede reiniciar.
+function readGpuDisabled() {
+  try { return JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'config.json'), 'utf8')).disableHardwareAcceleration === true; }
+  catch { return false; }
+}
+const gpuDisabledAtStart = readGpuDisabled();
+if (gpuDisabledAtStart) app.disableHardwareAcceleration();
+
+// Registro de falhas: a tela preta seguida de fechar (relato de amigo no Windows, nas
+// Atividades) é o processo da placa de vídeo caindo; depois de algumas quedas o Chromium
+// encerra o app inteiro. Fica anotado em falhas.log (e o minidump em crashDumps) pra dar
+// pra investigar, e a queda da GPU faz o app oferecer desligar a aceleração ao reabrir.
+crashReporter.start({ uploadToServer: false });
+const crashLogPath = () => path.join(app.getPath('userData'), 'falhas.log');
+function logFalha(tipo, detalhes) {
+  try {
+    const linha = JSON.stringify({ quando: new Date().toISOString(), versao: app.getVersion(), so: `${process.platform} ${process.getSystemVersion()}`, aceleracao: !gpuDisabledAtStart, tipo, ...detalhes });
+    const antigas = fs.existsSync(crashLogPath()) ? fs.readFileSync(crashLogPath(), 'utf8').split('\n').filter(Boolean).slice(-199) : [];
+    fs.mkdirSync(path.dirname(crashLogPath()), { recursive: true });
+    // Síncrono de propósito: quando a GPU cai de vez, o processo principal sai logo em seguida
+    fs.writeFileSync(crashLogPath(), [...antigas, linha].join('\n') + '\n');
+  } catch {}
+}
+const recargas = [];
+app.on('child-process-gone', (_event, d) => {
+  if (d.reason === 'clean-exit') return;
+  logFalha('processo', { processo: d.type, nome: d.name || d.serviceName || '', motivo: d.reason, codigo: d.exitCode });
+  if (d.type === 'GPU' && !gpuDisabledAtStart) {
+    const cfg = loadConfig();
+    saveConfig({ gpuCrash: { at: Date.now(), count: (cfg.gpuCrash?.count || 0) + 1 } });
+  }
+});
+app.on('render-process-gone', (_event, contents, d) => {
+  if (d.reason === 'clean-exit') return;
+  let pagina = '';
+  try { pagina = new URL(contents.getURL()).pathname; } catch {}
+  logFalha('pagina', { motivo: d.reason, codigo: d.exitCode, pagina });
+  // Recarrega em vez de deixar a janela preta, mas não fica em loop se cair sem parar
+  const agora = Date.now();
+  while (recargas.length && agora - recargas[0] > 60000) recargas.shift();
+  if (recargas.length < 3 && !contents.isDestroyed()) { recargas.push(agora); contents.reload(); }
+});
+app.on('web-contents-created', (_event, contents) => {
+  contents.on('unresponsive', () => logFalha('travou', { pagina: (() => { try { return new URL(contents.getURL()).pathname; } catch { return ''; } })() }));
+});
 
 let mainWindow = null;
 let selectedDesktopSourceId = null;
@@ -602,6 +650,29 @@ function setupPermissionsAndCapture() {
   });
   ipcMain.handle('autostart-get', event => localSettings(event) ? autostart.get() : { supported: false, enabled: false });
   ipcMain.handle('autostart-set', (event, enabled) => localSettings(event) ? autostart.set(enabled) : { supported: false, enabled: false });
+  // gpuCrashAt: a placa de vídeo caiu e ninguém respondeu ao aviso ainda
+  const gpuState = () => {
+    const cfg = loadConfig();
+    return { enabled: cfg.disableHardwareAcceleration !== true, active: !gpuDisabledAtStart, gpuCrashAt: gpuDisabledAtStart ? null : cfg.gpuCrash?.at || null, hasLog: fs.existsSync(crashLogPath()) };
+  };
+  ipcMain.handle('gpu-get', event => localSettings(event) ? gpuState() : null);
+  ipcMain.handle('gpu-set', (event, enabled) => {
+    if (!localSettings(event)) return null;
+    saveConfig({ disableHardwareAcceleration: enabled !== true, gpuCrash: null });
+    return gpuState();
+  });
+  ipcMain.handle('gpu-crash-dismiss', event => {
+    if (localSettings(event)) saveConfig({ gpuCrash: null });
+  });
+  ipcMain.handle('crash-log-show', event => {
+    if (localSettings(event) && fs.existsSync(crashLogPath())) shell.showItemInFolder(crashLogPath());
+  });
+  ipcMain.handle('app-relaunch', event => {
+    if (!localSettings(event)) return false;
+    app.relaunch();
+    app.exit(0);
+    return true;
+  });
   ipcMain.handle('prefs-get', () => loadPrefs());
   ipcMain.handle('get-game-activity', async () => {
     // Evita reler e decodificar fotos/GIFs do prefs.json a cada consulta de jogo.

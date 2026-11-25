@@ -4062,6 +4062,48 @@ async function setupAutostart() {
   $('#btn-open-settings')?.addEventListener('click', () => window.electronAPI.getAutostart().then(refresh).catch(() => {}));
 }
 
+async function setupHardwareAcceleration() {
+  const api = window.electronAPI;
+  if (!api?.getHardwareAcceleration) return;
+  const group = $('#gpu-setting'), input = $('#check-gpu'), status = $('#gpu-status'), restart = $('#btn-gpu-restart');
+  const HELP = 'Usa a placa de vídeo pra desenhar o app e codificar a transmissão. Se a tela travar ou ficar ruim ao transmitir ou assistir, tente desligar.';
+  const refresh = state => {
+    if (!state) return;
+    group.classList.remove('hidden');
+    input.checked = state.enabled;
+    input.disabled = false;
+    // A escolha só pega ao abrir o app: avisa enquanto o que está valendo é diferente
+    const pending = state.enabled !== state.active;
+    restart.classList.toggle('hidden', !pending);
+    $('#btn-crash-log').classList.toggle('hidden', !state.hasLog);
+    status.textContent = state.error || (pending
+      ? `Vai ${state.enabled ? 'ligar' : 'desligar'} quando o Teletela reiniciar. Se estiver em call, você sai dela.`
+      : (state.active ? HELP : 'Desligada: o app usa só o processador. Se ficar pesado, ligue de novo.'));
+  };
+  let inicial = null;
+  try { inicial = await api.getHardwareAcceleration(); refresh(inicial); } catch {}
+  // A placa de vídeo derrubou o app da última vez: oferece desligar a aceleração
+  if (inicial?.gpuCrashAt && inicial.active) {
+    const modal = $('#modal-gpu-crash');
+    modal.classList.remove('hidden');
+    $('#btn-gpu-crash-off').focus();
+    $('#btn-gpu-crash-later').addEventListener('click', () => { modal.classList.add('hidden'); api.dismissGpuCrash().catch(() => {}); }, { once: true });
+    const desligar = $('#btn-gpu-crash-off');
+    desligar.addEventListener('click', async () => {
+      desligar.disabled = true;
+      try { await api.setHardwareAcceleration(false); await api.relaunchApp(); }
+      catch { desligar.disabled = false; showToast('Não consegui desligar. Tente em Configurações → Transmissão.', 'error'); }
+    }, { once: true });
+  }
+  $('#btn-crash-log').addEventListener('click', () => api.showCrashLog().catch(() => {}));
+  input.addEventListener('change', async () => {
+    input.disabled = true;
+    try { refresh(await api.setHardwareAcceleration(input.checked)); }
+    catch { input.disabled = false; status.textContent = 'Não consegui alterar essa opção. Tente novamente.'; }
+  });
+  restart.addEventListener('click', () => { restart.disabled = true; api.relaunchApp().catch(() => { restart.disabled = false; }); });
+}
+
 function openSettings(name = $('.settings-tab.active')?.dataset.settingsTab || 'aparencia') {
   const modal = $('#modal-settings');
   mountStageOverlay(modal);
@@ -5678,14 +5720,14 @@ function setupPerformanceSelect() {
 }
 
 // Novidades da versão: mostra uma vez só (quem abre o app pela primeira vez vê o perfil, não isso)
-const WHATS_NEW_VERSION = '5.0.0';
+const WHATS_NEW_VERSION = '5.0.1';
 let whatsNewReturnFocus = null;
 
 function openWhatsNew(seen = 0, returnFocus = document.activeElement) {
   closeUserPopover();
   whatsNewReturnFocus = returnFocus;
   const seenParts = String(seen).split('.').map(Number);
-  for (const version of ['4-9-0', '4-8-0', '4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
+  for (const version of ['5-0-0', '4-9-0', '4-8-0', '4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
     const parts = version.split('-').map(Number);
     // Compara também a correção: quem viu 3.4.0 ainda precisa das novidades de 3.4.1.
     const difference = parts.findIndex((part, index) => part !== (seenParts[index] || 0));
@@ -8789,6 +8831,7 @@ function initApp() {
   }) });
   setupThemeSelect();
   setupAutostart();
+  setupHardwareAcceleration();
   setupPersonalization({ prefs, savePrefs, showToast });
   setupTransmissionDiagnostics({ mountStageOverlay, getConnections: () => {
     const list = [];

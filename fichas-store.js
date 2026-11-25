@@ -93,6 +93,17 @@ export class FichasStore {
     return true;
   }
 
+  // Só o dono do servidor chama: soma ou tira fichas de uma carteira (nunca fica negativa).
+  // Devolve o saldo novo, ou null se a carteira não existe ou não é de conta.
+  ajustar(chave, quanto) {
+    const c = this.carteiras.get(chave);
+    const contas = this.contas();
+    if (!c || (contas && !contas.has(chave)) || !Number.isSafeInteger(quanto)) return null;
+    c.saldo = Math.max(0, c.saldo + quanto);
+    this.salvar();
+    return c.saldo;
+  }
+
   resetarTodas() {
     const carteiras = this.carteirasDeContas();
     for (const [, c] of carteiras) c.saldo = FICHAS_INICIAIS;

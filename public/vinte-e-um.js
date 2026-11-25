@@ -12,6 +12,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
   const fichas = document.querySelector('#fichas-na-mesa');
   const entrada = document.querySelector('#entrada-21');
   const acoes = document.querySelector('#acoes-21');
+  const painel = acoes.closest('.painel-21');
   const monte = document.querySelector('#monte-21');
   const bandeja = document.querySelector('#bandeja-21');
   const feltro = document.querySelector('.feltro-21');
@@ -54,14 +55,20 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
   window.addEventListener('teletela-aba-jogo', ev => { if (ev.detail.jogo === '21') titulo.textContent = titulo21; });
 
   // ---------- Peças ----------
-  function botao(texto, acao, modo, secundario = false) {
+  // cor: jogada da vez (.jogada-mesa), que vai pro grupo grande das jogadas.
+  function botao(texto, acao, modo, secundario = false, cor) {
     const el = document.createElement('button');
-    el.className = secundario ? 'btn-secondary' : 'btn-primary';
+    el.className = cor ? 'jogada-mesa' : secundario ? 'btn-secondary' : 'btn-primary';
     el.textContent = texto;
     el.dataset.acao = modo || acao;
+    if (cor) el.dataset.cor = cor;
     el.disabled = ocupado;
     el.onclick = () => enviar(acao, modo);
-    acoes.append(el);
+    if (cor) {
+      let grupo = acoes.querySelector('.jogadas-mesa');
+      if (!grupo) { grupo = document.createElement('div'); grupo.className = 'jogadas-mesa'; acoes.prepend(grupo); }
+      grupo.append(el);
+    } else acoes.append(el);
     return el;
   }
 
@@ -226,7 +233,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
   function desenhar(foco = document.activeElement?.dataset.acao) {
     clearTimeout(revelacao);
     maos.replaceChildren();
-    acoes.replaceChildren();
+    acoes.replaceChildren(); painel.removeAttribute('data-vez');
     placar.hidden = true;
     mostrarTitulo(!mesa ? 'Jogar 21' : mesa.modo === 'banca' ? '21 contra a banca' : '21 entre amigos');
     palco.dataset.fase = mesa?.fase || 'abertura';
@@ -319,7 +326,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       const meu = p.id === socket.id;
       const estado = resultado ? ESTADOS[p.resultado] : jogando ? (p.parou ? (p.pontos > 21 ? 'estourou' : 'parou') : 'vez') : p.confirmou ? 'pronto' : '';
       const linha = [
-        resultado ? p.resultado : jogando ? (p.parou ? 'Parou' : 'Jogando…') : p.confirmou ? 'Apostou' : '',
+        resultado ? p.resultado : jogando ? (p.dobrou ? 'Dobrou' : p.parou ? 'Parou' : 'Jogando…') : p.confirmou ? 'Apostou' : '',
         mesa.fichas && numero(p.saldo) + ' fichas'
       ].filter(Boolean).join(' · ');
       // O que está no círculo: a aposta da vez; entre amigos, ela vai pro pote ao distribuir.
@@ -357,6 +364,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       for (const [i, p] of mesa.pessoas.entries()) voarFichas(rodaDe(p.id), destino, p.aposta, i * 70);
       tocar('fichas', .2, .45);
     }
+    if (mesa.pessoas.some(p => p.dobrou && !anterior?.pessoas.find(a => a.id === p.id)?.dobrou && anterior?.rodada === mesa.rodada)) tocar(ficha());
     if (bancaVirou && mesa.modo === 'banca') tocar('virar', 80);
     if (eu && jogando && anterior?.rodada === mesa.rodada) {
       const antes = anterior.pessoas.find(a => a.id === eu.id);
@@ -392,9 +400,17 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
         el.disabled = !total || ocupado;
       } else botao('Dar as cartas', 'iniciar');
     }
-    if (eu && jogando && !eu.parou) {
-      botao('Pedir carta', 'pedir');
-      botao('Parar', 'parar', undefined, true);
+    // Sua vez: parar, pedir e dobrar, sempre nessa ordem e com a cor de cada uma.
+    const vez = Boolean(eu && jogando && !eu.parou);
+    painel.toggleAttribute('data-vez', vez);
+    if (vez) {
+      botao('Parar', 'parar', undefined, true, 'vermelho');
+      botao('Pedir carta', 'pedir', undefined, false, 'verde');
+      // Dobrar: só contra a banca, nas duas primeiras cartas e com fichas pra cobrir
+      if (mesa.modo === 'banca' && eu.cartas.length === 2 && (!mesa.fichas || eu.saldo >= eu.aposta)) {
+        const el = botao('Dobrar', 'dobrar', undefined, true, 'amarelo');
+        if (mesa.fichas) { const q = document.createElement('small'); q.textContent = '+' + numero(eu.aposta) + ' fichas'; el.append(q); }
+      }
     }
     if (eu) botao('Sair da mesa', 'sair', undefined, true);
     if (foco && !ocupado) acoes.querySelector('[data-acao="' + foco + '"]')?.focus();
@@ -428,7 +444,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     const fichasTexto = n => numero(Math.abs(n)) + (Math.abs(n) === 1 ? ' ficha' : ' fichas');
     if (eu) {
       const r = eu.resultado;
-      if (r.startsWith('Ganhou')) { grande = r === 'Ganhou' ? (eu.pontos === 21 ? 'Vinte e um!' : 'Você ganhou') : 'Ganhou por W.O.'; tom = 'ganhou'; }
+      if (r.startsWith('Ganhou')) { grande = r === 'Ganhou' ? (mesa.modo === 'banca' && eu.cartas.length === 2 && eu.pontos === 21 ? '21 de cara!' : eu.pontos === 21 ? 'Vinte e um!' : 'Você ganhou') : 'Ganhou por W.O.'; tom = 'ganhou'; }
       else if (r === 'Empatou') { grande = 'Empate'; tom = 'empatou'; pequeno = mesa.fichas && eu.aposta ? 'Aposta devolvida' : ''; }
       else if (r === 'Estourou') { grande = 'Estourou'; tom = 'perdeu'; }
       else { grande = mesa.modo === 'banca' ? 'A banca levou' : 'Não foi dessa vez'; tom = 'perdeu'; }
@@ -455,13 +471,13 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     if (ocupado) return;
     if (!socket.connected) {
       aviso.textContent = 'Conecte-se ao servidor para jogar.';
-      acoes.replaceChildren();
+      acoes.replaceChildren(); painel.removeAttribute('data-vez');
       botao('Atualizar mesa', 'ver');
       return;
     }
     const foco = document.activeElement?.dataset.acao;
     ocupado = true;
-    for (const el of acoes.children) el.disabled = true;
+    for (const el of acoes.querySelectorAll('button')) el.disabled = true;
     const vez = ++consulta;
     const eu = mesa?.pessoas.find(p => p.id === socket.id);
     tocar.precarregar();
@@ -469,7 +485,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       if (vez !== consulta || canal !== appState.currentChannelId || palco.hidden) return;
       ocupado = false;
       if (erro) {
-        acoes.replaceChildren();
+        acoes.replaceChildren(); painel.removeAttribute('data-vez');
         aviso.textContent = 'A mesa não respondeu.';
         botao('Atualizar mesa', 'ver');
         return;
@@ -482,7 +498,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
         desenhar(foco);
       } else {
         // O servidor já enviou a mesa. Preserva as cartas que estão chegando.
-        for (const el of acoes.children) el.disabled = el.dataset.vazio === '1';
+        for (const el of acoes.querySelectorAll('button')) el.disabled = el.dataset.vazio === '1';
         if (foco) acoes.querySelector('[data-acao="' + foco + '"]')?.focus();
       }
       if (foco && document.activeElement === document.body) acoes.querySelector('button')?.focus();
@@ -637,7 +653,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     montar.hidden = true;
     placar.hidden = true;
     maos.replaceChildren();
-    acoes.replaceChildren();
+    acoes.replaceChildren(); painel.removeAttribute('data-vez');
     palco.hidden = false;
     atividades.setAttribute('aria-expanded', 'true');
     titulo.focus();

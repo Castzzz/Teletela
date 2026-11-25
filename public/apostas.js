@@ -151,22 +151,27 @@ export function configurarApostas({ socket, appState, showToast }) {
       const id = 'aposta-valor-' + (noChat ? 'chat' : 'atividades');
       rotulo.htmlFor = id;
       const input = el('input', 'form-input');
-      Object.assign(input, { id, type: 'number', min: 1, max: Math.max(1, saldo), step: 1, inputMode: 'numeric', value: Math.min(valor, saldo) || '' });
+      // De 5 em 5, como o resto do app; só o all-in vale o que sobrou na carteira.
+      const cinco = v => v >= saldo ? saldo : Math.max(5, Math.round(v / 5) * 5);
+      Object.assign(input, { id, type: 'number', min: 5, max: Math.max(5, saldo), step: 5, inputMode: 'numeric', value: Math.min(cinco(valor), saldo) || '' });
+      valor = Number(input.value) || 0;
       input.oninput = () => { valor = Math.floor(Number(input.value)) || 0; enviar.textContent = rotuloEnviar(); enviar.disabled = !pode(); };
+      input.onblur = () => { if (valor) { valor = cinco(valor); input.value = valor; input.oninput(); } };
       const rapidos = el('div', 'aposta-rapidos');
-      for (const [r, v] of [['+10', 10], ['+50', 50], ['+100', 100], ['Tudo', null]]) {
+      for (const [r, v] of [['+10', 10], ['+50', 50], ['+100', 100], ['All-in', null]]) {
         const b = botao(r);
-        b.onclick = () => { valor = v == null ? saldo : Math.min(saldo, (Number(input.value) || 0) + v); input.value = valor; input.oninput(); };
+        b.onclick = () => { valor = v == null ? saldo : Math.min(saldo, cinco(Number(input.value) || 0) + v); input.value = valor; input.oninput(); };
         rapidos.append(b);
       }
       const nomeOpcao = aposta.opcoes.find(o => o.id === opcao)?.texto;
-      const pode = () => Boolean(opcao) && valor >= 1 && valor <= saldo && !ocupado;
+      const pode = () => Boolean(opcao) && valor >= Math.min(5, saldo) && valor <= saldo && !ocupado;
       const rotuloEnviar = () => !opcao ? 'Escolha uma opção' : (travada ? 'Pôr mais ' : 'Apostar ') + numero(valor || 0) + ' em ' + nomeOpcao;
       const enviar = el('button', 'btn-primary', rotuloEnviar());
       enviar.type = 'submit';
       enviar.disabled = !pode();
       form.onsubmit = async ev => {
         ev.preventDefault();
+        valor = cinco(valor);
         if (!pode()) return;
         ocupado = true; enviar.disabled = true;
         const r = await pedir('palpitar', { opcao, valor });

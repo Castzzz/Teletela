@@ -80,8 +80,9 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
     for (const p of aposta.palpites) p.ganho = base ? 0 : p.valor;
     if (base) {
       let pago = 0;
-      for (const p of ganhadores) { p.ganho = Math.floor(total * p.valor / base); pago += p.ganho; }
-      for (let i = 0; pago < total; i = (i + 1) % ganhadores.length, pago++) ganhadores[i].ganho++;
+      // Prêmios arredondados pra baixo de 5 em 5; a sobra vai de 5 em 5 (o que não fecha 5, de 1 em 1).
+      for (const p of ganhadores) { p.ganho = Math.floor(total * p.valor / base / 5) * 5; pago += p.ganho; }
+      for (let i = 0; pago < total; i = (i + 1) % ganhadores.length) { const d = total - pago >= 5 ? 5 : 1; ganhadores[i].ganho += d; pago += d; }
     }
     for (const p of aposta.palpites) fichas.mover(p.chave, p.ganho);
     aposta.fase = vencedora ? 'resolvida' : 'cancelada';
@@ -137,7 +138,10 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
         if (aposta.fase !== 'aberta' || agora() >= aposta.fechaEm) return cb({ erro: 'As apostas já fecharam.' });
         if (!opcao) return cb({ erro: 'Escolha uma opção.' });
         if (!Number.isSafeInteger(valor) || valor < 1) return cb({ erro: 'Escolha quantas fichas.' });
-        if (valor > fichas.pegar(chave, user.name).saldo) return cb({ erro: 'Você não tem essas fichas.' });
+        const tem = fichas.pegar(chave, user.name).saldo;
+        if (valor > tem) return cb({ erro: 'Você não tem essas fichas.' });
+        // De 5 em 5, como o resto do app; só o all-in vale o que sobrou.
+        if (valor % 5 && valor !== tem) return cb({ erro: 'Aposte de 5 em 5 fichas.' });
         let meu = aposta.palpites.find(p => p.chave === chave);
         if (meu && meu.opcao !== opcao.id) return cb({ erro: 'Você já apostou em outra opção.' });
         if (!meu) { meu = { chave, nome: user.name, opcao: opcao.id, valor: 0 }; aposta.palpites.push(meu); }

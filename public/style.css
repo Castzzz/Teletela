@@ -1367,6 +1367,8 @@ ul {
 .reaction-all-button:hover { color: var(--text-header); background: var(--bg-hover); }
 
 #modal-whats-new { z-index: 1300; }
+/* O aviso de queda da placa de vídeo vem antes das novidades */
+#modal-gpu-crash { z-index: 1400; }
 .settings-news-button { display: flex; align-items: center; gap: 10px; text-align: left; margin-top: auto; padding: 10px; border-radius: var(--radius-md); color: var(--text-muted); font-size: 13px; font-weight: 600; }
 .settings-news-button .icon-svg { width: 18px; height: 18px; flex-shrink: 0; }
 .settings-news-button small { display: block; font-size: 11px; font-weight: 400; margin-top: 3px; }

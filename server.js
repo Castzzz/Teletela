@@ -1934,7 +1934,7 @@ io.on('connection', (socket) => {
 
 
   // Clientes antigos continuam reconhecendo o dono por sua identidade, sem promover admins.
-  // Fichas das atividades: só o dono vê a lista e recarrega uma pessoa ou todo mundo.
+  // Fichas das atividades: só o dono vê a lista, mexe no saldo de uma pessoa e recarrega todo mundo.
   socket.on('fichas-admin-lista', safeHandler((_raw, callback) => {
     const cb = safeCallback(callback);
     if (!permissions.isOwner(user)) return cb({ success: false, error: 'Só o dono do servidor.' });
@@ -1952,6 +1952,19 @@ io.on('connection', (socket) => {
     mesasPoker.atualizarTodas();
     apostas.atualizarTodas();
     cb({ success: true, quantos, lista: fichas.lista() });
+  }));
+  // O dono soma ou tira quantas fichas quiser de uma pessoa.
+  socket.on('fichas-admin-ajustar', safeHandler((raw, callback) => {
+    const cb = safeCallback(callback);
+    if (!permissions.isOwner(user)) return cb({ success: false, error: 'Só o dono do servidor.' });
+    const { chave, quanto } = safeObject(raw);
+    if (!Number.isSafeInteger(quanto) || !quanto || Math.abs(quanto) > 1_000_000_000) return cb({ success: false, error: 'Digite quantas fichas.' });
+    const saldo = typeof chave === 'string' ? fichas.ajustar(chave, quanto) : null;
+    if (saldo == null) return cb({ success: false, error: 'Essa pessoa não tem fichas ainda.' });
+    mesas21.atualizarTodas();
+    mesasPoker.atualizarTodas();
+    apostas.atualizarTodas();
+    cb({ success: true, saldo, lista: fichas.lista() });
   }));
   socket.on('admin-login', safeHandler((raw, callback) => {
     const cb = safeCallback(callback);

@@ -78,6 +78,7 @@ app.whenReady().then(async () => {
   await until(a, '!document.fullscreenElement');
   const terminou = w => js(w, 'document.querySelector("#aviso-21").textContent.includes("encerrada")');
   if (!await terminou(b) && !await js(b, 'document.querySelectorAll(".carta-21.coberta").length === 2')) throw Error('Mão dos amigos exposta');
+  if (await js(a, 'Boolean(document.querySelector("[data-acao=dobrar]"))')) throw Error('Entre amigos não tem dobrar');
   if (await js(a, 'Boolean(document.querySelector("[data-acao=pedir]"))')) {
     await jogar(a, 'pedir');
     await until(b, 'document.querySelectorAll(".carta-21").length === 5');
@@ -92,6 +93,16 @@ app.whenReady().then(async () => {
   await jogar(a, 'banca');
   await jogar(a, 'iniciar');
   await until(a, 'document.querySelectorAll(".carta-21").length >= 4');
+  // Contra a banca dá pra dobrar nas duas primeiras cartas: vem só mais uma (sem 21 de cara)
+  if (await js(a, 'Boolean(document.querySelector("[data-acao=dobrar]"))')) {
+    await wait(900);
+    if (process.env.PRINTS) await fs.writeFile(path.join(process.env.PRINTS, '21-dobrar.png'), (await a.webContents.capturePage()).toPNG());
+    await jogar(a, 'dobrar');
+    await until(a, 'document.querySelector("#aviso-21").textContent.includes("encerrada")');
+    if (await js(a, 'document.querySelectorAll(".minha-mao .carta-21").length') !== 3) throw Error('Dobrar deveria dar só uma carta');
+    await wait(2500);
+    if (process.env.PRINTS) await fs.writeFile(path.join(process.env.PRINTS, '21-dobrou.png'), (await a.webContents.capturePage()).toPNG());
+  }
   if (await js(a, 'Boolean(document.querySelector("[data-acao=parar]"))')) await jogar(a, 'parar');
   await until(a, 'document.querySelector("#aviso-21").textContent.includes("encerrada")');
   console.log('21 nos dois modos passou');

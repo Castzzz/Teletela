@@ -487,8 +487,8 @@
             <button type="button" class="ficha-botao-21 roxa" data-ficha="25" aria-label="Pôr ficha de 25">25</button>
             <button type="button" class="ficha-botao-21 verde" data-ficha="50" aria-label="Pôr ficha de 50">50</button>
             <button type="button" class="ficha-botao-21 preta" data-ficha="100" aria-label="Pôr ficha de 100">100</button>
-            <button type="button" class="btn-secondary" data-montar="tudo">Tudo</button>
-            <button type="button" class="btn-secondary" data-montar="limpar">Limpar</button>
+            <button type="button" class="atalho-mesa" data-montar="tudo">All-in</button>
+            <button type="button" class="atalho-mesa" data-montar="limpar">Limpar</button>
           </div>
           <footer id="acoes-21"></footer>
         </div>
@@ -517,10 +517,16 @@
               <label><input type="radio" name="fichas-poker" value="0"><span>Só diversão</span></label>
             </fieldset>
             <form id="valor-poker" hidden>
-              <label for="valor-poker-numero" class="valor-poker-rotulo"></label>
-              <input type="range" id="valor-poker-faixa" aria-hidden="true" tabindex="-1">
-              <input type="number" id="valor-poker-numero" class="form-input" inputmode="numeric">
-              <div class="valor-poker-rapidos"></div>
+              <div class="valor-poker-topo">
+                <label for="valor-poker-numero" class="valor-poker-rotulo"></label>
+                <span class="valor-poker-campo"><input type="number" id="valor-poker-numero" inputmode="numeric" step="5"><span aria-hidden="true">fichas</span></span>
+              </div>
+              <div class="valor-poker-ajuste">
+                <button type="button" class="valor-poker-passo" data-passo="-1"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+                <input type="range" id="valor-poker-faixa" aria-hidden="true" tabindex="-1">
+                <button type="button" class="valor-poker-passo" data-passo="1"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+              </div>
+              <div class="valor-poker-rapidos" role="group" aria-label="Valores prontos"></div>
             </form>
             <footer id="acoes-poker"></footer>
           </div>
@@ -1011,6 +1017,15 @@
 
       <div class="modal-body">
         <ul class="whats-new-list">
+          <li><strong>Cartas maiores.</strong> No poker e no 21 as cartas ficaram maiores e dá pra ler o número de longe. No poker, as cartas de cada um ficam do lado do nome.</li>
+          <li><strong>Sua vez com cor e som.</strong> Na sua vez aparecem botões grandes, sempre na mesma ordem: vermelho pra largar ou parar, verde pra pagar ou pedir carta, amarelo pra aumentar ou dobrar. No poker toca um sino quando é a sua vez, mesmo com a mesa fechada.</li>
+          <li><strong>Apostar ficou mais fácil.</strong> No poker, escolha o valor no número, na barra, no − e + ou nos atalhos ½ pote, Pote e All-in, que mostram quanto põem. Toda aposta anda de 5 em 5.</li>
+          <li><strong>21 mais justo.</strong> 21 de cara paga 3 por 2 e ganha de qualquer outro 21, e contra a banca dá pra Dobrar nas duas primeiras cartas.</li>
+          <li><strong>Aceleração por hardware.</strong> Se a transmissão ficar ruim ou o app fechar sozinho, desligue em Configurações → Transmissão. Se o Teletela fechar por problema na placa de vídeo, ele avisa ao abrir de novo.</li>
+        </ul>
+        <div id="whats-new-5-0-0" class="whats-new-older hidden">
+          <h4>E o que chegou na 5.0.0</h4>
+        <ul class="whats-new-list">
           <li><strong>Atividades na call.</strong> Toque em Atividades na barra da call e escolha uma mesa. Cada um joga o que quiser ao mesmo tempo.</li>
           <li><strong>21.</strong> Jogue contra a banca ou entre amigos, com até oito na mesa, cartas em pixel art e sons de cassino.</li>
           <li><strong>Poker.</strong> Texas Hold'em com blinds de 5 e 10. Sente com quanto quiser, veja o nome da sua mão enquanto as cartas saem e consulte as mãos no botão Mãos.</li>
@@ -1020,6 +1035,7 @@
           <li><strong>Visual novo.</strong> Fonte e cores próprias, quem fala em destaque na call e configurações do canal repaginadas. Roda e Aconchego viraram o Clássico; o Terminal ganhou atalhos de teclado.</li>
           <li><strong>Transmissão pela placa de vídeo.</strong> Quando o PC consegue, a tela é codificada pela placa de vídeo, como no Discord, e sobra processador pro jogo. O Diagnóstico da transmissão mostra se está usando a placa ou o processador.</li>
         </ul>
+        </div>
         <div id="whats-new-4-9-0" class="whats-new-older hidden">
           <h4>E o que chegou na 4.9.0</h4>
         <ul class="whats-new-list">
@@ -1341,6 +1357,20 @@
 
       <div class="modal-actions">
         <button type="button" class="btn-primary" data-close-modal="modal-whats-new">Bora</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aviso depois que a placa de vídeo derrubou o app (tela preta e fechou) -->
+  <div id="modal-gpu-crash" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="gpu-crash-title" aria-describedby="gpu-crash-text">
+    <div class="modal-card">
+      <div class="modal-header"><h3 id="gpu-crash-title">O Teletela fechou sozinho</h3></div>
+      <div class="modal-body">
+        <p class="form-help" id="gpu-crash-text">A placa de vídeo parou de responder enquanto desenhava a tela, e por isso ficou tudo preto. Desligar a aceleração por hardware costuma resolver. Dá pra ligar de novo em Configurações → Transmissão.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" id="btn-gpu-crash-later">Agora não</button>
+          <button type="button" class="btn-primary" id="btn-gpu-crash-off">Desligar e reiniciar</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1745,6 +1775,13 @@
           <section class="settings-section hidden" data-settings-section="transmissao">
             <h4 class="settings-section-title">Transmissão</h4>
             <div class="form-group"><button type="button" class="btn-secondary" id="btn-settings-diagnostics">Diagnóstico das transmissões</button><small>Veja a qualidade real enquanto transmite ou assiste.</small></div>
+            <!-- Aceleração por hardware (só no app do PC; vale depois de reiniciar) -->
+            <div class="form-group hidden" id="gpu-setting">
+              <label class="hotkey-global"><input type="checkbox" id="check-gpu"> Usar aceleração por hardware</label>
+              <p class="form-help" id="gpu-status" role="status">Usa a placa de vídeo pra desenhar o app e codificar a transmissão. Se a tela travar ou ficar ruim ao transmitir ou assistir, tente desligar.</p>
+              <button type="button" class="btn-secondary hidden" id="btn-gpu-restart">Reiniciar o Teletela</button>
+              <button type="button" class="btn-secondary hidden" id="btn-crash-log">Abrir registro de falhas</button>
+            </div>
             <!-- Esconder a própria transmissão -->
             <div class="form-group">
               <label class="hotkey-global">
@@ -1825,11 +1862,16 @@
             </div>
             <div id="fichas-admin" class="form-group permission-block hidden">
               <h4>Fichas das atividades</h4>
-              <p class="form-help">Cada pessoa tem uma carteira que vale pra todas as atividades. Recarregar devolve o saldo pra 1.000.</p>
+              <p class="form-help">Cada pessoa tem uma carteira que vale pra todas as atividades. Escolha a pessoa, digite quantas fichas e adicione ou remova. Recarregar todo mundo devolve todos os saldos pra 1.000.</p>
               <label for="fichas-admin-pessoa">Pessoa</label>
               <select id="fichas-admin-pessoa" class="form-input"></select>
+              <label for="fichas-admin-quanto">Quantas fichas</label>
               <div class="admin-row">
-                <button type="button" id="fichas-admin-uma" class="btn-primary" disabled>Recarregar essa pessoa</button>
+                <input type="number" id="fichas-admin-quanto" class="form-input" min="1" step="1" inputmode="numeric" placeholder="Ex.: 500">
+                <button type="button" id="fichas-admin-mais" class="btn-primary" disabled>Adicionar</button>
+                <button type="button" id="fichas-admin-menos" class="btn-secondary" disabled>Remover</button>
+              </div>
+              <div class="admin-row">
                 <button type="button" id="fichas-admin-todos" class="btn-secondary" disabled>Recarregar todo mundo</button>
               </div>
               <p id="fichas-admin-status" class="form-help" role="status"></p>

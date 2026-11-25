@@ -81,9 +81,12 @@
 /* Os lugares ficam na borda, numa elipse; as cartas e a aposta apontam pro centro. */
 #maos-21 {
   flex: 1; min-width: 0; position: relative;
-  min-height: clamp(27rem, 58vh, 46rem);
+  min-height: clamp(25rem, 50vh, 46rem);
 }
-.topo-21 { position: absolute; top: 0; left: 50%; translate: -50% 0; display: flex; align-items: flex-start; gap: clamp(.8rem, 2.5cqw, 2rem); }
+.topo-21 { position: absolute; top: 0; left: 50%; translate: -50% 0; width: max-content; max-width: 100%; display: flex; align-items: flex-start; gap: clamp(.8rem, 2.5cqw, 2rem); }
+/* Sem largura própria, o topo ficava preso à metade da mesa e as cartas da banca quebravam
+   em várias linhas, empurrando a placa pro meio do feltro. */
+.banca-21 .leque-21 { flex-wrap: nowrap; }
 .centro-21 { position: absolute; top: 47%; left: 50%; translate: -50% -50%; width: min(100%, 62rem); display: flex; flex-direction: column; align-items: center; gap: .7rem; }
 [data-modo="banca"] .centro-21 { top: 44%; }
 [data-modo="amigos"] .centro-21 { top: 51%; }
@@ -106,9 +109,21 @@
 .lugar-21 { --largura: clamp(2.7rem, 4.4cqw, 5.6rem); display: flex; flex-direction: column; align-items: center; min-width: 0; gap: .4rem; }
 .lugar-21.em-cima { flex-direction: column-reverse; }
 .jogo-21 { display: flex; align-items: center; gap: .55rem; }
-.minha-mao { --largura: clamp(4rem, 7.6cqw, 9rem); }
-.amostra-21 { --largura: clamp(5.4rem, 15cqw, 9.5rem); }
-.banca-21 { --largura: clamp(3.6rem, 6.2cqw, 7.6rem); }
+/* No 21 as cartas seguem os tamanhos do poker: múltiplos da arte de 48×64 (1,5×, 2×,
+   3×) pra não borrar, e nunca abaixo de 1,5× pros números do canto serem legíveis. */
+#maos-21 .lugar-21 { --largura: 72px; }
+#maos-21 :is(.minha-mao, .banca-21) { --largura: 96px; }
+#maos-21 .amostra-21 { --largura: 144px; }
+@container (min-width: 1500px) {
+  #maos-21 .lugar-21 { --largura: 96px; }
+  #maos-21 :is(.minha-mao, .banca-21) { --largura: 144px; }
+  #maos-21 .amostra-21 { --largura: 192px; }
+}
+@container (max-width: 900px) {
+  #maos-21 .lugar-21 { --largura: 48px; }
+  #maos-21 :is(.minha-mao, .banca-21) { --largura: 72px; }
+  #maos-21 .amostra-21 { --largura: 96px; }
+}
 
 .leque-21 { position: relative; display: flex; align-items: center; justify-content: center; max-width: 100%; flex-wrap: wrap; padding: .3rem .45rem; transition: opacity .3s, filter .3s; }
 .amigo-21 .leque-21:not(:has(.carta-21)), .minha-mao .leque-21:not(:has(.carta-21)), .banca-21 .leque-21:not(:has(.carta-21)) { width: var(--largura); aspect-ratio: 5/7; border: 1.5px dashed color-mix(in srgb, var(--marfim) 35%, transparent); border-radius: 9%; }
@@ -282,12 +297,57 @@
 /* ---------- Painel embaixo da mesa ---------- */
 .painel-21 { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem 1.2rem; margin-top: 1rem; }
 .estado-21 { flex: 1 1 18rem; min-width: 0; }
+/* Sem aviso (montando a aposta), as fichas e o botão de apostar ficam na mesma linha. */
+#jogo-21 .estado-21:has(#aviso-21:empty):not(:has(#fichas-na-mesa:not([hidden], :empty))) { display: none; }
 #aviso-21 { margin: 0; line-height: 1.45; color: var(--text-normal); }
 #fichas-na-mesa:not([hidden]) { display: flex; align-items: center; gap: .6rem; margin-bottom: .3rem; color: var(--text-header); font-weight: 650; font-variant-numeric: tabular-nums; }
 .ficha-solta-21 { flex: none; width: 1.3rem; height: 1.3rem; border-radius: 50%; box-shadow: 0 1px 2px rgb(0 0 0 / 40%); }
 :is(#acoes-21, #acoes-poker) { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; }
 :is(#acoes-21, #acoes-poker) button { min-height: 44px; }
-#acoes-21 [data-acao="pedir"] { min-width: 8.5rem; }
+
+/* Jogadas da vez (21 e poker): botões grandes do mesmo tamanho, cada um com a sua cor e
+   sempre no mesmo lugar. Parar/largar vermelho, pedir/pagar verde, dobrar/aumentar
+   amarelo. Tinta sobre o fundo do app pra funcionar nos 3 temas. */
+.jogada-mesa {
+  --cor: var(--accent-green);
+  min-height: 52px; padding: .35rem 1rem;
+  border: 1.5px solid var(--cor); border-radius: var(--radius-md, 8px);
+  background: color-mix(in srgb, var(--cor) 16%, var(--bg-secondary));
+  color: var(--text-header);
+  font-family: inherit; font-weight: 750; font-size: 1rem; line-height: 1.2; font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color .15s, transform .1s, opacity .15s;
+}
+.jogada-mesa[data-cor="vermelho"] { --cor: var(--accent-red); }
+.jogada-mesa[data-cor="amarelo"] { --cor: var(--accent-yellow); }
+.jogada-mesa:hover:not(:disabled) { background: color-mix(in srgb, var(--cor) 30%, var(--bg-secondary)); }
+.jogada-mesa:active:not(:disabled) { transform: scale(.97); }
+.jogada-mesa:disabled { opacity: .55; cursor: default; }
+.jogada-mesa small { display: block; color: var(--text-muted); font-size: .78rem; font-weight: 650; }
+
+/* Atalhos de valor (½ pote, All-in, Limpar): pílula com borda, legível sem competir
+   com as jogadas. O valor que ele põe vai do lado, mais apagado. */
+.atalho-mesa {
+  display: inline-flex; align-items: center; justify-content: center; gap: .35rem;
+  min-height: 38px; padding: .3rem .7rem; white-space: nowrap;
+  border-radius: 8px; border: 1px solid var(--border-medium);
+  background: var(--bg-tertiary); color: var(--text-header);
+  font-family: inherit; font-weight: 700; font-size: .86rem; line-height: 1.15; font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, transform .1s;
+}
+.atalho-mesa small { color: var(--text-muted); font-size: .74rem; font-weight: 600; }
+.atalho-mesa:hover:not(:disabled) { border-color: color-mix(in srgb, var(--text-header) 40%, var(--border-medium)); }
+.atalho-mesa:active:not(:disabled) { transform: scale(.96); }
+.atalho-mesa:disabled { opacity: .45; cursor: default; }
+[data-visual="terminal"] :is(.jogada-mesa, .atalho-mesa, #valor-poker, #montar-21) { border-radius: 2px; }
+
+/* Sua vez no 21: aviso e "Sair da mesa" em cima, as jogadas embaixo. */
+#jogo-21 .painel-21[data-vez] { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+#jogo-21 .painel-21[data-vez] #acoes-21 { display: contents; }
+#jogo-21 .painel-21[data-vez] .jogadas-mesa { grid-column: 1 / -1; grid-row: 2; }
+#jogo-21 .painel-21[data-vez] #aviso-21 { color: var(--text-header); font-weight: 700; font-size: 1.05rem; }
+.jogadas-mesa { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .6rem; }
 #mesa-21 button:focus-visible { outline: 2px solid var(--text-link); outline-offset: 2px; }
 
 /* A entrada se escolhe pegando a ficha */
@@ -308,9 +368,17 @@
 :is(#entrada-21, #entrada-poker) label:has(:focus-visible) { outline: 2px solid var(--text-link); outline-offset: 3px; }
 
 /* Montar a aposta: cada ficha é um botão; a pilha cresce no seu círculo */
-#montar-21 { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+#montar-21 {
+  display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+  padding: .6rem .75rem;
+  border-radius: var(--radius-md, 10px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+}
 #montar-21[hidden] { display: none; }
-#montar-21 .btn-secondary { min-height: 40px; }
+/* Fichas de um lado, atalhos do outro, separados por um fio. */
+#montar-21 [data-montar="tudo"] { margin-left: .35rem; position: relative; }
+#montar-21 [data-montar="tudo"]::before { content: ''; position: absolute; left: -.5rem; top: 15%; bottom: 15%; border-left: 1px solid var(--border-medium); }
 .ficha-botao-21 {
   position: relative;
   display: grid; place-items: center;

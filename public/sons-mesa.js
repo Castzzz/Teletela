@@ -34,6 +34,32 @@ export function criarSons(appState, podeTocar = () => true) {
       fonte.start(ctx.currentTime + atraso / 1000);
     });
   }
+  // Sua vez: duas notas de sino, feitas na hora (sem arquivo). Toca mesmo com a mesa
+  // fechada, porque o tempo está correndo; o botão de som da mesa e ensurdecer calam.
+  tocar.vez = (atraso = 0) => {
+    if (!somLigado() || appState.myUser?.isDeafened) return;
+    const [ctx, saida] = saidaDeAudio();
+    if (!ctx) return;
+    const inicio = ctx.currentTime + atraso / 1000;
+    for (const [i, nota] of [880, 1318.5].entries()) {
+      const t = inicio + i * .13;
+      const ganho = ctx.createGain();
+      ganho.gain.setValueAtTime(0, t);
+      ganho.gain.linearRampToValueAtTime(.16 - i * .03, t + .008);
+      ganho.gain.exponentialRampToValueAtTime(.0001, t + .9);
+      ganho.connect(saida);
+      // Fundamental + um harmônico baixinho: soa como sino, não como bipe
+      for (const [mult, vol] of [[1, 1], [2.76, .18]]) {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.frequency.value = nota * mult;
+        g.gain.value = vol;
+        osc.connect(g).connect(ganho);
+        osc.start(t);
+        osc.stop(t + 1);
+      }
+    }
+  };
   // Carregar no primeiro clique deixa o primeiro som sem atraso.
   tocar.precarregar = () => {
     const [ctx] = saidaDeAudio();

@@ -66,6 +66,9 @@ app.whenReady().then(async () => {
   await print(a, '1-abertura');
 
   // Lia senta com 300 digitando; Davi com o valor sugerido (500); Caio assiste no celular.
+  // Digitado fora dos 5 em 5, o valor arredonda ao sair do campo.
+  await js(a, `{const n=document.querySelector('#valor-poker-numero');n.value='302';n.dispatchEvent(new Event('input'));n.dispatchEvent(new Event('blur'))}void 0`);
+  if (await js(a, 'document.querySelector("#valor-poker-numero").value') !== '300') throw Error('O valor não foi pra 5 em 5');
   await js(a, `const n=document.querySelector('#valor-poker-numero');n.value='300';n.dispatchEvent(new Event('input'));void 0`);
   if (!await js(a, 'document.querySelector("#acoes-poker [data-acao=sentar]").textContent.includes("300")')) throw Error('O botão não acompanhou o valor');
   await click(a, '#acoes-poker [data-acao=sentar]');
@@ -114,9 +117,9 @@ app.whenReady().then(async () => {
 
   // Depois do flop fala Davi. Ele aposta o pote; Lia larga.
   await until(b, 'Boolean(document.querySelector("#acoes-poker [data-acao=aumentar]"))');
-  const pote = [...await js(b, 'Array.from(document.querySelectorAll(".valor-poker-rapidos button"), x => x.textContent)')];
-  if (pote.join() !== 'Mínimo,½ pote,Pote,Tudo') throw Error('Atalhos de aposta: ' + pote.join());
-  await js(b, `Array.from(document.querySelectorAll('.valor-poker-rapidos button')).find(x => x.textContent === 'Pote').click();void 0`);
+  const pote = [...await js(b, 'Array.from(document.querySelectorAll(".valor-poker-rapidos button"), x => x.firstChild.textContent)')];
+  if (pote.join() !== 'Mínimo,½ pote,Pote,All-in') throw Error('Atalhos de aposta: ' + pote.join());
+  await js(b, `Array.from(document.querySelectorAll('.valor-poker-rapidos button')).find(x => x.firstChild.textContent === 'Pote').click();void 0`);
   if (!await js(b, 'document.querySelector("#acoes-poker [data-acao=aumentar]").textContent === "Apostar 20"')) throw Error('Aposta do pote errada');
   await click(b, '#acoes-poker [data-acao=aumentar]');
   await until(a, 'Boolean(document.querySelector("#acoes-poker [data-acao=largar]"))');
@@ -153,6 +156,7 @@ app.whenReady().then(async () => {
     // A última ficha cai na coluna da cor dela; a aposta vira um montinho, uma coluna por cor.
     if (!await js(a, 'Boolean(document.querySelector(".ficha-caindo"))')) throw Error('A ficha não caiu na pilha');
     if (await js(a, 'document.querySelectorAll(".minha-mao .aposta-21 .pilha-21").length') !== 5) throw Error('Uma coluna por cor');
+    await print(a, '7a-21-aposta');
     await click(a, '#acoes-21 [data-acao=iniciar]');
     await until(a, 'document.querySelectorAll(".minha-mao .carta-21").length === 2');
     await print(a, '7-vinte-e-um');
