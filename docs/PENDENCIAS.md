@@ -1,5 +1,9 @@
 # Pendências atuais
 
+## 25/11/2026 — 5.0.1 aprovada e agendada (`ambos`) pra 26/11 às 03h
+
+O dono mandou preparar a atualização e deixar na VM como a 5.0, pras 03h. Versão 5.0.1 (package.json/lock), `WHATS_NEW_VERSION = '5.0.1'` com cinco novidades (cartas maiores, vez com cor e som, apostar mais fácil/5 em 5, 21 com 3:2 e Dobrar, aceleração por hardware); a lista da 5.0.0 virou `#whats-new-5-0-0`. Antes do commit: 62/62, 26 das atividades, `poker-browser` e `vinte-e-um-browser` com prints (novidades conferidas). Commit `d599752` na `main` e enviado; instaladores em `dist/release-5.0.1` (com os 15 sons); rascunho v5.0.1 apontando pro SHA completo com os 7 arquivos; `agendar.sh ambos` rodado e pedido conferido em `/var/lib/teletela-agenda/pendente`. Timer: 26/11 06:00 UTC (03h de Brasília), tenta até 03h50 com os canais vazios. Depois conferir o journal de `teletela-madrugada.service` e se a v5.0.1 saiu do rascunho. Mudanças de fichas do dono não foram conferidas na tela.
+
 ## 25/11/2026 — opção de desligar a aceleração por hardware (local)
 
 Pedido do dono depois da 5.0: um amigo transmite e assiste melhor pelo navegador sem aceleração. O app vinha sempre com ela ligada (padrão do Electron). Agora **Configurações → Transmissão → Usar aceleração por hardware** (só no app do PC, ligada por padrão). A escolha vai pro `config.json` e só vale ao abrir o app; ao mudar aparece **Reiniciar o Teletela** (sai da call). Sem aceleração a transmissão volta pro VP8 no processador. Mexeu em `electron/` e `public/`: precisa de **release** (sem deploy). Testado: 62/62 e a opção num Electron isolado (mock do IPC) no Clássico e no Terminal, prints num `kwin_wayland --virtual`; o `disableHardwareAcceleration()` de verdade e o reinício não foram testados no app instalado. Falta: item nas novidades da próxima versão e o amigo testar.
