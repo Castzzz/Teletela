@@ -374,7 +374,7 @@ tests/
   m4-channels-admin.test.js  Teste de integração grande: sobe o server.js de verdade
   helpers/, e2e/           Utilitários e cenários do runner
 
-README.md                  Pra quem USA (download, instalar, como usar) + resumo pra quem mantém
+README.md                  Curto: o que é, download, instalar, problemas comuns e anotações de dev
 LEIA-ME-AMIGOS.txt         Guia curtinho pros amigos
 docs/PROJETO.md            Este arquivo
 docs/RECUPERAR-SERVIDOR.md Passo a passo pra recriar a sala se a VM sumir
@@ -1565,7 +1565,7 @@ Mudar qualquer um destes quebra a atualização automática ou faz a galera perd
 3. Rodar `npm test`, `node --test tests/m1-*.test.js tests/m2-*.test.js tests/m3-*.test.js`
    e `node tests/m4-channels-admin.test.js`.
 4. Conferir na tela (`npm run app`, de preferência com dois apps num servidor local).
-5. Atualizar o README (tabela "Como usar") se mudou algo que o usuário vê, e este arquivo se
+5. Atualizar o README (curto: só a lista "O que tem" e "Deu problema?") se mudou algo que o usuário vê, e este arquivo se
    mudou arquitetura, deploy, dados ou uma armadilha nova.
 6. Pra lançar: versão no `package.json` + popup de novidades, commit sem `public/sounds/`,
    `npm run release` e/ou `npm run deploy:oracle` (tabela da §6).
