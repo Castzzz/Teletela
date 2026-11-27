@@ -1,7 +1,12 @@
 # Pendências atuais
 
+## 27/11/2026 — 5.1.0 publicada às 18h de Brasília
+
+O dono antecipou o lançamento e autorizou reiniciar com voz ocupada. Publicados o servidor e os sete arquivos da v5.1.0 do commit 827b185, com a Comilança desligada. O primeiro reinício acionou a reversão porque faltavam módulos no pacote. Foram incluídos roleta.js, cassino.js e comilanca.js do commit aprovado, e o pacote passou por inicialização isolada antes do segundo reinício. Confirmados saúde pública, serviços de sala e voz ativos, temporada 1, backup e fila vazia. A correção da lista de arquivos do deploy ficou no repositório local. Testes gerais 62/62.
+
 ## 27/11/2026 — 5.1.0 aprovada pro lançamento desta madrugada (28/11, 03h)
 
+- **Lançada pelo dono antes da madrugada:** 27/11 às 18h16 (21:16 UTC) a v5.1.0 (`827b185`) foi publicada e o servidor reiniciou com ela; a fila da VM ficou vazia, então às 03h não roda nada. Conferido na VM: `cassino.json` com a temporada 1 (fim 27/01/2027, 03h de Brasília) e as carteiras de conta subiram pra 5.000 (das 8 em `fichas.json`, uma está abaixo: ou não é de conta, ou já gastou depois do lançamento).
 - O dono mandou lançar nesta madrugada a Roleta, o Seu cassino e o resto, **sem a Comilança** (fica pro futuro, falta polir). A Comilança ficou no código e desligada: `COMILANCA_LIGADA = false` em `public/app.js` e o servidor só responde com `TELINHA_COMILANCA=1`. O salão voltou a 5 cartões (3 + 2 centralizado; a grade em `roleta.css` serve pra 5 ou 6).
 - Antes de lançar apareceu que a temporada do Seu cassino só acabava no servidor de teste. O dono escolheu **fazer a temporada de verdade agora**: global, 60 dias, acaba às 03h de Brasília; no fim todo mundo recomeça, ganha 3 estrelas (tudo no máximo) ou 1, e toda carteira vai pra 5.000. No lançamento ninguém perde coins: quem tem menos de 5.000 sobe pra 5.000; conta nova começa com 5.000. Detalhes em PROJETO.md, "Seu cassino".
 - Versão 5.1.0, novidades: Seu cassino (com temporadas), Roleta e 5.000 coins pra começar; a 5.0.1 virou `#whats-new-5-0-1`.
