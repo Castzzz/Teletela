@@ -6,6 +6,7 @@
 - Antes de lançar apareceu que a temporada do Seu cassino só acabava no servidor de teste. O dono escolheu **fazer a temporada de verdade agora**: global, 60 dias, acaba às 03h de Brasília; no fim todo mundo recomeça, ganha 3 estrelas (tudo no máximo) ou 1, e toda carteira vai pra 5.000. No lançamento ninguém perde coins: quem tem menos de 5.000 sobe pra 5.000; conta nova começa com 5.000. Detalhes em PROJETO.md, "Seu cassino".
 - Versão 5.1.0, novidades: Seu cassino (com temporadas), Roleta e 5.000 coins pra começar; a 5.0.1 virou `#whats-new-5-0-1`.
 - Testes antes do commit: npm test 62/62, atividades 45/45 (teste novo da temporada global), navegador cassino/roleta/21/poker ok (os de 21 e poker esperavam saldo de 1.000 e foram ajustados pra 5.000).
+- **Agendada (`ambos`):** commit `8a5a761` na `main` e enviado; instaladores em `dist/release-5.1.0` (15 sons, `cassino-local` junto); rascunho v5.1.0 apontando pro SHA completo com os 7 arquivos; `agendar.sh ambos` rodado e pedido conferido em `/var/lib/teletela-agenda/pendente`. Timer: 28/11 06:00 UTC (03h de Brasília), tenta até 03h50 com os canais vazios; senão fica pra próxima madrugada. Depois conferir o journal de `teletela-madrugada.service`, se a v5.1.0 saiu do rascunho e se `cassino.json` na VM ganhou a `temporada` 1 (e as carteiras abaixo de 5.000 subiram).
 - **Lembrar:** `public/cassino-local/` (tileset sem redistribuição confirmada) vai dentro do instalador e do deploy, mas não no git. Perguntar ao autor continua pendente.
 
 ## 27/11/2026 — Comilança com cara nova (local, sem commit)
