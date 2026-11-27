@@ -673,6 +673,8 @@ pedido por vez. O timer local pode ser consultado por SSH com
 binários sobre a instalação existente. Mudanças de infraestrutura ou das unidades
 do sistema precisam do procedimento de instalação correspondente.
 
+O pacote do servidor usa a lista explícita de módulos em `deploy/oracle/deploy.sh`. Inclua os módulos importados mesmo quando a atividade estiver desligada: o Node resolve os imports ao iniciar.
+
 A VM faz backup de dados e segredos antes do deploy, confere ocupação novamente
 antes do reinício e verifica os serviços e a saúde por HTTP local e HTTPS público.
 Se a verificação falhar, repõe os arquivos anteriores. Depois do sucesso conserva
