@@ -94,6 +94,27 @@ app.whenReady().then(async () => {
   const topo = (((angulo + RODA.indexOf(n) * 360 / 37) % 360) + 360) % 360;
   if (Math.min(topo, 360 - topo) > .5) throw Error(`A roda parou fora do número ${n} (${topo}°)`);
 
+  // Salão com 5 cartões em várias telas: nada se sobrepõe, todos do mesmo tamanho, a fileira
+  // de baixo centralizada e, de 1600x900 pra cima, sem rolar (em 1366x768 rola um pouco).
+  for (const [w, h] of [[1920, 1080], [1745, 980], [1600, 900], [1366, 768], [1100, 800]]) {
+    const t = await open('Tela' + w, w, h);
+    await new Promise(r => setTimeout(r, 300));
+    const m = await js(t, `(() => {
+      const cs = [...document.querySelectorAll('#salao-jogos .salao-cartao')].map(e => e.getBoundingClientRect());
+      const sobre = cs.some((x, i) => cs.some((y, j) => i < j && x.left < y.right - 1 && y.left < x.right - 1 && x.top < y.bottom - 1 && y.top < x.bottom - 1));
+      const larg = Math.round(Math.max(...cs.map(c => c.width)) - Math.min(...cs.map(c => c.width)));
+      const lista = document.querySelector('#salao-jogos .salao-cartoes').getBoundingClientRect();
+      const ult = cs.filter(c => Math.abs(c.top - cs.at(-1).top) < 2);
+      const centro = Math.round(Math.abs((ult[0].left + ult.at(-1).right) / 2 - (lista.left + lista.right) / 2));
+      let rola = 0;
+      for (let e = document.querySelector('#salao-jogos'); e; e = e.parentElement) if (/(auto|scroll)/.test(getComputedStyle(e).overflowY)) rola = Math.max(rola, e.scrollHeight - e.clientHeight);
+      const mi = document.querySelector("#salao-jogos .salao-miolo"); const quem = []; for (let e = document.querySelector("#salao-jogos"); e; e = e.parentElement) if (/(auto|scroll)/.test(getComputedStyle(e).overflowY) && e.scrollHeight > e.clientHeight + 1) quem.push((e.id || e.className) + ":" + e.scrollHeight + "/" + e.clientHeight); return { sobre, larg, centro, rola, n: cs.length, mi: Math.round(mi.getBoundingClientRect().width), miw: getComputedStyle(mi).width, quem, vh: innerHeight };
+    })()`);
+    await print(t, '5-salao-' + w);
+    if (m.n !== 5 || m.sobre || m.larg > 2 || m.centro > 2 || (w >= 1600 && m.rola > 1)) throw Error('Salão torto em ' + w + 'x' + h + ': ' + JSON.stringify(m));
+    t.destroy();
+  }
+
   // Celular só pra print.
   const c = await open('Caio', 420, 860);
   await click(c, '.salao-cartao[data-jogo="roleta"]');

@@ -9,6 +9,7 @@
 .salao-roda { transition: transform .8s cubic-bezier(.2, .7, .2, 1); }
 @container cartao (min-width: 400px) { .salao-roda { width: 192px; height: 192px; } .salao-arte-roleta .salao-pilha { margin-bottom: 28px; } }
 @container cartao (min-width: 540px) { .salao-roda { width: 256px; height: 256px; } .salao-arte-roleta .salao-pilha { margin-bottom: 36px; } }
+@container cartao (max-width: 239px) { .salao-roda { width: 96px; height: 96px; margin-right: 2px; } .salao-arte-roleta .salao-pilha { margin-bottom: 16px; } }
 @container salao (max-width: 600px) { .salao-roda { width: 64px; height: 64px; margin-right: 2px; } .salao-arte-roleta .salao-pilha { margin-bottom: 10px; } }
 
 /* Salão com 5 ou 6 jogos (a Comilança só entra quando estiver ligada, ver app.js):
@@ -19,15 +20,26 @@
   .salao-cartoes { grid-template-columns: repeat(6, 1fr); }
   .salao-cartoes > li { grid-column: span 2; }
   .salao-cartoes:has(> li:nth-child(5):last-child) > li:nth-child(4) { grid-column: 2 / span 2; }
+  /* Duas fileiras: sem a folga do centro ótico, que sozinha fazia rolar uns 30 px. */
+  .salao-miolo:has(> .salao-cartoes > li:nth-child(5)) { padding-bottom: 0; }
 }
 @container salao (min-width: 1240px) {
   .salao-cartoes:has(> li:nth-child(5):last-child) { grid-template-columns: repeat(5, 1fr); }
-  .salao-cartoes:has(> li:nth-child(5):last-child) > li { grid-column: auto; }
+  .salao-miolo:has(> .salao-cartoes > li:nth-child(5):last-child) { padding-bottom: clamp(0rem, 4vh, 3.5rem); }
+  /* nth-child(n): mesma força da regra do 4º cartão acima, senão ele continua preso na trilha 2 */
+  .salao-cartoes:has(> li:nth-child(5):last-child) > li:nth-child(n) { grid-column: auto; }
+}
+/* Janela baixa (1080p com barras, notebook) e duas fileiras: a arte encolhe na altura. */
+@media (max-height: 1000px) {
+  @container salao (min-width: 601px) and (max-width: 1239px) {
+    .salao-cartoes:has(> li:nth-child(5)) .salao-arte { height: 148px; padding-bottom: 14px; }
+    .salao-miolo:has(> .salao-cartoes > li:nth-child(5)) { gap: .75rem; }
+  }
 }
 @container salao (min-width: 1800px) {
   .salao-miolo { width: min(100%, 120rem); }
   .salao-cartoes:has(> li:nth-child(6)) { grid-template-columns: repeat(6, 1fr); }
-  .salao-cartoes:has(> li:nth-child(6)) > li { grid-column: auto; }
+  .salao-cartoes:has(> li:nth-child(6)) > li:nth-child(n) { grid-column: auto; }
 }
 
 /* ---------- Mesa ---------- */

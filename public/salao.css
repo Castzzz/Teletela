@@ -112,6 +112,17 @@
   [data-jogo="poker"] .salao-pilha + .salao-pilha { margin-left: -42px; }
 }
 
+/* Cartão bem estreito (5 lado a lado em 1080p): cartas e fichas em 1,5× pra caber sem cortar. */
+@container cartao (max-width: 239px) {
+  .salao-arte { gap: 3px; }
+  .salao-cartas img { width: 72px; height: 96px; }
+  .salao-cartas img + img { margin-left: -38px; }
+  [data-jogo="poker"] .salao-cartas img + img { margin-left: -60px; }
+  .salao-pilha { width: 48px; }
+  .salao-pilha + .salao-pilha { margin-left: -12px; }
+  [data-jogo="poker"] .salao-pilha + .salao-pilha { margin-left: -30px; }
+}
+
 /* A arte cresce pela largura do próprio cartão, não da tela: com 4 cartões lado a
    lado em 1080p eles continuam estreitos, e a arte em 3× vazava pras bordas.
    Os limites vêm da arte mais larga (poker: duas cartas e duas pilhas). */
