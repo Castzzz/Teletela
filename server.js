@@ -25,6 +25,9 @@ import { criarMesas21 } from './vinte-e-um.js';
 import { FichasStore } from './fichas-store.js';
 import { criarApostas } from './apostas.js';
 import { criarMesasPoker } from './poker.js';
+import { criarMesasRoleta } from './roleta.js';
+import { criarComilanca } from './comilanca.js';
+import { criarCassino } from './cassino.js';
 import { installWatchTogether } from './watch-together.js';
 import { normalizePresence, effectivePresence, presencePriority, PRESENCE_IDLE_MS } from './public/presence.js';
 import { SERVER_NAME, MAX_SERVER_ICON_BYTES, SERVER_ICON_RE, validServerIcon } from './public/server-branding.js';
@@ -1776,14 +1779,26 @@ installAccountHttp({ app, store: accounts, limit: accountLimit, onRevoke: revoke
 const dice = new DiceStore(DATA_DIR);
 const setupDiceSocket = installDice({ io, store: dice });
 // Fichas de cada pessoa, valem pra todas as atividades (fichas.json)
-const fichas = new FichasStore(DATA_DIR, Date.now, () => accounts.referencedAccessIds());
+// Conta nova começa com 5.000, o mesmo começo de temporada do Seu cassino.
+const fichas = new FichasStore(DATA_DIR, Date.now, () => accounts.referencedAccessIds(), { inicial: 5000 });
 const mesas21 = criarMesas21({ io, channels, fichas });
 // Poker (Texas Hold'em) na call, ao lado do 21; usa a mesma carteira
 const mesasPoker = criarMesasPoker({ io, channels, fichas });
+// Roleta europeia na call; também usa a mesma carteira
+const mesasRoleta = criarMesasRoleta({ io, channels, fichas });
+// Comilança: slot de coleta solo de cada conta, mesma carteira. Desligada nas versões até
+// ficar pronta; TELINHA_COMILANCA=1 liga pra testar (o app também tem a chave em app.js).
+const COMILANCA_LIGADA = process.env.TELINHA_COMILANCA === '1';
+const comilanca = criarComilanca({ fichas, aoMudarFichas: () => { mesas21.atualizarTodas(); mesasPoker.atualizarTodas(); mesasRoleta.atualizarTodas(); } });
 // Apostas estilo Twitch nos canais de voz (apostas.json)
 const apostas = criarApostas({ io, channels, fichas, isOwner: u => permissions.isOwner(u), diretorio: DATA_DIR,
   // Saldo mudou na aposta: as mesas de 21 abertas mostram o valor novo nos assentos.
-  aoMudarFichas: () => { mesas21.atualizarTodas(); mesasPoker.atualizarTodas(); } });
+  aoMudarFichas: () => { mesas21.atualizarTodas(); mesasPoker.atualizarTodas(); mesasRoleta.atualizarTodas(); } });
+// Cassino e roça de cada conta (atividade idle, cassino.json). TELINHA_CASSINO_TESTE=1
+// liga os botões de pular o tempo e os amigos de mentira (só em servidor local).
+const cassino = criarCassino({ io, fichas, diretorio: DATA_DIR, teste: process.env.TELINHA_CASSINO_TESTE === '1',
+  aoMudarFichas: () => { mesas21.atualizarTodas(); mesasPoker.atualizarTodas(); mesasRoleta.atualizarTodas(); apostas.atualizarTodas(); } });
+server.on('close', () => cassino.gravar());
 const watchTogether = installWatchTogether({ app, io, channels, server });
 
 // Quem não tem a senha nem chega a entrar (a senha de admin também abre a porta)
@@ -1889,7 +1904,10 @@ io.on('connection', (socket) => {
   socket.data.user = user;
   mesas21.conectar(socket, user);
   mesasPoker.conectar(socket, user);
+  mesasRoleta.conectar(socket, user);
+  if (COMILANCA_LIGADA) comilanca.conectar(socket, user);
   apostas.conectar(socket, user);
+  cassino.conectar(socket, user);
   scheduleMembers();
   socket.use((_packet, next) => {
     if ((accountSession && !accounts.resolveSessionMeta(socket.handshake.auth?.accountToken))
@@ -1947,9 +1965,10 @@ io.on('connection', (socket) => {
     let quantos;
     if (todos === true) quantos = fichas.resetarTodas();
     else if (typeof chave === 'string' && fichas.resetar(chave)) quantos = 1;
-    else return cb({ success: false, error: 'Essa pessoa não tem fichas ainda.' });
+    else return cb({ success: false, error: 'Essa pessoa não tem coins ainda.' });
     mesas21.atualizarTodas();
     mesasPoker.atualizarTodas();
+    mesasRoleta.atualizarTodas();
     apostas.atualizarTodas();
     cb({ success: true, quantos, lista: fichas.lista() });
   }));
@@ -1958,11 +1977,12 @@ io.on('connection', (socket) => {
     const cb = safeCallback(callback);
     if (!permissions.isOwner(user)) return cb({ success: false, error: 'Só o dono do servidor.' });
     const { chave, quanto } = safeObject(raw);
-    if (!Number.isSafeInteger(quanto) || !quanto || Math.abs(quanto) > 1_000_000_000) return cb({ success: false, error: 'Digite quantas fichas.' });
+    if (!Number.isSafeInteger(quanto) || !quanto || Math.abs(quanto) > 1_000_000_000) return cb({ success: false, error: 'Digite quantos coins.' });
     const saldo = typeof chave === 'string' ? fichas.ajustar(chave, quanto) : null;
-    if (saldo == null) return cb({ success: false, error: 'Essa pessoa não tem fichas ainda.' });
+    if (saldo == null) return cb({ success: false, error: 'Essa pessoa não tem coins ainda.' });
     mesas21.atualizarTodas();
     mesasPoker.atualizarTodas();
+    mesasRoleta.atualizarTodas();
     apostas.atualizarTodas();
     cb({ success: true, saldo, lista: fichas.lista() });
   }));
@@ -3502,6 +3522,7 @@ function leaveCurrentChannel(socket) {
   socket.data.screenPreviews?.clear();
   mesas21.sair(user.channelId, socket.id);
   mesasPoker.sair(user.channelId, socket.id);
+  mesasRoleta.sair(user.channelId, socket.id);
   watchTogether.leave(socket.id);
   if (SFU_SECRET) for (const id of [user.mediaId, user.voiceHostId, user.voiceViewerId]) revokeSfuMedia(id);
 

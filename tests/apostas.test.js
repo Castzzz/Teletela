@@ -35,7 +35,7 @@ test('pote vai pra quem acertou na proporção e quem criou também aposta', () 
   assert.ok(b.pedir('palpitar', { opcao: 'o2', valor: 10 }).erro, 'não troca de lado');
   c.pedir('palpitar', { opcao: 'o2', valor: 600 });
   assert.ok(c.pedir('palpitar', { opcao: 'o2', valor: 401 }).erro, 'sem saldo');
-  assert.equal(c.pedir('palpitar', { opcao: 'o2', valor: 7 }).erro, 'Aposte de 5 em 5 fichas.');
+  assert.equal(c.pedir('palpitar', { opcao: 'o2', valor: 7 }).erro, 'Aposte de 5 em 5 coins.');
   const o1 = a.estado.aposta.opcoes[0];
   assert.deepEqual([o1.total, o1.pessoas, a.estado.aposta.total], [400, 2, 1000]);
   assert.equal(o1.paga, 2.5);

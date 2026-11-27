@@ -1,6 +1,6 @@
 {
   "name": "telinha",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "description": "Transmissão de tela P2P (WebRTC) e voz estilo Discord/TeamSpeak com áudio de sistema independente",
   "type": "module",
   "private": true,
@@ -89,6 +89,7 @@
       "fichas-store.js",
       "apostas.js",
       "poker.js",
+      "cassino.js",
       "music/**",
       "package.json"
     ],

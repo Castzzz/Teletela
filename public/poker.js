@@ -136,7 +136,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     else if (j.allin && mesa.fase === 'jogando') partes.push('All-in');
     else if (j.acao) partes.push(j.acao);
     else if (mesa.fase === 'jogando' && !j.cartas.length) partes.push('Fora dessa mão');
-    partes.push(numero(j.pilha) + (j.pilha === 1 ? ' ficha' : ' fichas'));
+    partes.push(numero(j.pilha) + (j.pilha === 1 ? ' coin' : ' coins'));
     return partes.join(' · ');
   }
 
@@ -312,7 +312,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     poteEl.replaceChildren();
     poteEl.hidden = !potePrincipal;
     if (potePrincipal) {
-      poteEl.append(pilha(potePrincipal, 'Pote de ' + numero(potePrincipal) + ' fichas'));
+      poteEl.append(pilha(potePrincipal, 'Pote de ' + numero(potePrincipal) + ' coins'));
       const r = document.createElement('small');
       r.textContent = 'Pote · ' + numero(potePrincipal);
       poteEl.append(r);
@@ -539,7 +539,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       grande = ganham.length > 1 ? 'Você dividiu o pote' : 'Você levou';
       tom = 'ganhou';
       const delta = meu.ganho - meu.total;
-      pequeno = [mesa.fichas && delta > 0 ? '+' + numero(delta) + ' fichas' : '', meu.nomeMao || comoGanhou].filter(Boolean).join(' · ');
+      pequeno = [mesa.fichas && delta > 0 ? '+' + numero(delta) + ' coins' : '', meu.nomeMao || comoGanhou].filter(Boolean).join(' · ');
     } else if (ganham.length) {
       grande = ganham.length === 1 ? ganham[0].nome + ' levou' : ganham.map(j => j.nome).join(' e ') + ' dividiram';
       tom = meu?.cartas.length ? 'perdeu' : 'neutro';
@@ -585,7 +585,7 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
     rotuloValor.textContent = rotulo;
     for (const el of [faixa, campo]) { el.min = min; el.max = max; el.step = 5; }
     faixa.disabled = campo.disabled = min >= max;
-    for (const b of passos) b.setAttribute('aria-label', (b.dataset.passo > 0 ? 'Mais ' : 'Menos ') + passo + ' fichas');
+    for (const b of passos) b.setAttribute('aria-label', (b.dataset.passo > 0 ? 'Mais ' : 'Menos ') + passo + ' coins');
     rapidos.replaceChildren();
     for (const [texto, v] of atalhos) {
       if (v < min || v > max) continue;
@@ -664,16 +664,16 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       aviso.textContent = cheia ? 'A mesa está cheia. Dá pra assistir.' : mesa?.fase === 'jogando' ? 'Sentando agora, você entra na próxima mão.' : '';
       if (cheia) return;
       if (!appState.myUser.accountId) {
-        aviso.textContent = 'Entre na sua conta pra jogar valendo fichas.';
+        aviso.textContent = 'Entre na sua conta pra jogar valendo coins.';
         if (valendo) return;
       }
       if (valendo) {
         if (saldo < 10) {
-          aviso.textContent = mesa ? 'Você precisa de pelo menos 10 fichas pra sentar nesta mesa.' : 'Você precisa de pelo menos 10 fichas. Dá pra abrir uma mesa só por diversão.';
+          aviso.textContent = mesa ? 'Você precisa de pelo menos 10 coins pra sentar nesta mesa.' : 'Você precisa de pelo menos 10 coins. Dá pra abrir uma mesa só por diversão.';
           return;
         } else {
           mostrarValor('sentar', 10, saldo, Math.min(saldo, 500), 'Levar pra mesa', [['100', 100], ['500', 500], ['1.000', 1000], ['Tudo', saldo]], 50);
-          principalComValor('Sentar com # fichas', 'sentar');
+          principalComValor('Sentar com # coins', 'sentar');
           return;
         }
       }
@@ -715,20 +715,20 @@ export function configurarPoker({ socket, appState, showToast, pessoaDaCall = ()
       aviso.textContent = meu.allin ? 'Você está all-in. Agora é com as cartas.' : vez ? 'Vez de ' + vez.nome + '.' : '';
     } else if (mesa.fase === 'jogando') aviso.textContent = meu.cartas.length ? 'Você largou essa mão.' : 'Você entra na próxima mão.';
     else if (mesa.fase === 'resultado') aviso.textContent = quantos >= 2 ? 'A próxima mão já vem.' : '';
-    else aviso.textContent = quantos < 2 ? 'Esperando mais alguém sentar com fichas.' : mesa.numero ? '' : 'Todo mundo pronto? Dê as cartas.';
+    else aviso.textContent = quantos < 2 ? 'Esperando mais alguém sentar com coins.' : mesa.numero ? '' : 'Todo mundo pronto? Dê as cartas.';
 
     if (mesa.fase === 'espera' && quantos >= 2 && !mesa.numero) botao('Dar as cartas', 'comecar');
-    if (!meu.pilha && !repondo) aviso.textContent = 'Suas fichas na mesa acabaram. Ponha mais pra continuar.';
+    if (!meu.pilha && !repondo) aviso.textContent = 'Seus coins na mesa acabaram. Ponha mais pra continuar.';
     // Pôr mais fichas: só fora de uma mão em andamento.
     const teto = mesa.fichas ? saldo : 1000;
     if (!naMao && teto > meu.pilha) {
       if (repondo || !meu.pilha) {
         mostrarValor('repor', 5, teto - meu.pilha, Math.min(teto - meu.pilha, 500), 'Pôr na mesa', [['100', 100], ['500', 500], ['Tudo', teto - meu.pilha]], 50);
-        principalComValor('Pôr # fichas', 'repor');
+        principalComValor('Pôr # coins', 'repor');
         if (meu.pilha) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-secondary'; b.textContent = 'Cancelar'; b.onclick = () => { repondo = false; desenharPainel(); }; acoes.append(b); }
       } else {
         const b = document.createElement('button');
-        b.type = 'button'; b.className = 'btn-secondary'; b.textContent = 'Pôr mais fichas'; b.dataset.acao = 'abrir-repor';
+        b.type = 'button'; b.className = 'btn-secondary'; b.textContent = 'Pôr mais coins'; b.dataset.acao = 'abrir-repor';
         b.onclick = () => { repondo = true; desenharPainel(); campo.focus(); };
         acoes.append(b);
       }

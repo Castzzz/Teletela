@@ -1,0 +1,163 @@
+/* Roleta (roleta.js). Usa o feltro, a madeira e as fichas da mesa de 21
+   (vinte-e-um.css, mesa-pixel.css); aqui fica a roda e o pano de apostas. */
+
+/* Cartão do salão: a roda e duas pilhas */
+.salao-roda { width: 128px; height: 128px; margin-right: 6px; filter: drop-shadow(0 4px 4px rgb(0 0 0 / 45%)); image-rendering: auto; }
+.salao-arte-roleta { align-items: center; padding-bottom: 0; }
+.salao-arte-roleta .salao-pilha { align-self: flex-end; margin-bottom: 20px; }
+.salao-cartao:hover .salao-roda { transform: rotate(40deg); }
+.salao-roda { transition: transform .8s cubic-bezier(.2, .7, .2, 1); }
+@container cartao (min-width: 400px) { .salao-roda { width: 192px; height: 192px; } .salao-arte-roleta .salao-pilha { margin-bottom: 28px; } }
+@container cartao (min-width: 540px) { .salao-roda { width: 256px; height: 256px; } .salao-arte-roleta .salao-pilha { margin-bottom: 36px; } }
+@container salao (max-width: 600px) { .salao-roda { width: 64px; height: 64px; margin-right: 2px; } .salao-arte-roleta .salao-pilha { margin-bottom: 10px; } }
+
+/* Salão com 5 ou 6 jogos (a Comilança só entra quando estiver ligada, ver app.js):
+   a partir de 601 px, fileiras de 3; com 5, a de baixo (2) fica centralizada. Numa grade
+   de 6 trilhas cada cartão ocupa 2, e o 4º começa na trilha 2. Em tela larga, todos lado
+   a lado. */
+@container salao (min-width: 601px) {
+  .salao-cartoes { grid-template-columns: repeat(6, 1fr); }
+  .salao-cartoes > li { grid-column: span 2; }
+  .salao-cartoes:has(> li:nth-child(5):last-child) > li:nth-child(4) { grid-column: 2 / span 2; }
+}
+@container salao (min-width: 1240px) {
+  .salao-cartoes:has(> li:nth-child(5):last-child) { grid-template-columns: repeat(5, 1fr); }
+  .salao-cartoes:has(> li:nth-child(5):last-child) > li { grid-column: auto; }
+}
+@container salao (min-width: 1800px) {
+  .salao-miolo { width: min(100%, 120rem); }
+  .salao-cartoes:has(> li:nth-child(6)) { grid-template-columns: repeat(6, 1fr); }
+  .salao-cartoes:has(> li:nth-child(6)) > li { grid-column: auto; }
+}
+
+/* ---------- Mesa ---------- */
+#jogo-roleta { display: flex; flex-direction: column; flex: 1 0 auto; container: roleta / inline-size; }
+#jogo-roleta[hidden] { display: none; }
+#jogo-roleta .trilho-21 { border-radius: 2.2rem; }
+.feltro-roleta {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center;
+  gap: clamp(1rem, 3cqw, 2.6rem); padding: clamp(1rem, 2.4cqw, 2rem);
+}
+
+/* A roda gira; a bola corre por cima, numa órbita que gira ao contrário. */
+.roda-roleta { position: relative; width: clamp(12rem, 34cqw, 30rem); aspect-ratio: 1; }
+.roda-img { width: 100%; height: 100%; display: block; filter: drop-shadow(0 10px 14px rgb(0 0 0 / 50%)); transition: transform 0ms cubic-bezier(.12, .62, .22, 1); user-select: none; }
+.bola-orbita { position: absolute; inset: 0; transition: transform 0ms cubic-bezier(.12, .62, .22, 1); pointer-events: none; }
+.bola-roleta {
+  position: absolute; left: 50%; top: 9.5%; width: 4.2%; aspect-ratio: 1; translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0 25%, #e6e1d6 55%, #9c968b);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 60%);
+  transition: top 0ms cubic-bezier(.5, 0, .7, 1);
+}
+/* No fim do giro a bola cai do trilho pra casa do número (o anel de dentro da roda). */
+.bola-roleta.na-casa { top: 24.5%; }
+
+.lado-roleta { position: relative; display: grid; gap: .8rem; min-width: 0; }
+
+/* Últimos números */
+.historico-roleta { display: flex; gap: .3rem; margin: 0; padding: 0; list-style: none; flex-wrap: wrap; }
+.historico-roleta[hidden] { display: none; }
+.historico-roleta li {
+  min-width: 1.9rem; padding: .2rem .35rem; border-radius: .4rem; text-align: center;
+  font: 750 .85rem/1.2 var(--fonte-titulo, inherit); color: var(--marfim); font-variant-numeric: tabular-nums;
+  background: #1d1d22; box-shadow: inset 0 0 0 1px rgb(251 245 230 / 18%);
+}
+.historico-roleta li.vermelho { background: #b3362e; }
+.historico-roleta li.verde { background: #1f8a4c; }
+.historico-roleta li:first-child { outline: 2px solid var(--ouro); outline-offset: 1px; }
+
+/* O pano: 0 à esquerda, 3 linhas de 12 números, colunas 2:1 à direita, dúzias e as de
+   fora embaixo. Fios dourados como o impresso da mesa. */
+.pano-roleta {
+  display: grid; grid-template-columns: 1.15fr repeat(12, 1fr) 1.15fr; grid-auto-rows: minmax(clamp(2.4rem, 4.4cqw, 3.8rem), auto);
+  border: 1.5px solid color-mix(in srgb, var(--filete) 70%, transparent);
+  border-radius: .5rem; overflow: hidden;
+}
+.casa-roleta {
+  position: relative; min-width: 0; padding: .35rem .1rem;
+  border: 0; border-right: 1px solid color-mix(in srgb, var(--filete) 45%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--filete) 45%, transparent);
+  background: transparent; color: var(--marfim);
+  font: 750 clamp(.85rem, 1.5cqw, 1.4rem)/1 var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background-color .12s, box-shadow .12s;
+}
+.casa-roleta.vermelho { background: color-mix(in srgb, #c43b32 82%, transparent); }
+.casa-roleta.preto { background: color-mix(in srgb, #1d1d22 88%, transparent); }
+.casa-roleta.verde { background: color-mix(in srgb, #1f8a4c 85%, transparent); border-radius: .5rem 0 0 .5rem; }
+.casa-roleta.fora { font-size: clamp(.78rem, 1.2cqw, 1.15rem); color: var(--tinta-feltro); }
+.casa-roleta:hover:not([aria-disabled="true"]) { box-shadow: inset 0 0 0 2px var(--ouro); }
+.casa-roleta:focus-visible { outline: 2px solid var(--ouro); outline-offset: -3px; z-index: 2; }
+.casa-roleta[aria-disabled="true"] { cursor: default; }
+.losango { display: inline-block; width: 1.6em; height: 1em; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); vertical-align: middle; }
+.losango.vermelho { background: #d0453b; }
+.losango.preto { background: #111114; box-shadow: inset 0 0 0 1px #000; }
+/* Onde caiu: a casa e as apostas de fora que ganharam acendem em dourado. */
+.casa-roleta.ganhou { box-shadow: inset 0 0 0 3px var(--ouro); animation: ganhou-roleta 1s steps(2, end) 3; }
+@keyframes ganhou-roleta { 50% { box-shadow: inset 0 0 0 3px transparent; } }
+
+/* Ficha em cima da casa, com o total escrito; as suas têm o anel dourado. */
+.marca-roleta {
+  position: absolute; z-index: 1; right: 6%; top: 8%;
+  width: 26px; height: 25px; display: grid; place-items: center; padding-bottom: 2px; box-sizing: border-box;
+  background: url(fichas/roxa-1.png) center / 100% 100% no-repeat; image-rendering: pixelated;
+  color: #fff; font: 800 .62rem/1 var(--fonte-titulo, inherit); text-shadow: 0 1px 1px #000;
+  filter: drop-shadow(0 2px 1px rgb(0 0 0 / 45%));
+  pointer-events: none;
+}
+.marca-roleta[data-cor="vermelha"] { background-image: url(fichas/vermelha-1.png); }
+.marca-roleta[data-cor="azul"] { background-image: url(fichas/azul-1.png); }
+.marca-roleta[data-cor="verde"] { background-image: url(fichas/verde-1.png); }
+.marca-roleta[data-cor="preta"] { background-image: url(fichas/preta-1.png); }
+.marca-roleta.minha { outline: 2px solid var(--ouro); outline-offset: 0; border-radius: 50%; }
+
+/* Placar por cima do pano */
+#placar-roleta {
+  position: absolute; inset: 50% auto auto 50%; translate: -50% -50%; z-index: 3;
+  display: grid; justify-items: center; gap: .15rem; padding: .6rem 1.6rem .7rem;
+  border-radius: .8rem; background: rgb(6 26 20 / 88%);
+  border: 1.5px solid color-mix(in srgb, var(--filete) 70%, transparent);
+  box-shadow: 0 8px 20px -6px rgb(0 0 0 / 55%); text-align: center;
+}
+#placar-roleta[hidden] { display: none; }
+#placar-roleta strong { font: 800 clamp(1.4rem, 3cqw, 2.6rem)/1.05 var(--fonte-titulo, inherit); color: var(--marfim); white-space: nowrap; }
+#placar-roleta[data-cor="vermelho"] strong { color: #ff8a7f; }
+#placar-roleta[data-cor="verde"] strong { color: #6fdc98; }
+#placar-roleta span { font-weight: 650; color: var(--tinta-feltro); }
+#placar-roleta span:empty { display: none; }
+#placar-roleta[data-tom="ganhou"] { border-color: var(--ouro); }
+#placar-roleta[data-tom="ganhou"] span { color: var(--ouro); }
+
+/* ---------- Painel embaixo ---------- */
+.painel-roleta { justify-content: center; }
+#aviso-roleta { margin: 0; line-height: 1.45; }
+#apostadores-roleta { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin: .3rem 0 0; color: var(--text-muted); font-size: .88rem; font-variant-numeric: tabular-nums; }
+#apostadores-roleta:empty { display: none; }
+.apostador strong { color: var(--text-header); font-weight: 700; }
+.apostador .ganho { color: var(--accent-green); }
+#fichas-roleta { display: flex; gap: .35rem; align-items: center; }
+#fichas-roleta[hidden], #acoes-roleta[hidden] { display: none; }
+#fichas-roleta .ficha-botao-21 { border: 0; color: #fff; font: 800 .8rem var(--fonte-titulo, inherit); text-shadow: 0 1px 1px #000; cursor: pointer; transition: transform .1s; }
+/* A ficha escolhida sobe e ganha um anel, pra dar pra ver qual vai cair no pano. */
+#fichas-roleta .ficha-botao-21[aria-pressed="true"] { transform: translateY(-5px); filter: drop-shadow(0 0 0 var(--ouro)) drop-shadow(0 3px 0 var(--ouro)); }
+#fichas-roleta .ficha-botao-21:disabled { opacity: .4; cursor: default; }
+#acoes-roleta { display: flex; gap: .55rem; flex-wrap: wrap; align-items: center; }
+
+/* Tela estreita: a roda em cima, menor, e o pano embaixo (rola de lado se precisar). */
+@container roleta (max-width: 760px) {
+  .feltro-roleta { grid-template-columns: 1fr; justify-items: center; padding: .8rem .6rem; }
+  .roda-roleta { width: clamp(10rem, 52cqw, 16rem); }
+  .lado-roleta { width: 100%; }
+}
+/* Celular: o pano inteiro cabe na largura, com casas e fichas menores. */
+@container roleta (max-width: 480px) {
+  .pano-roleta { grid-auto-rows: minmax(2.2rem, auto); }
+  .casa-roleta { padding: .25rem 0; font-size: .74rem; }
+  .casa-roleta.fora { font-size: .62rem; }
+  .marca-roleta { width: 18px; height: 17px; right: 0; top: 0; font-size: .5rem; }
+  .losango { width: 1.2em; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .salao-roda { transition: none; }
+  .casa-roleta.ganhou { animation: none; }
+}

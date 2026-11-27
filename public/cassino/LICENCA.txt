@@ -1,0 +1,10 @@
+Sprites do cassino e da roça (atividade idle):
+- Tiny Farm e Tiny Town, de Kenney (CC0) — https://kenney.nl  → fazenda.png, cidade.png, grama.png, terra.png (e terra-arada.png, recortada dela sem a grama), celeiro.png
+- Tiny Farmer, de Oul Studio (CC0) — https://oul-studio.itch.io/tiny-farmer → fazendeiro-andar.png, fazendeiro-parado.png, fazendeiro-enxada.png
+- Cow!, de Duckhive (CC0) — https://duckhive.itch.io/cow → vaca.png (quadros recortados da folha original)
+- chicken and pen (CC0) — https://opengameart.org/content/chicken-and-pen → galinhas.png
+- Farming Crops 16x16, de josehzz (CC0) — https://opengameart.org/content/farming-crops-16x16 → plantas.png
+- 100 Free Pixel Art Foods, de Alex Kovacs (CC BY 4.0) — https://alexkovacsart.itch.io/free-pixel-art-foods → ícones de comida e bebida (drink_wine, drink_pinacolada e snack_popcorn foram desenhados pra Teletela no mesmo estilo)
+- Fantasy RPG Character Base (demo), de Franuka (CC BY 4.0) — https://franuka.itch.io/rpg-character-base → corpo01–03.png
+O salão do cassino (public/cassino-local/) é do "2D Top Down Pixel Art Tileset Casino", de Jephed / Game Between
+The Lines; fica fora do git até o autor confirmar que pode redistribuir. As fotos dos amigos também ficam fora.

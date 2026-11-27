@@ -60,7 +60,7 @@ app.whenReady().then(async () => {
   await click(b, '#montar-21 [data-ficha="10"]');
   await jogar(b, 'iniciar');
   await until(a, 'document.querySelector("#fichas-na-mesa").textContent.includes("Pote de 20")');
-  if (await js(a, 'document.querySelector("#carteira-21").textContent') !== '990') throw Error('A carteira não debitou a aposta');
+  if (await js(a, 'document.querySelector("#carteira-21").textContent') !== '4.990') throw Error('A carteira não debitou a aposta');
   await click(a, '#ranking-21-botao');
   await until(a, 'document.querySelectorAll("#ranking-21 li").length === 2');
   await click(a, '#fechar-ranking-21');

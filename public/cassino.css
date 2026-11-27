@@ -1,0 +1,358 @@
+/* Seu cassino (cassino.js). As cenas são pixel art em 2× (inteiro, pra não borrar),
+   com o tapete e a grama próprios; o resto usa os tokens do app e funciona nos 3 temas. */
+
+/* Arte do cartão no salão: metade cassino (tapete e caça-níquel), metade fazenda
+   (grama, milho e celeiro), separadas na diagonal. Tudo em escala inteira (--e). */
+.salao-arte-cassino {
+  --e: 2; position: relative; gap: calc(var(--e) * 3px); image-rendering: pixelated;
+  background: linear-gradient(rgb(0 0 0 / 30%), rgb(0 0 0 / 30%)), url(cassino-local/tapete.png) 0 0 / calc(var(--e) * 16px) repeat;
+  box-shadow: none;
+}
+.salao-arte-cassino::before, .salao-arte-cassino::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; }
+/* grama com uma fileira de terra arada embaixo, onde o milho fica */
+.salao-arte-cassino::before {
+  background: url(cassino/terra-arada.png) 0 100% / calc(var(--e) * 16px) calc(var(--e) * 16px) repeat-x, url(cassino/grama.png) 0 0 / calc(var(--e) * 48px) repeat;
+  clip-path: polygon(50% 0, 100% 0, 100% 100%, 38% 100%); }
+/* a moldura de madeira por cima das duas metades */
+.salao-arte-cassino::after { z-index: 2; box-shadow: inset 0 0 0 4px var(--madeira), inset 0 0 0 5px rgb(0 0 0 / 35%), inset 0 6px 14px rgb(0 0 0 / 45%); }
+.salao-arte-cassino > * { position: relative; z-index: 1; }
+.salao-arte-cassino .salao-maquina { width: calc(var(--e) * 32px); height: calc(var(--e) * 48px); margin-right: calc(var(--e) * 4px); }
+.salao-arte-cassino .salao-celeiro { width: calc(var(--e) * 48px); height: calc(var(--e) * 64px); }
+/* milho maduro: coluna 1, linha 9 da folha de 16 px */
+.salao-milho {
+  width: calc(var(--e) * 16px); height: calc(var(--e) * 16px);
+  background: url(cassino/plantas.png) calc(var(--e) * -16px) calc(var(--e) * -144px) / calc(var(--e) * 192px) calc(var(--e) * 160px) no-repeat;
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 40%));
+}
+.salao-galinha {
+  width: calc(var(--e) * 16px); height: calc(var(--e) * 16px); align-self: flex-end;
+  background: url(cassino/galinhas.png) 0 0 / calc(var(--e) * 128px) no-repeat; transform: scaleX(-1);
+}
+.salao-cartao:hover .salao-maquina { transform: translateY(-4px); }
+.salao-maquina { transition: transform .2s steps(2, end); }
+/* cartão estreito (4 lado a lado em 1080p): o celeiro não cabe, ficam os dois pés de milho */
+@container cartao (max-width: 299px) { .salao-arte-cassino .salao-celeiro { display: none; } }
+@container cartao (min-width: 400px) { .salao-arte-cassino { --e: 3; } }
+@container cartao (min-width: 540px) { .salao-arte-cassino { --e: 4; } }
+@container salao (max-width: 600px) { .salao-arte-cassino { --e: 1; } }
+
+#jogo-cassino { --px-ouro: var(--ouro, #e9c15a); container: cassino / inline-size; }
+/* Ocupa a altura que sobra na mesa, sem a página rolar: o salão encolhe pra caber e
+   a loja rola por dentro. No celular (uma coluna) volta a rolar a página. */
+#jogo-cassino:not([hidden]) { flex: 1 1 0; }
+.cassino-sem-conta { margin: auto; padding: 2rem; text-align: center; color: var(--text-muted); font-size: 1rem; }
+
+.cassino { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; grid-template-rows: minmax(0, 1fr); gap: 1rem; flex: 1; min-height: 0; }
+.cassino[hidden] { display: none; }
+@container cassino (max-width: 820px) {
+  .cassino { grid-template-columns: 1fr; grid-template-rows: none; flex: none; }
+  .cassino-palco { min-height: 22rem; }
+  .cassino-lado { overflow: visible; }
+}
+
+/* Palco com as três cenas */
+.cassino-palco {
+  position: relative; display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+  border: 1px solid var(--border-subtle); border-radius: 16px; background: var(--bg-secondary);
+}
+.cassino-abas { display: flex; align-items: center; gap: .25rem; padding: .4rem; border-bottom: 1px solid var(--border-subtle); }
+.cassino-editar { margin-left: auto; }
+.cassino-editar[hidden] { display: none; }
+.cassino-abas button {
+  min-height: 34px; padding: .35rem .85rem; border: 0; border-radius: 9px; background: none;
+  color: var(--text-muted); font-weight: 650; font-size: .92rem; cursor: pointer;
+}
+.cassino-abas button:hover { color: var(--text-header); }
+.cassino-abas button[aria-selected="true"] { background: var(--bg-tertiary); color: var(--text-header); }
+.cassino-abas button:focus-visible { outline: 2px solid var(--text-link); outline-offset: 1px; }
+.cassino-abas.pequenas { padding: 0 0 .5rem; border: 0; }
+.cassino-abas.pequenas button { min-height: 30px; padding: .25rem .65rem; font-size: .86rem; }
+
+.cassino-visitando {
+  display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; padding: .45rem .7rem;
+  background: color-mix(in srgb, var(--accent-brand, #6951cd) 22%, var(--bg-secondary)); border-bottom: 1px solid var(--border-subtle);
+}
+.cassino-visitando[hidden] { display: none; }
+.cassino-visitando span { flex: 1; color: var(--text-header); font-weight: 650; }
+
+.cassino-cena { position: relative; flex: 1; overflow: auto; image-rendering: pixelated; }
+.cassino-cena[hidden] { display: none; }
+.cassino-cena[data-cena="cassino"] { display: grid; place-items: center; overflow: hidden; padding: 8px; background: #2b0a10; }
+.cassino-cena[data-cena="cassino"][hidden] { display: none; }
+.cassino-cena[data-cena="amigos"] {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr)); gap: .8rem; align-content: start;
+  padding: .9rem; image-rendering: auto;
+}
+.cassino-cena[data-cena="amigos"][hidden] { display: none; }
+
+/* Placas e avisos em cima da arte */
+.cassino-placa, .cassino-aviso {
+  display: inline-block; padding: .2rem .55rem; border-radius: 6px; background: rgb(0 0 0 / 65%);
+  color: #fff; font-weight: 700; font-size: .72rem; line-height: 1.3; letter-spacing: .06em; text-transform: uppercase;
+}
+.cassino-aviso { text-transform: none; letter-spacing: 0; font-size: .82rem; font-weight: 600; padding: .3rem .5rem; }
+.cassino-fileira { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: flex-end; }
+
+/* Salão em grade (cassino-regras.js: células de 8 px da arte). --k é a escala que
+   cabe na tela (cassino.js mede), então tudo aqui é "pixel da arte × --k". */
+.cassino-sala {
+  --k: 2; --c: calc(var(--k) * 8px);
+  position: relative; width: calc(var(--sw) * var(--c)); height: calc(var(--sh) * var(--c));
+  background: #5b1520 url(cassino-local/tapete.png) 0 0 / calc(var(--k) * 16px);
+  box-shadow: 0 0 0 calc(var(--k) * 2px) #1a0508, 0 10px 30px rgb(0 0 0 / 50%);
+  image-rendering: pixelated; touch-action: none;
+}
+/* parede no topo */
+.cassino-sala::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: calc(2 * var(--c));
+  background: linear-gradient(#3a1a24, #2a1018 80%, #12060a);
+}
+.cassino-pecas { position: absolute; inset: 0; }
+.cassino-porta {
+  position: absolute; left: calc(var(--x) * var(--c)); top: calc(var(--y) * var(--c));
+  width: calc(var(--w) * var(--c)); height: calc(var(--h) * var(--c));
+  background: repeating-linear-gradient(90deg, #8a6a2a 0 calc(var(--k) * 4px), #6e521d 0 calc(var(--k) * 8px));
+  box-shadow: inset 0 calc(var(--k) * -2px) 0 #3b2a0c; opacity: .9;
+}
+.cassino-obj {
+  position: absolute; left: calc(var(--x) * var(--c)); top: calc(var(--y) * var(--c));
+  width: calc(var(--pw) * var(--k) * 1px); height: calc(var(--ph) * var(--k) * 1px);
+  filter: drop-shadow(0 calc(var(--k) * 2px) calc(var(--k) * 1px) rgb(0 0 0 / 35%));
+}
+.cassino-obj > img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.cassino-obj.fechado > img { filter: grayscale(.8) brightness(.6); }
+.cassino-obj > .cassino-placa { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -50%); white-space: nowrap; }
+.cassino-bar-info { position: absolute; left: 0; top: 100%; display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.cassino-produtos { display: flex; gap: 3px; padding: 3px 5px; border-radius: 7px; background: rgb(0 0 0 / 65%); }
+.cassino-produtos img { width: calc(var(--k) * 10px); height: calc(var(--k) * 10px); image-rendering: pixelated; }
+.cassino-produtos img.vazio { opacity: .25; filter: grayscale(1); }
+
+/* Editar o salão: grade aparece, peça mostra a área que ocupa e pode ser arrastada */
+.cassino-dica-edicao {
+  position: absolute; z-index: 5; top: 8px; left: 50%; transform: translateX(-50%); margin: 0; white-space: nowrap;
+  padding: .3rem .7rem; border-radius: 8px; background: rgb(0 0 0 / 75%); color: #fff; font-size: .8rem; font-weight: 600;
+}
+.cassino-dica-edicao[hidden] { display: none; }
+.cassino-sala.editando .cassino-pecas {
+  background-image: linear-gradient(rgb(255 255 255 / 9%) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 9%) 1px, transparent 1px);
+  background-size: var(--c) var(--c);
+}
+.cassino-sala.editando .cassino-pessoa { display: none; }
+.cassino-sala.editando .cassino-obj { cursor: grab; }
+.cassino-sala.editando .cassino-obj::after {
+  content: ''; position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--c)); height: calc(var(--h) * var(--c));
+  box-sizing: border-box; border: 2px dashed rgb(255 255 255 / 55%); border-radius: 3px; background: rgb(255 255 255 / 6%);
+}
+.cassino-sala.editando .cassino-obj:hover::after, .cassino-sala.editando .cassino-obj:focus-visible::after { border-color: var(--px-ouro); }
+.cassino-sala.editando .cassino-obj:focus-visible { outline: none; }
+.cassino-sala.editando .cassino-obj.arrastando { cursor: grabbing; }
+.cassino-sala.editando .cassino-obj.arrastando::after { border: 2px solid #3ba55d; background: rgb(59 165 93 / 25%); }
+.cassino-sala.editando .cassino-obj.nao-cabe::after { border-color: #ed4245; background: rgb(237 66 69 / 30%); }
+.cassino-sala.editando .cassino-porta { outline: 2px dashed rgb(233 193 90 / 70%); outline-offset: -2px; }
+
+/* Gente: folha 4×4 de 16×24 (linhas: frente, esquerda, direita, costas) */
+.cassino-pessoa { position: absolute; left: 0; top: 0; width: calc(var(--k) * 16px); height: calc(var(--k) * 24px); pointer-events: none; }
+.cassino-pessoa .corpo {
+  position: absolute; inset: 0; image-rendering: pixelated;
+  background-size: calc(var(--k) * 64px) calc(var(--k) * 96px);
+  background-position: 0 calc(var(--dir, 0) * var(--k) * -24px);
+  animation: cassino-passo .9s steps(4) infinite;
+}
+.cassino-pessoa.andando .corpo { animation-duration: .45s; }
+@keyframes cassino-passo { from { background-position-x: 0; } to { background-position-x: calc(var(--k) * -64px); } }
+.cassino-pessoa .placa {
+  position: absolute; left: 50%; bottom: 100%; transform: translateX(-50%); white-space: nowrap; margin-bottom: 2px;
+  padding: .05rem .3rem; border-radius: 5px; background: var(--px-ouro); color: #2a1d00; font-weight: 750; font-size: .6rem;
+}
+
+/* Caça-níquel animado (folha 256×256 com quadros de 32×48) */
+.cassino-slot {
+  display: block; width: 64px; height: 96px; image-rendering: pixelated;
+  background: url(cassino-local/slots0.png) 0 -96px / 512px 512px;
+  animation: cassino-girar 1.2s steps(8) infinite;
+}
+@keyframes cassino-girar { from { background-position: 0 -96px; } to { background-position: -512px -96px; } }
+.cassino-obj .cassino-slot {
+  width: 100%; height: 100%; background-size: calc(var(--k) * 256px);
+  background-position: 0 calc(var(--k) * -48px); animation-name: cassino-girar-sala;
+}
+.cassino-obj .cassino-slot.outro { background-image: url(cassino-local/slots1.png); animation-duration: 1.5s; }
+@keyframes cassino-girar-sala { from { background-position-x: 0; } to { background-position-x: calc(var(--k) * -256px); } }
+
+/* Fazenda: cena de 352×208 px de arte em --k (cassino.js mede pra caber sem rolar).
+   Tiles de 16 px das folhas 192×176 (Kenney); --fx/--fy em pixel da arte. */
+.cassino-cena[data-cena="roca"] { display: grid; place-items: center; overflow: hidden; padding: 8px; background: #3f7a35; }
+.cassino-cena[data-cena="roca"][hidden] { display: none; }
+.cassino-fazenda {
+  --k: 3; position: relative; width: calc(var(--k) * 352px); height: calc(var(--k) * 208px);
+  background: #74c14f url(cassino/grama.png) 0 0 / calc(var(--k) * 48px);
+  box-shadow: 0 0 0 calc(var(--k) * 2px) #2f5a28, 0 10px 30px rgb(0 0 0 / 40%);
+  image-rendering: pixelated; overflow: hidden;
+}
+.cassino-fazenda-fundo, .cassino-fazenda-canteiros, .cassino-fazenda-bichos { position: absolute; inset: 0; }
+.cassino-fazenda-bichos { pointer-events: none; }
+.faz-tile {
+  position: absolute; left: calc(var(--fx, 0) * var(--k) * 1px); top: calc(var(--fy, 0) * var(--k) * 1px);
+  width: calc(var(--k) * 16px); height: calc(var(--k) * 16px);
+  background-size: calc(var(--k) * var(--sw, 192) * 1px) calc(var(--k) * var(--sh, 176) * 1px);
+  background-position: calc(var(--tx) * var(--k) * -16px) calc(var(--ty) * var(--k) * -16px);
+  background-repeat: no-repeat; image-rendering: pixelated;
+}
+.faz-tile:not(.chao):not(.flor) { filter: drop-shadow(0 calc(var(--k) * 1px) 0 rgb(0 0 0 / 25%)); }
+.faz-img {
+  position: absolute; left: calc(var(--fx) * var(--k) * 1px); top: calc(var(--fy) * var(--k) * 1px);
+  width: calc(var(--fw) * var(--k) * 1px); height: calc(var(--fh) * var(--k) * 1px);
+  image-rendering: pixelated; filter: drop-shadow(0 calc(var(--k) * 2px) 0 rgb(0 0 0 / 25%));
+}
+/* Bichos e fazendeiro: sprite animado quadro a quadro pelo JS (--qx/--qy), na escala
+   da cena; a posição e o virar ficam no transform. */
+.faz-bicho {
+  --ke: calc(var(--k) * var(--e, 1));
+  position: absolute; left: 0; top: 0; width: calc(var(--w) * var(--ke) * 1px); height: calc(var(--h) * var(--ke) * 1px);
+  background-repeat: no-repeat; image-rendering: pixelated;
+  background-size: calc(var(--sw) * var(--ke) * 1px) calc(var(--sh) * var(--ke) * 1px);
+  background-position: calc(var(--qx, 0) * var(--w) * var(--ke) * -1px) calc(var(--qy, 0) * var(--h) * var(--ke) * -1px);
+  filter: drop-shadow(0 calc(var(--k) * 1px) 0 rgb(0 0 0 / 25%));
+}
+
+/* Canteiros: terra arada de 24×24 com a planta em 1× no meio; os que faltam comprar
+   ficam apagados */
+.faz-canteiro {
+  position: absolute; left: calc(var(--fx) * var(--k) * 1px); top: calc(var(--fy) * var(--k) * 1px);
+  width: calc(var(--k) * 24px); height: calc(var(--k) * 24px); padding: 0; border: 0; border-radius: calc(var(--k) * 2px);
+  background: url(cassino/terra-arada.png) 0 0 / calc(var(--k) * 24px); image-rendering: pixelated; cursor: pointer;
+  box-shadow: inset 0 0 0 calc(var(--k) * 1px) rgb(91 58 31 / 60%), 0 calc(var(--k) * 1px) 0 rgb(0 0 0 / 25%);
+}
+.faz-canteiro.bloqueado { cursor: default; opacity: .35; filter: saturate(.4); box-shadow: inset 0 0 0 calc(var(--k) * 1px) rgb(255 255 255 / 30%); }
+.faz-canteiro:not(.bloqueado):hover { box-shadow: inset 0 0 0 calc(var(--k) * 1px) var(--px-ouro), 0 calc(var(--k) * 1px) 0 rgb(0 0 0 / 25%); }
+.faz-canteiro:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.faz-canteiro .planta {
+  position: absolute; left: calc(var(--k) * 4px); top: calc(var(--k) * 2px); width: calc(var(--k) * 16px); height: calc(var(--k) * 16px);
+  background: url(cassino/plantas.png) no-repeat;
+  background-size: calc(var(--k) * 192px) calc(var(--k) * 160px);
+  background-position: calc(var(--tx) * var(--k) * -16px) calc(var(--ty) * var(--k) * -16px);
+  image-rendering: pixelated;
+}
+.faz-canteiro .tempo {
+  position: absolute; left: 50%; bottom: calc(var(--k) * -4px); transform: translateX(-50%); white-space: nowrap;
+  padding: 0 4px; border-radius: 4px; background: rgb(0 0 0 / 70%); color: #fff; font-weight: 700; font-size: .62rem; line-height: 1.3;
+}
+.faz-canteiro.vazio .tempo { background: rgb(0 0 0 / 45%); }
+.faz-canteiro.pronto { animation: faz-pronto 1s ease-in-out infinite alternate; }
+.faz-canteiro.pronto .tempo { background: var(--px-ouro); color: #2a1d00; }
+.faz-canteiro.pronto.cheio { animation: none; }
+.faz-canteiro.pronto.cheio .tempo { background: #ed4245; color: #fff; }
+@keyframes faz-pronto { to { box-shadow: inset 0 0 0 calc(var(--k) * 1px) var(--px-ouro), 0 0 calc(var(--k) * 4px) var(--px-ouro); } }
+
+/* próxima cultura escolhida (irrigação): iconezinho no canto */
+.faz-canteiro .proxima {
+  position: absolute; right: calc(var(--k) * -3px); top: calc(var(--k) * -3px); width: 20px; height: 20px;
+  border-radius: 50%; background-color: rgb(0 0 0 / 65%); box-shadow: 0 0 0 2px var(--px-ouro); image-rendering: pixelated;
+}
+/* Botões da fazenda na barra das abas */
+.cassino-acoes-fazenda { display: flex; gap: .35rem; margin-left: auto; }
+.cassino-acoes-fazenda[hidden] { display: none; }
+
+/* Celeiro na coluna da direita */
+.cassino-celeiro ul { display: grid; gap: .3rem; margin: .4rem 0 0; padding: 0; list-style: none; }
+.cassino-celeiro li { display: grid; grid-template-columns: 24px 1fr auto auto; gap: .45rem; align-items: center; color: var(--text-normal); font-size: .86rem; }
+.cassino-celeiro li b { color: var(--text-header); font-variant-numeric: tabular-nums; }
+.cassino-celeiro .mini { width: 24px; height: 24px; image-rendering: pixelated; }
+.cassino-loja-titulo { margin-bottom: .5rem !important; }
+
+/* Amigos */
+.cassino-amigo { display: grid; gap: .6rem; padding: .9rem; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-tertiary); }
+.cassino-amigo-topo { display: flex; gap: .7rem; align-items: center; }
+.cassino-amigo-topo img, .cassino-amigo-topo .inicial { width: 52px; height: 52px; border-radius: 50%; flex: none; }
+.cassino-amigo-topo .inicial { display: grid; place-items: center; background: var(--bg-secondary); color: var(--text-header); font: 750 1.3rem var(--fonte-titulo, inherit); }
+.cassino-amigo-topo strong { display: block; color: var(--text-header); font: 750 1.05rem var(--fonte-titulo, inherit); }
+.cassino-amigo-topo span, .cassino-amigo-info { color: var(--text-muted); font-size: .82rem; }
+.cassino-amigo .cassino-botao { flex: 1; }
+.cassino-vazio { color: var(--text-muted); }
+
+
+/* Coluna da direita */
+.cassino-lado { display: flex; flex-direction: column; gap: .8rem; min-height: 0; overflow: auto; }
+.cassino-numeros { display: flex; flex-wrap: wrap; gap: .3rem .8rem; color: var(--text-muted); font-size: .85rem; }
+.cassino-numeros b { color: var(--text-header); font: 750 1.05rem var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums; }
+.cassino-cartao { padding: .8rem .9rem; border: 1px solid var(--border-subtle); border-radius: 14px; background: var(--bg-secondary); }
+.cassino-cartao[hidden] { display: none; }
+.cassino-cartao h3 { margin: 0; color: var(--text-header); font: 750 1rem var(--fonte-titulo, inherit); }
+.cassino-cartao p { margin: .2rem 0 0; color: var(--text-muted); font-size: .82rem; }
+.cassino-cartao-topo { display: flex; justify-content: space-between; align-items: baseline; color: var(--text-muted); font-size: .8rem; }
+.cassino-barra { height: 10px; margin: .55rem 0 .45rem; overflow: hidden; border-radius: 99px; background: var(--bg-tertiary); }
+.cassino-barra > div { width: 0; height: 100%; background: linear-gradient(90deg, color-mix(in srgb, var(--px-ouro) 60%, #6b4a00), var(--px-ouro)); transition: width .4s; }
+.cassino-barra.cheio > div { background: #ed4245; }
+.cassino-cofre-linha { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.cassino-cofre-valor { color: var(--text-header); font: 750 1.45rem var(--fonte-titulo, inherit); font-variant-numeric: tabular-nums; }
+
+.cassino-loja { flex: 1; min-height: 10rem; overflow: auto; }
+.cassino-loja-lista { margin: 0; padding: 0; list-style: none; }
+.cassino-secao { margin: .8rem 0 .15rem; color: var(--text-muted); font-weight: 750; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.cassino-secao:first-child { margin-top: 0; }
+.cassino-item { display: grid; grid-template-columns: 40px 1fr auto; gap: .6rem; align-items: center; padding: .45rem 0; border-top: 1px solid var(--border-subtle); }
+.cassino-secao + .cassino-item { border-top: 0; }
+.cassino-dica { margin: 0 0 .3rem; color: var(--text-muted); font-size: .75rem; line-height: 1.35; }
+.cassino-dica + .cassino-item { border-top: 0; }
+.cassino-icone { width: 40px; height: 40px; border-radius: 9px; background: var(--bg-tertiary) center / contain no-repeat; image-rendering: pixelated; }
+.cassino-item strong { display: block; color: var(--text-header); font-size: .9rem; }
+.cassino-item strong small { color: var(--text-muted); font-weight: 600; }
+.cassino-item span { color: var(--text-muted); font-size: .76rem; line-height: 1.3; }
+
+/* Botões */
+.cassino-botao, .cassino-preco {
+  min-height: 32px; padding: .35rem .75rem; border: 1px solid var(--border-subtle); border-radius: 9px; cursor: pointer;
+  background: var(--bg-tertiary); color: var(--text-header); font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums;
+  transition: transform .08s, filter .15s;
+}
+.cassino-botao:hover:not(:disabled), .cassino-preco.pode:hover { filter: brightness(1.12); }
+.cassino-botao:active:not(:disabled), .cassino-preco.pode:active { transform: scale(.96); }
+.cassino-botao:disabled, .cassino-preco:disabled { opacity: .5; cursor: default; }
+.cassino-botao:focus-visible, .cassino-preco:focus-visible { outline: 2px solid var(--text-link); outline-offset: 2px; }
+.cassino-preco { min-width: 4.6rem; white-space: nowrap; font-size: .8rem; }
+.cassino-preco[aria-disabled="true"] { color: var(--text-muted); cursor: not-allowed; }
+.cassino-botao.ouro, .cassino-preco.pode { border-color: color-mix(in srgb, var(--px-ouro) 70%, #000); background: var(--px-ouro); color: #2a1d00; }
+.cassino-botao.verde { border-color: #2d8049; background: #3ba55d; color: #fff; }
+.cassino-botao.pequeno { min-height: 24px; padding: .1rem .45rem; font-size: .72rem; }
+
+/* Escolher semente */
+.cassino-sementes {
+  position: fixed; z-index: 40; display: grid; min-width: 15rem; padding: .4rem;
+  border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--bg-floating, var(--bg-secondary)); box-shadow: 0 14px 32px rgb(0 0 0 / 45%);
+}
+.cassino-sementes[hidden] { display: none; }
+.cassino-sementes button {
+  display: grid; grid-template-columns: 32px 1fr; gap: 0 .6rem; padding: .35rem .5rem; border: 0; border-radius: 8px;
+  background: none; color: var(--text-header); font: inherit; text-align: left; cursor: pointer;
+}
+.cassino-sementes button:hover:not(:disabled), .cassino-sementes button:focus-visible { background: var(--bg-tertiary); outline: none; }
+.cassino-sementes button:disabled { opacity: .45; cursor: default; }
+.cassino-sementes .ic { grid-row: span 2; width: 32px; height: 32px; image-rendering: pixelated; }
+.cassino-sementes b { font-size: .9rem; }
+.cassino-sementes small { color: var(--text-muted); font-size: .74rem; }
+.cassino-sementes .pop-titulo { margin: .2rem .5rem 0; color: var(--text-header); font-weight: 750; font-size: .9rem; }
+.cassino-sementes .pop-dica { margin: .1rem .5rem .3rem; color: var(--text-muted); font-size: .78rem; }
+.cassino-sementes button[aria-current="true"] { background: color-mix(in srgb, var(--px-ouro) 18%, transparent); }
+.cassino-sementes .pop-arrancar { margin-top: .25rem; border-top: 1px solid var(--border-subtle); border-radius: 0 0 8px 8px; }
+.cassino-sementes .pop-arrancar b { color: #ed4245; }
+
+.cassino-voa {
+  position: fixed; z-index: 60; pointer-events: none; transform: translate(-50%, -50%);
+  color: var(--ouro, #e9c15a); font: 800 1rem var(--fonte-titulo, inherit); text-shadow: 0 2px 0 #000;
+  animation: cassino-voar .9s ease-out forwards;
+}
+@keyframes cassino-voar { to { transform: translate(-50%, -150%); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cassino-slot, .cassino-pessoa .corpo, .cassino-canteiro.pronto { animation: none; }
+  .cassino-pessoa { transition: none; }
+  .cassino-voa { animation-duration: .01s; }
+}
+
+/* Botões na barra das abas (editar o salão, colher e plantar) */
+.cassino-abas .cassino-botao { min-height: 30px; padding: .25rem .65rem; border: 1px solid var(--border-subtle); background: var(--bg-tertiary); color: var(--text-header); font-size: .82rem; }
+.cassino-abas .cassino-botao.verde { border-color: #2d8049; background: #3ba55d; color: #fff; }
+.cassino-abas .cassino-editar { min-height: 30px; border: 1px solid var(--border-subtle); background: var(--bg-tertiary); color: var(--text-header); font-size: .82rem; }
+.cassino-abas .cassino-editar.ouro { border-color: color-mix(in srgb, var(--px-ouro) 70%, #000); background: var(--px-ouro); color: #2a1d00; }
+
+.cassino-celeiro .cassino-aviso { color: #ed4245; font-weight: 650; }

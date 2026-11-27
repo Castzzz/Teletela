@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { criarMesas21, tempoDoResultado } from '../vinte-e-um.js';
-import { FichasStore, proximaSegunda, ultimaSegunda } from '../fichas-store.js';
+import { FichasStore } from '../fichas-store.js';
 
 function montar(cartas, fichas = new FichasStore(), relogio) {
   const users = new Map(), sockets = new Map();
@@ -92,7 +92,7 @@ test('entre amigos o pote vai pros vencedores na proporção da aposta', () => {
   assert.deepEqual(saldos(a.mesa), [1015, 1045, 940]);
 });
 
-test('saldo vale fora da mesa e toda segunda cada um ganha mais 1000', () => {
+test('saldo vale fora da mesa e não tem mais crédito toda segunda', () => {
   const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'fichas-'));
   let agora = Date.UTC(2026, 10, 25, 15); // quarta-feira
   const loja = new FichasStore(pasta, () => agora);
@@ -103,19 +103,10 @@ test('saldo vale fora da mesa e toda segunda cada um ganha mais 1000', () => {
   a.jogar('parar');
   a.jogar('sair');
   assert.ok(a.jogar('criar', { modo: 'banca' }).erro, 'sem fichas não senta');
-  assert.equal(proximaSegunda(agora), Date.UTC(2026, 10, 30, 3));
-  assert.equal(ultimaSegunda(agora), Date.UTC(2026, 10, 23, 3));
-  assert.equal(ultimaSegunda(Date.UTC(2026, 10, 30, 3)), Date.UTC(2026, 10, 30, 3), 'a própria segunda conta');
-  agora = Date.UTC(2026, 10, 30, 2, 59);
-  assert.equal(new FichasStore(pasta, () => agora).resumo('Ana').saldo, 0, 'ainda é domingo em Brasília');
-  agora = Date.UTC(2026, 10, 30, 3);
+  agora = Date.UTC(2026, 11, 15, 12); // segundas depois
   const depois = new FichasStore(pasta, () => agora);
-  assert.equal(depois.resumo('Ana').saldo, 1000, 'quem zerou ganha 1000');
-  assert.equal(depois.ranking('Ana')[0].nome, 'Bia', 'quem tinha saldo também ganha: 1250 + 1000');
-  assert.equal(depois.ranking('Ana')[0].saldo, 2250);
-  assert.equal(depois.resumo('Ana').saldo, 1000, 'na mesma semana não credita de novo');
-  agora = Date.UTC(2026, 11, 15, 12); // duas segundas depois
-  assert.equal(new FichasStore(pasta, () => agora).resumo('Ana').saldo, 3000, 'semanas sem abrir somam');
+  assert.equal(depois.resumo('Ana').saldo, 0, 'quem zerou continua zerado');
+  assert.equal(depois.ranking('Ana')[0].saldo, 1250);
   fs.rmSync(pasta, { recursive: true, force: true });
 });
 
@@ -212,7 +203,7 @@ test('dobrar: aposta em dobro, uma carta só, e só nas duas primeiras', () => {
   const c = montar(['10♣','6♣','5♦','10♠','8♥'])('Caio');
   c.jogar('criar', { modo: 'banca' });
   c.jogar('iniciar', { pilha: Array(6).fill(100) });
-  assert.match(c.jogar('dobrar').erro, /fichas/);
+  assert.match(c.jogar('dobrar').erro, /coins/);
   assert.deepEqual(saldos(c.mesa), [400]);
 });
 

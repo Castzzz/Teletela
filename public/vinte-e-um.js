@@ -76,7 +76,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
   function encher(roda, valor, ordem) {
     roda.replaceChildren();
     if (!valor) return;
-    roda.append(pilha(valor, 'Aposta de ' + numero(valor) + ' fichas', ordem));
+    roda.append(pilha(valor, 'Aposta de ' + numero(valor) + ' coins', ordem));
     const rotulo = document.createElement('small');
     rotulo.textContent = numero(valor);
     roda.append(rotulo);
@@ -254,7 +254,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       maos.append(centro);
       assento({ cartas: [null, 'K♥', 'A♠'], lugar: 'amostra-21' }, null, centro);
       centro.append(arco);
-      aviso.textContent = !appState.myUser.accountId ? 'Jogue só por diversão ou entre na sua conta pra apostar fichas.' : semFichas() ? 'Suas fichas acabaram. ' + quandoVolta() + ' Dá pra jogar só por diversão.' : 'Chegue perto de 21 sem passar. Escolha se vale fichas e o jeito de jogar.';
+      aviso.textContent = !appState.myUser.accountId ? 'Jogue só por diversão ou entre na sua conta pra apostar coins.' : semFichas() ? 'Seus coins acabaram. ' + quandoVolta() + ' Dá pra jogar só por diversão.' : 'Chegue perto de 21 sem passar. Escolha se vale coins e o jeito de jogar.';
       fichas.hidden = true;
       botao('Contra a banca', 'criar', 'banca');
       botao('Entre amigos', 'criar', 'amigos', true);
@@ -282,10 +282,10 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     if (eu) while (soma(montando) > eu.saldo) montando.pop();
     fichas.hidden = !mesa.fichas;
     if (mesa.fichas) {
-      fichas.textContent = mesa.modo === 'amigos' && !espera && mesa.pote ? 'Pote de ' + numero(mesa.pote) + ' fichas' : '';
+      fichas.textContent = mesa.modo === 'amigos' && !espera && mesa.pote ? 'Pote de ' + numero(mesa.pote) + ' coins' : '';
       if (jogando && eu) aviso.textContent += ' Sair agora perde a aposta.';
       if (eu?.confirmou) aviso.textContent += ' Aposta feita. Esperando a mesa.';
-      if (eu && !jogando && eu.saldo < MENOR_FICHA) aviso.textContent += ' Suas fichas acabaram. ' + quandoVolta();
+      if (eu && !jogando && eu.saldo < MENOR_FICHA) aviso.textContent += ' Seus coins acabaram. ' + quandoVolta();
     }
     montar.hidden = !podeApostar;
     if (podeApostar) for (const el of montar.querySelectorAll('[data-ficha]')) el.disabled = soma(montando) + Number(el.dataset.ficha) > eu.saldo;
@@ -314,7 +314,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       if (mesa.fichas && !espera && mesa.pote) {
         pote = document.createElement('div');
         pote.className = 'pote-21';
-        pote.append(pilha(mesa.pote, 'Pote de ' + numero(mesa.pote) + ' fichas'));
+        pote.append(pilha(mesa.pote, 'Pote de ' + numero(mesa.pote) + ' coins'));
         const rotulo = document.createElement('small');
         rotulo.textContent = 'Pote · ' + numero(mesa.pote);
         pote.append(rotulo);
@@ -327,7 +327,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       const estado = resultado ? ESTADOS[p.resultado] : jogando ? (p.parou ? (p.pontos > 21 ? 'estourou' : 'parou') : 'vez') : p.confirmou ? 'pronto' : '';
       const linha = [
         resultado ? p.resultado : jogando ? (p.dobrou ? 'Dobrou' : p.parou ? 'Parou' : 'Jogando…') : p.confirmou ? 'Apostou' : '',
-        mesa.fichas && numero(p.saldo) + ' fichas'
+        mesa.fichas && numero(p.saldo) + ' coins'
       ].filter(Boolean).join(' · ');
       // O que está no círculo: a aposta da vez; entre amigos, ela vai pro pote ao distribuir.
       // Você montando vê a pilha crescer no seu círculo.
@@ -388,14 +388,14 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     voar(novas);
     anterior = mesa;
 
-    if (!eu && mesa.fichas && !appState.myUser.accountId) aviso.textContent = 'Entre na sua conta pra jogar valendo fichas.';
+    if (!eu && mesa.fichas && !appState.myUser.accountId) aviso.textContent = 'Entre na sua conta pra jogar valendo coins.';
     else if (!eu && !jogando && mesa.pessoas.length < 8) botao('Entrar na mesa', 'entrar');
     const comFichas = mesa.pessoas.filter(p => !mesa.fichas || p.saldo >= MENOR_FICHA).length;
     if (eu && espera && comFichas >= minimo && (!mesa.fichas || eu.saldo >= MENOR_FICHA)) {
       if (eu.confirmou) botao('Cancelar aposta', 'cancelar', undefined, true);
       else if (mesa.fichas) {
         const total = soma(montando);
-        const el = botao(total ? 'Apostar ' + numero(total) + ' fichas' : 'Monte a aposta', 'iniciar');
+        const el = botao(total ? 'Apostar ' + numero(total) + ' coins' : 'Monte a aposta', 'iniciar');
         el.dataset.vazio = total ? '' : '1';
         el.disabled = !total || ocupado;
       } else botao('Dar as cartas', 'iniciar');
@@ -409,7 +409,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
       // Dobrar: só contra a banca, nas duas primeiras cartas e com fichas pra cobrir
       if (mesa.modo === 'banca' && eu.cartas.length === 2 && (!mesa.fichas || eu.saldo >= eu.aposta)) {
         const el = botao('Dobrar', 'dobrar', undefined, true, 'amarelo');
-        if (mesa.fichas) { const q = document.createElement('small'); q.textContent = '+' + numero(eu.aposta) + ' fichas'; el.append(q); }
+        if (mesa.fichas) { const q = document.createElement('small'); q.textContent = '+' + numero(eu.aposta) + ' coins'; el.append(q); }
       }
     }
     if (eu) botao('Sair da mesa', 'sair', undefined, true);
@@ -441,7 +441,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
   function mostrarPlacar(eu) {
     let grande = '', pequeno = '', tom = '';
     const delta = eu && mesa.fichas ? eu.ganho - eu.aposta : 0;
-    const fichasTexto = n => numero(Math.abs(n)) + (Math.abs(n) === 1 ? ' ficha' : ' fichas');
+    const fichasTexto = n => numero(Math.abs(n)) + (Math.abs(n) === 1 ? ' coin' : ' coins');
     if (eu) {
       const r = eu.resultado;
       if (r.startsWith('Ganhou')) { grande = r === 'Ganhou' ? (mesa.modo === 'banca' && eu.cartas.length === 2 && eu.pontos === 21 ? '21 de cara!' : eu.pontos === 21 ? 'Vinte e um!' : 'Você ganhou') : 'Ganhou por W.O.'; tom = 'ganhou'; }
@@ -508,11 +508,8 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
 
   // ---------- Carteira, aposta e ranking ----------
   const semFichas = () => Boolean(carteira && carteira.saldo < MENOR_FICHA);
-  function quandoVolta() {
-    if (!carteira?.voltaEm) return 'Na segunda você ganha mais 1.000.';
-    const dia = new Date(carteira.voltaEm).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit', timeZone: 'America/Sao_Paulo' });
-    return 'Você ganha mais 1.000 ' + (dia.startsWith('segunda') ? 'na ' : 'em ') + dia + '.';
-  }
+  // Sem crédito semanal: quem zerou junta mais no Seu cassino.
+  const quandoVolta = () => 'Junte mais no Seu cassino.';
   // Uma carteira só pra todas as atividades: avisa as outras e ouve quando elas mudam.
   function novaCarteira(c) {
     carteira = c;
@@ -531,8 +528,8 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
     carteiraEl.hidden = saldo == null;
     if (saldo == null) return;
     carteiraEl.lastElementChild.textContent = numero(saldo);
-    carteiraEl.title = 'Suas fichas: ' + numero(saldo);
-    carteiraEl.setAttribute('aria-label', 'Suas fichas: ' + numero(saldo));
+    carteiraEl.title = 'Seus Colheita Coins: ' + numero(saldo);
+    carteiraEl.setAttribute('aria-label', 'Seus Colheita Coins: ' + numero(saldo));
   }
   // Clicar numa ficha põe ela na pilha; a pilha cresce no seu círculo na mesa.
   montar.addEventListener('click', ev => {
@@ -582,7 +579,7 @@ export function configurarMesa21(socket, appState, mostrarSala, pessoaDaCall = (
         nome.textContent = p.nome + (p.voce ? ' (você)' : '');
         if (p.zerado) {
           const zerou = document.createElement('small');
-          zerou.textContent = 'zerou · +1.000 na segunda';
+          zerou.textContent = 'zerou';
           nome.append(zerou);
         }
         const saldo = document.createElement('span');

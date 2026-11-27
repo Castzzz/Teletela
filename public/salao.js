@@ -6,12 +6,14 @@ export function configurarSalao({ socket, appState }) {
   const titulo = document.querySelector('#titulo-21');
   const salao = document.querySelector('#salao-jogos');
   const voltar = document.querySelector('#voltar-salao');
-  const paineis = { salao, '21': document.querySelector('#jogo-21'), poker: document.querySelector('#jogo-poker') };
-  const statusEl = nome => salao.querySelector('[data-jogo="' + nome + '"] .salao-status');
-  const cartao = nome => salao.querySelector('[data-jogo="' + nome + '"]');
+  const paineis = { salao, '21': document.querySelector('#jogo-21'), poker: document.querySelector('#jogo-poker'), roleta: document.querySelector('#jogo-roleta'), comilanca: document.querySelector('#jogo-comilanca'), cassino: document.querySelector('#jogo-cassino') };
+  // Pela classe do cartão: o próprio palco também tem data-jogo (o jogo aberto), e o
+  // seletor solto pegava o primeiro cartão de dentro dele.
+  const cartao = nome => salao.querySelector('.salao-cartao[data-jogo="' + nome + '"]');
+  const statusEl = nome => cartao(nome).querySelector('.salao-status');
 
   let jogo = 'salao', canal = null;
-  const estado = { '21': null, poker: null, aposta: null };
+  const estado = { '21': null, poker: null, roleta: null, aposta: null };
 
   function escolher(novo, focar = false) {
     jogo = novo;
@@ -25,7 +27,8 @@ export function configurarSalao({ socket, appState }) {
 
   // Sentado numa mesa: abrir Atividades leva de volta pra ela.
   const sentadoEm = () => estado.poker?.eu != null ? 'poker'
-    : estado['21']?.pessoas.some(p => p.id === socket.id) ? '21' : 'salao';
+    : estado['21']?.pessoas.some(p => p.id === socket.id) ? '21'
+    : estado.roleta?.apostas.some(a => a.id === socket.id) ? 'roleta' : 'salao';
 
   function marcar(nome, texto, vivo = false, chamando = false) {
     const el = statusEl(nome);
@@ -47,34 +50,42 @@ export function configurarSalao({ socket, appState }) {
     marcar('poker', suaVez ? 'Sua vez!' : !np ? 'Ninguém jogando'
       : (np === 1 ? '1 pessoa' : np + ' pessoas') + ' na mesa' + (mp.eu != null ? ' · você está nela' : ''), np > 0, suaVez);
 
+    const mr = estado.roleta;
+    const nr = mr?.apostas.length || 0;
+    marcar('roleta', mr?.fase === 'girando' ? 'Girando…' : mr?.fase === 'resultado' ? 'Deu ' + mr.numero
+      : mr?.fase === 'apostando' ? 'Apostas abertas · ' + (nr === 1 ? '1 pessoa' : nr + ' pessoas') : 'Ninguém jogando',
+      Boolean(mr && mr.fase !== 'espera'));
+
     const a = estado.aposta;
     const aberta = a && a.fase === 'aberta';
     marcar('apostas', aberta ? 'Aberta: ' + a.titulo : a?.fase === 'fechada' ? 'Esperando o resultado' : 'Nenhuma aberta agora',
       Boolean(aberta || a?.fase === 'fechada'));
     // Quem fala por leitor de tela ouve o jogo e o status juntos.
-    for (const nome of ['21', 'poker', 'apostas']) {
+    for (const nome of ['21', 'poker', 'roleta', 'apostas']) {
       const c = cartao(nome);
       c.setAttribute('aria-label', c.querySelector('strong').textContent + '. ' + statusEl(nome).textContent);
     }
   }
 
-  // Pede o estado das três ao entrar no canal e ao abrir o salão.
+  // Pede o estado de todas ao entrar no canal e ao abrir o salão.
   function consultar() {
     if (!canal) return;
     const pedido = canal;
     socket.timeout(6000).emit('jogar-21', { canal, acao: 'ver' }, (erro, r) => { if (!erro && pedido === canal && r) { estado['21'] = r.mesa; desenhar(); } });
     socket.timeout(6000).emit('jogar-poker', { canal, acao: 'ver' }, (erro, r) => { if (!erro && pedido === canal && r && !r.erro) { estado.poker = r.mesa; desenhar(); } });
+    socket.timeout(6000).emit('jogar-roleta', { canal, acao: 'ver' }, (erro, r) => { if (!erro && pedido === canal && r && !r.erro) { estado.roleta = r.mesa; desenhar(); } });
     socket.timeout(6000).emit('aposta', { canal, acao: 'ver' }, (erro, r) => { if (!erro && pedido === canal && r && !r.erro) { estado.aposta = r.aposta || null; desenhar(); } });
   }
   function entrarNoCanal() {
     canal = appState.currentChannelId || null;
-    estado['21'] = estado.poker = estado.aposta = null;
+    estado['21'] = estado.poker = estado.roleta = estado.aposta = null;
     desenhar();
     consultar();
   }
 
   socket.on('mesa-21', d => { if (d.canal === canal) { estado['21'] = d.mesa; desenhar(); } });
   socket.on('mesa-poker', d => { if (d.canal === canal) { estado.poker = d.mesa; desenhar(); } });
+  socket.on('mesa-roleta', d => { if (d.canal === canal) { estado.roleta = d.mesa; desenhar(); } });
   socket.on('aposta', d => { if (d?.canal === canal) { estado.aposta = d.aposta || null; desenhar(); } });
 
   salao.addEventListener('click', ev => {

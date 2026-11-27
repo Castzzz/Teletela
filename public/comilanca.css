@@ -1,0 +1,178 @@
+/* Comilança (comilanca.js). A grade é uma caixa de joias: veludo cor de berinjela com
+   moldura dourada, pra não parecer mais uma mesa de feltro. Cores da caixa, das pedras e
+   dos amigos são fixas (são o próprio jogo); o painel ao lado usa os tokens do app, então
+   funciona nos 3 temas. Números e faixas de vitória usam a Bricolage, que já vem no app. */
+#jogo-comilanca, .salao-arte-comilanca {
+  --cml-veludo: #2b1236;
+  --cml-fundo: #160a1d;
+  --cml-poco: #1d0c26;
+  --cml-ouro: #f0bf4f;
+  --cml-bronze: #8a5a16;
+  --cml-creme: #fff2d4;
+  --cml-titulo: 'Bricolage Grotesque', var(--fonte-titulo, inherit);
+  --cml-saida: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Cartão do salão: as joias e um amigo no veludo */
+.salao-arte.salao-arte-comilanca { gap: 6px; align-items: center; padding-bottom: 0; background: radial-gradient(ellipse at 50% 45%, #4a1f5c, var(--cml-veludo) 55%, var(--cml-fundo)); }
+.salao-arte-comilanca .arte-joia { width: 40px; height: 40px; filter: drop-shadow(0 3px 3px rgb(0 0 0 / 50%)); }
+.salao-arte-comilanca .arte-amigo { display: block; width: 60px; height: 60px; border-radius: 50%; overflow: hidden; border: 3px solid var(--cor); box-shadow: 0 0 14px color-mix(in srgb, var(--cor) 60%, transparent); transition: transform .2s var(--cml-saida); }
+.salao-arte-comilanca .arte-amigo svg { display: block; width: 100%; height: 100%; }
+@media (hover: hover) and (pointer: fine) { .salao-cartao:hover .arte-amigo { transform: translateY(-4px); } }
+@container cartao (min-width: 400px) { .salao-arte-comilanca .arte-joia { width: 58px; height: 58px; } .salao-arte-comilanca .arte-amigo { width: 90px; height: 90px; } }
+@container salao (max-width: 600px) { .salao-arte-comilanca .arte-joia { width: 20px; height: 20px; } .salao-arte-comilanca .arte-amigo { width: 32px; height: 32px; border-width: 2px; } .salao-arte-comilanca { gap: 2px; } }
+
+/* ---------- Jogo ---------- */
+#jogo-comilanca { container: comilanca / inline-size; }
+.comilanca { display: grid; grid-template-columns: minmax(0, 1fr) 16rem; gap: 1.2rem; align-items: start; max-width: 64rem; margin: 0 auto; }
+@container comilanca (max-width: 820px) { .comilanca { grid-template-columns: minmax(0, 1fr); } }
+.comilanca-centro { display: grid; gap: .8rem; min-width: 0; justify-items: center; }
+.comilanca-centro > * { width: min(100%, 38rem); }
+
+/* A turma: quatro fichas em cima da grade, com o nível de cada cor */
+.comilanca-turma { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin: 0; padding: 0; list-style: none; }
+/* Celular: só a foto e o nível, numa fileira, pra grade caber na tela */
+@container comilanca (max-width: 520px) {
+  .comilanca-turma li { flex-direction: column; gap: .25rem; padding: .35rem .25rem; }
+  .comilanca-turma li :is(b, small) { display: none; }
+  .comilanca-turma li .pips { margin: 0; }
+  .comilanca-turma li .pips i { width: 6px; }
+}
+.comilanca-turma li { display: flex; align-items: center; gap: .5rem; min-width: 0; padding: .4rem .5rem; border-radius: 12px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); transition: background-color .3s ease, border-color .3s ease; }
+.comilanca-turma li.subiu { background: color-mix(in srgb, var(--cor) 24%, var(--bg-secondary)); border-color: var(--cor); }
+.comilanca-turma .foto { flex: none; width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 3px solid var(--cor); }
+.comilanca-turma .foto :is(img, svg) { width: 100%; height: 100%; display: block; object-fit: cover; }
+.comilanca-turma .dados { min-width: 0; }
+.comilanca-turma b { display: block; overflow: hidden; color: var(--text-header); font-size: .86rem; text-overflow: ellipsis; white-space: nowrap; }
+.comilanca-turma small { display: block; color: var(--text-muted); font-size: .74rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.comilanca-turma .pips { display: flex; gap: 2px; margin: 3px 0 2px; }
+.comilanca-turma .pips i { width: 9px; height: 5px; border-radius: 2px; background: var(--border-medium); }
+.comilanca-turma .pips i.on { background: var(--cor); }
+
+/* A caixa: moldura dourada, veludo e a grade de poços */
+.comilanca-caixa {
+  position: relative; padding: 9px; border-radius: 26px;
+  background: linear-gradient(160deg, #fff0b0, var(--cml-ouro) 22%, var(--cml-bronze) 55%, #d9a43c 80%, #6b4210);
+  box-shadow: 0 1px 0 #fff6 inset, 0 18px 36px -12px rgb(0 0 0 / 65%);
+}
+.comilanca-veludo {
+  position: relative; display: grid; gap: .6rem; padding: clamp(.6rem, 2.2cqw, 1rem); border-radius: 18px;
+  background: radial-gradient(ellipse 80% 70% at 50% 40%, #4a1f5c, var(--cml-veludo) 55%, var(--cml-fundo));
+  box-shadow: inset 0 3px 10px rgb(0 0 0 / 70%);
+}
+.comilanca-placa { display: flex; justify-content: space-between; align-items: center; gap: .6rem; min-height: 2.2rem; }
+.comilanca-placar { display: flex; align-items: baseline; gap: .5rem; margin: 0; transform-origin: left center; }
+.comilanca-placar span { color: color-mix(in srgb, var(--cml-creme) 65%, transparent); font-size: .85rem; font-weight: 600; }
+.comilanca-ganho { color: var(--cml-ouro); font: 800 1.7rem/1 var(--cml-titulo); font-variant-numeric: tabular-nums; text-shadow: 0 2px 0 #3a1500; }
+.comilanca-giros { padding: .3rem .8rem; border-radius: 999px; background: #3a6b2a; color: #eaffd9; font-size: .85rem; font-weight: 800; box-shadow: 0 0 0 1px #8fd46c inset; }
+.comilanca-giros[hidden] { display: none; }
+
+/* A grade: cada peça vai pra --x/--y (em casas) e desliza quando muda. Os poços são um
+   SVG repetido no tamanho de uma casa, então acompanham a grade quando ela cresce. */
+.comilanca-grade {
+  --n: 6; position: relative; width: min(100%, 62vh); margin: 0 auto; aspect-ratio: 1; overflow: hidden; border-radius: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Crect x='1' y='1' width='18' height='18' rx='4.5' fill='%23150819'/%3E%3Crect x='1' y='1.6' width='18' height='17.4' rx='4.5' fill='%231f0d29'/%3E%3C/svg%3E") 0 0 / calc(100% / var(--n)) calc(100% / var(--n));
+  transition: background-size .38s var(--cml-saida);
+}
+.comilanca-grade::after { content: ''; position: absolute; inset: 0; z-index: 2; background: rgb(10 3 14 / 62%); opacity: 0; pointer-events: none; transition: opacity .25s ease-out; }
+.comilanca-grade.foco::after { opacity: 1; }
+.comilanca-grade.clarao::after { background: #fff6dc; opacity: .5; transition-duration: .06s; }
+.comilanca-peca, .comilanca-amigo {
+  position: absolute; left: 0; top: 0; width: calc(100% / var(--n)); height: calc(100% / var(--n));
+  transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%)); display: grid; place-items: center;
+}
+/* Queda com um quique curto no fim, como pedra caindo no poço */
+.comilanca-peca { transition: transform .5s cubic-bezier(.34, 1.3, .64, 1), width .38s var(--cml-saida), height .38s var(--cml-saida); }
+.comilanca-peca .cml-svg { width: 78%; height: 78%; filter: drop-shadow(0 2px 1px rgb(0 0 0 / 45%)); }
+.comilanca-peca:is(.curinga, .nivel, .bomba, .trevo) .cml-svg { width: 84%; height: 84%; }
+.comilanca-peca.em-foco { z-index: 4; }
+.comilanca-peca.trevo.aceso .cml-svg { filter: drop-shadow(0 0 10px #8fff9e) drop-shadow(0 3px 2px rgb(0 0 0 / 55%)); }
+.cml-faisca { animation: cml-pavio .5s steps(2, end) infinite; transform-origin: 57px 9px; }
+@keyframes cml-pavio { 50% { transform: scale(.7) rotate(25deg); } }
+.comilanca-amigo { z-index: 3; transition: transform .26s var(--cml-saida), width .38s var(--cml-saida), height .38s var(--cml-saida); }
+.comilanca-amigo.trocando { z-index: 5; transition-duration: .55s, .38s, .38s; transition-timing-function: cubic-bezier(0.77, 0, 0.175, 1); }
+.comilanca-grade.turbo .comilanca-peca { transition-duration: .22s, .3s, .3s; }
+.comilanca-grade.turbo .comilanca-amigo { transition-duration: .1s, .3s, .3s; }
+.comilanca-amigo .rosto { width: 88%; height: 88%; overflow: hidden; border-radius: 50%; border: 3px solid var(--cor); background: var(--cml-fundo); box-shadow: 0 0 0 2px rgb(0 0 0 / 50%), 0 0 14px color-mix(in srgb, var(--cor) 70%, transparent), 0 5px 9px rgb(0 0 0 / 55%); }
+.comilanca-amigo .rosto :is(img, svg) { width: 100%; height: 100%; object-fit: cover; display: block; }
+.comilanca-amigo.comendo .rosto { animation: cml-mastiga .22s var(--cml-saida); }
+@keyframes cml-mastiga { 40% { transform: scale(1.14, .9); } }
+.comilanca-faisca { position: absolute; z-index: 4; width: 3.2%; aspect-ratio: 1; border-radius: 2px; pointer-events: none; box-shadow: 0 0 6px currentColor; }
+.comilanca-anel { position: absolute; z-index: 4; width: calc(100% / var(--n)); aspect-ratio: 1; border-radius: 50%; border: 4px solid var(--cor); box-shadow: 0 0 18px var(--cor), inset 0 0 12px var(--cor); pointer-events: none; }
+.comilanca-voa { position: absolute; z-index: 5; pointer-events: none; color: var(--cml-creme); font: 800 clamp(.8rem, 2cqw, 1.1rem)/1 var(--cml-titulo); text-shadow: 0 2px 0 #2a0b30, 0 0 8px rgb(240 191 79 / 70%); white-space: nowrap; }
+
+/* Etiqueta de especial (nível, curinga, grade maior), em cima da grade */
+.comilanca-etiqueta { position: absolute; z-index: 7; left: 50%; top: 4.2rem; padding: .45rem 1.1rem; border-radius: 999px; background: var(--cml-fundo); border: 2px solid var(--cor); color: var(--cml-creme); font: 800 1.05rem/1.1 var(--cml-titulo); white-space: nowrap; box-shadow: 0 0 22px color-mix(in srgb, var(--cor) 55%, transparent), 0 8px 18px rgb(0 0 0 / 50%); pointer-events: none; transform: translate(-50%, 0); }
+
+/* Aviso de giros grátis */
+.comilanca-aviso { position: absolute; inset: 0; z-index: 8; display: grid; place-items: center; pointer-events: none; }
+.comilanca-aviso[hidden] { display: none; }
+.comilanca-aviso div { padding: 1.1rem 1.8rem; border-radius: 18px; background: rgb(18 40 20 / 92%); border: 2px solid #8fd46c; text-align: center; box-shadow: 0 0 40px rgb(143 212 108 / 35%), 0 14px 30px rgb(0 0 0 / 60%); }
+.comilanca-aviso strong { display: block; color: #eaffd9; font: 800 clamp(1.6rem, 6cqw, 2.6rem)/1.05 var(--cml-titulo); }
+.comilanca-aviso span { color: #cfe9c2; font-weight: 600; }
+
+/* Big win / Mega win / Ultra win: cobre a caixa, com raios girando e chuva de moedas */
+.comilanca-vitoria { position: absolute; inset: 0; z-index: 9; display: grid; place-items: center; overflow: hidden; border-radius: 26px; background: radial-gradient(circle at 50% 50%, rgb(40 10 50 / 78%), rgb(10 3 14 / 92%)); cursor: pointer; }
+.comilanca-vitoria[hidden] { display: none; }
+.comilanca-raios { position: absolute; left: 50%; top: 50%; width: 160%; aspect-ratio: 1; translate: -50% -50%; background: repeating-conic-gradient(from 0deg, rgb(240 191 79 / 22%) 0 9deg, transparent 9deg 24deg); mask: radial-gradient(circle, #000 15%, transparent 62%); animation: cml-raios 14s linear infinite; }
+@keyframes cml-raios { to { rotate: 1turn; } }
+.comilanca-vitoria-miolo { position: relative; display: grid; justify-items: center; gap: .3rem; text-align: center; }
+.comilanca-faixa { font: 800 clamp(2.2rem, 10cqw, 4.4rem)/.95 var(--cml-titulo); letter-spacing: -.01em; color: var(--cml-ouro); text-shadow: 0 4px 0 #6b4210, 0 0 28px rgb(240 191 79 / 55%); }
+.comilanca-vitoria[data-faixa="1"] .comilanca-faixa { color: #ffd0ea; text-shadow: 0 4px 0 #7f1852, 0 0 32px rgb(239 108 178 / 65%); }
+.comilanca-vitoria[data-faixa="2"] .comilanca-faixa { color: #c8f1ff; text-shadow: 0 4px 0 #3f106a, 0 0 22px #a86bff, 0 0 44px #4aa8ff; }
+.comilanca-vitoria[data-faixa="2"] .comilanca-raios { background: repeating-conic-gradient(from 0deg, rgb(168 107 255 / 28%) 0 9deg, transparent 9deg 24deg); }
+.comilanca-contador { color: var(--cml-creme); font: 800 clamp(1.8rem, 7cqw, 3rem)/1 var(--cml-titulo); font-variant-numeric: tabular-nums; text-shadow: 0 3px 0 #2a0b30; }
+.comilanca-vitoria small { color: color-mix(in srgb, var(--cml-creme) 55%, transparent); font-size: .78rem; }
+.comilanca-moeda { position: absolute; top: -8%; z-index: 1; width: 6%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff1b5, var(--cml-ouro) 45%, var(--cml-bronze)); box-shadow: inset 0 0 0 2px #b8842a; pointer-events: none; }
+
+/* Controles: aposta, girar (o botão grande), auto e turbo */
+.comilanca-controles { display: flex; align-items: center; justify-content: center; gap: .6rem .9rem; flex-wrap: wrap; }
+.comilanca-aposta { display: flex; align-items: center; gap: .2rem; padding: .25rem; border-radius: 999px; border: 1px solid var(--border-medium); background: var(--bg-tertiary); }
+.comilanca-aposta button { width: 38px; height: 38px; border: 0; border-radius: 50%; background: var(--bg-secondary); color: var(--text-header); font: 800 1.15rem/1 inherit; cursor: pointer; }
+.comilanca-aposta button:disabled { opacity: .35; cursor: default; }
+.comilanca-aposta output { min-width: 4.4rem; text-align: center; color: var(--text-header); font: 800 1.15rem/1.1 var(--cml-titulo); font-variant-numeric: tabular-nums; }
+.comilanca-aposta small { display: block; color: var(--text-muted); font: 600 .7rem/1.2 var(--font-family, inherit); }
+.comilanca-girar {
+  min-width: 10.5rem; min-height: 3.5rem; padding: 0 1.4rem; border: 0; border-radius: 999px; cursor: pointer;
+  color: #3a1f00; font: 800 1.35rem/1 var(--cml-titulo);
+  background: linear-gradient(180deg, #fff0b0, var(--cml-ouro) 42%, #c48a22);
+  box-shadow: 0 5px 0 #7a4f12, 0 12px 22px rgb(0 0 0 / 35%);
+  transition: transform .12s var(--cml-saida), box-shadow .12s var(--cml-saida), filter .15s ease;
+}
+.comilanca-girar:active:not(:disabled) { transform: translateY(4px); box-shadow: 0 1px 0 #7a4f12, 0 4px 10px rgb(0 0 0 / 35%); }
+@media (hover: hover) and (pointer: fine) { .comilanca-girar:hover:not(:disabled) { filter: brightness(1.07); } }
+.comilanca-girar:disabled { filter: grayscale(.7) brightness(.75); cursor: default; }
+.comilanca-girar.parar { background: linear-gradient(180deg, #ffb3a6, #e5503d 45%, #a5261b); color: #fff; box-shadow: 0 5px 0 #6e140c, 0 12px 22px rgb(0 0 0 / 35%); }
+.comilanca-auto { position: relative; }
+.comilanca-auto-botao, .comilanca-turbo { min-height: 2.6rem; padding: 0 1rem; border-radius: 999px; border: 1px solid var(--border-medium); background: var(--bg-tertiary); color: var(--text-header); font-weight: 700; cursor: pointer; }
+.comilanca-auto-botao:disabled { opacity: .45; cursor: default; }
+.comilanca-auto-botao[aria-expanded="true"], .comilanca-turbo[aria-pressed="true"] { border-color: var(--cml-ouro); color: var(--cml-ouro); }
+.comilanca-auto-menu { position: absolute; bottom: calc(100% + .5rem); left: 50%; z-index: 10; display: flex; gap: .3rem; padding: .35rem; border-radius: 14px; border: 1px solid var(--border-medium); background: var(--bg-floating, var(--bg-secondary)); box-shadow: 0 10px 24px rgb(0 0 0 / 35%); transform: translateX(-50%); transform-origin: 50% 100%; }
+.comilanca-auto-menu[hidden] { display: none; }
+@starting-style { .comilanca-auto-menu { opacity: 0; transform: translateX(-50%) scale(.95); } }
+.comilanca-auto-menu { transition: opacity .15s var(--cml-saida), transform .15s var(--cml-saida); }
+.comilanca-auto-menu button { min-width: 2.8rem; min-height: 2.4rem; border: 0; border-radius: 10px; background: var(--bg-tertiary); color: var(--text-header); font: 800 1rem/1 var(--cml-titulo); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .comilanca-auto-menu button:hover { background: var(--cml-ouro); color: #3a1f00; } }
+.comilanca-aviso-conta { margin: 0; color: var(--text-muted); text-align: center; }
+.comilanca-aviso-conta:empty { display: none; }
+
+/* Painel ao lado: últimos giros e como funciona */
+.comilanca-lado { display: grid; gap: .8rem; }
+.comilanca-lado > * { padding: .9rem; border-radius: 14px; border: 1px solid var(--border-subtle); background: var(--bg-secondary); }
+.comilanca-lado h3, .comilanca-regras summary { margin: 0 0 .5rem; color: var(--text-header); font-size: .9rem; font-weight: 700; }
+.comilanca-regras summary { margin: 0; cursor: pointer; }
+.comilanca-regras[open] summary { margin-bottom: .5rem; }
+.comilanca-regras p { margin: 0 0 .7rem; color: var(--text-normal, var(--text-muted)); font-size: .84rem; line-height: 1.45; }
+.comilanca-legenda { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; font-size: .82rem; line-height: 1.35; color: var(--text-muted); }
+.comilanca-legenda li { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: .5rem; align-items: center; }
+.comilanca-legenda .icones { display: flex; justify-content: center; }
+.comilanca-legenda .cml-svg { width: 24px; height: 24px; }
+.comilanca-legenda .icones .cml-svg + .cml-svg { margin-left: -8px; }
+.comilanca-legenda b { color: var(--text-header); }
+.comilanca-historico { display: flex; flex-wrap: wrap; gap: .2rem .6rem; margin: 0; color: var(--text-muted); font-size: .84rem; font-variant-numeric: tabular-nums; }
+.comilanca-historico .bom { color: var(--accent-green); font-weight: 750; }
+
+@media (prefers-reduced-motion: reduce) {
+  .comilanca-peca, .comilanca-amigo { transition-duration: .01s !important; }
+  .comilanca-amigo.comendo .rosto, .cml-faisca, .comilanca-raios { animation: none; }
+}

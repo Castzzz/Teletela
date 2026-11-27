@@ -94,7 +94,7 @@ test('mão mano a mano até o showdown, com as fichas saindo e voltando pra cart
   assert.equal(ana.mesa.pote, 20);
   assert.equal(ana.mesa.vez, 4, 'depois do flop quem fala primeiro é quem senta depois do dealer');
   assert.ok(bia.jogar('aumentar', { valor: 5 }).erro, 'aposta mínima é o big blind');
-  assert.equal(bia.jogar('aumentar', { valor: 52 }).erro, 'Aposte de 5 em 5 fichas.');
+  assert.equal(bia.jogar('aumentar', { valor: 52 }).erro, 'Aposte de 5 em 5 coins.');
   bia.jogar('aumentar', { valor: 50 });
   assert.ok(ana.jogar('aumentar', { valor: 60 }).erro, 'aumento mínimo dobra a aposta');
   ana.jogar('aumentar', { valor: 150 });

@@ -1,4 +1,4 @@
-// Sons das atividades (21, apostas, poker). Saem pelo mesmo caminho do áudio da call,
+// Sons das atividades (21, apostas, poker, Seu cassino). Saem pelo mesmo caminho do áudio da call,
 // então ensurdecer cala tudo. O botão de som da mesa liga/desliga pra todas elas.
 const CHAVE_SOM = 'teletela-mesa-sons';
 const SONS = ['embaralhar', 'carta-1', 'carta-2', 'carta-3', 'virar', 'leque', 'ficha-1', 'ficha-2', 'fichas', 'pote', 'bater'];
@@ -58,6 +58,27 @@ export function criarSons(appState, podeTocar = () => true) {
         osc.start(t);
         osc.stop(t + 1);
       }
+    }
+  };
+  // Notas curtas feitas na hora (sem arquivo), pros sons do Seu cassino que o pacote de
+  // cassino não tem: plantar, colher, comprar na lojinha. notas = [frequência, início em s].
+  tocar.tom = (notas, { onda = 'triangle', dura = .18, volume = .12, atraso = 0 } = {}) => {
+    if (!somLigado() || !podeTocar() || appState.myUser?.isDeafened) return;
+    const [ctx, saida] = saidaDeAudio();
+    if (!ctx) return;
+    const inicio = ctx.currentTime + atraso / 1000;
+    for (const [nota, quando] of notas) {
+      const t = inicio + quando;
+      const ganho = ctx.createGain();
+      ganho.gain.setValueAtTime(0, t);
+      ganho.gain.linearRampToValueAtTime(volume, t + .006);
+      ganho.gain.exponentialRampToValueAtTime(.0001, t + dura);
+      const osc = ctx.createOscillator();
+      osc.type = onda;
+      osc.frequency.value = nota;
+      osc.connect(ganho).connect(saida);
+      osc.start(t);
+      osc.stop(t + dura + .02);
     }
   };
   // Carregar no primeiro clique deixa o primeiro som sem atraso.

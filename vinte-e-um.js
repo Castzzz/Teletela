@@ -179,7 +179,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
       if (acao === 'ver') return cb(estado(mesa, socket.id));
       const comFichas = mesa ? mesa.fichas : pedido.fichas !== false;
       if (comFichas && !chave && ['criar', 'entrar'].includes(acao)) {
-        return cb({ erro: 'Entre na sua conta pra jogar valendo fichas.' });
+        return cb({ erro: 'Entre na sua conta pra jogar valendo coins.' });
       }
       if (acao === 'criar') {
         if (mesa || !['banca', 'amigos'].includes(modo)) return cb({ erro: 'Escolha uma mesa disponível.' });
@@ -192,7 +192,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
         if ([...mesa.pessoas.values()].some(p => p.chave === lugar)) return cb({ erro: 'Você já ocupa um lugar nesta mesa.' });
         if (mesa.fichas && fichas.pegar(chave, user.name).saldo < MENOR_FICHA) {
           if (!mesa.pessoas.size) mesas.delete(canal);
-          return cb({ erro: 'Suas fichas acabaram. Na segunda você ganha mais 1.000.' });
+          return cb({ erro: 'Seus coins acabaram. Junte mais no Seu cassino.' });
         }
         for (const p of mesa.pessoas.values()) p.confirmou = false;
         mesa.pessoas.set(socket.id, { chave: lugar, confirmou: false, pilha: [], aposta: 0, ganho: 0, id: socket.id, nome: user.name, cartas: [], parou: false, resultado: '' });
@@ -201,15 +201,15 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
         return cb({});
       } else if (acao === 'iniciar' && pessoa && mesa.fase === 'espera' && mesa.pessoas.size >= minimo) {
         if (mesa.fichas) {
-          if (!pilhaValida(pedido.pilha)) return cb({ erro: 'Monte a aposta com as fichas.' });
-          if (soma(pedido.pilha) > saldo(pessoa)) return cb({ erro: 'Você não tem fichas para essa aposta.' });
+          if (!pilhaValida(pedido.pilha)) return cb({ erro: 'Monte a aposta com os coins.' });
+          if (soma(pedido.pilha) > saldo(pessoa)) return cb({ erro: 'Você não tem coins para essa aposta.' });
           pessoa.pilha = pedido.pilha.slice();
           pessoa.confirmou = true;
         }
         const jogadores = [...mesa.pessoas.values()].filter(p => !mesa.fichas || saldo(p) >= MENOR_FICHA);
         if (jogadores.length < minimo) {
           pessoa.confirmou = false;
-          return cb({ erro: 'Aguarde outro jogador com fichas.' });
+          return cb({ erro: 'Aguarde outro jogador com coins.' });
         }
         if (!mesa.fichas || jogadores.every(p => p.confirmou)) {
           // Quem ficou sem fichas pode acompanhar o resultado antes da próxima rodada.
@@ -221,7 +221,7 @@ export function criarMesas21({ io, channels, novoBaralho = embaralhar, fichas = 
       } else if (acao === 'dobrar' && pessoa && !pessoa.parou && mesa.fase === 'jogando' && mesa.modo === 'banca' && pessoa.cartas.length === 2 && pedido.quantidade === 2) {
         // Dobrar: a aposta dobra e vem só mais uma carta
         if (mesa.fichas) {
-          if (saldo(pessoa) < pessoa.aposta) return cb({ erro: 'Você não tem fichas para dobrar.' });
+          if (saldo(pessoa) < pessoa.aposta) return cb({ erro: 'Você não tem coins para dobrar.' });
           fichas.mover(pessoa.chave, -pessoa.aposta);
           mesa.pote += pessoa.aposta;
           pessoa.aposta *= 2;

@@ -26,20 +26,20 @@ export function configurarFichasAdmin({ socket, appState, showToast }) {
     select.replaceChildren(...lista.map(p => {
       const op = document.createElement('option');
       op.value = p.chave;
-      op.textContent = p.nome + ' · ' + numero(p.saldo) + ' fichas' + (p.zerado ? ' (zerou)' : '');
+      op.textContent = p.nome + ' · ' + numero(p.saldo) + ' coins' + (p.zerado ? ' (zerou)' : '');
       return op;
     }));
     if (lista.some(p => p.chave === escolhida)) select.value = escolhida;
     lista_ = lista;
     atualizarBotoes();
     todos.disabled = !lista.length;
-    status.textContent = lista.length ? '' : 'Ninguém jogou valendo fichas ainda.';
+    status.textContent = lista.length ? '' : 'Ninguém jogou valendo coins ainda.';
   }
 
   function carregar() {
     if (!appState.isOwner) return;
     socket.timeout(5000).emit('fichas-admin-lista', {}, (erro, res) => {
-      if (erro || !res?.success) { status.textContent = res?.error || 'A lista de fichas não respondeu.'; return; }
+      if (erro || !res?.success) { status.textContent = res?.error || 'A lista de coins não respondeu.'; return; }
       preencher(res.lista);
     });
   }
@@ -49,7 +49,7 @@ export function configurarFichasAdmin({ socket, appState, showToast }) {
     todos.disabled = true;
     socket.timeout(5000).emit('fichas-admin-resetar', pedido, (erro, res) => {
       if (erro || !res?.success) {
-        showToast(res?.error || 'Não deu pra recarregar as fichas.', 'error');
+        showToast(res?.error || 'Não deu pra recarregar os coins.', 'error');
         carregar();
         return;
       }
@@ -68,12 +68,12 @@ export function configurarFichasAdmin({ socket, appState, showToast }) {
     socket.timeout(5000).emit('fichas-admin-ajustar', { chave: select.value, quanto: sinal * n }, (erro, res) => {
       ocupado = false;
       if (erro || !res?.success) {
-        showToast(res?.error || 'Não deu pra mudar as fichas.', 'error');
+        showToast(res?.error || 'Não deu pra mudar os coins.', 'error');
         carregar();
         return;
       }
       preencher(res.lista);
-      showToast((sinal > 0 ? `+${numero(n)} pra ${nome}` : `−${numero(n)} de ${nome}`) + `. Agora tem ${numero(res.saldo)} fichas.`, 'success');
+      showToast((sinal > 0 ? `+${numero(n)} pra ${nome}` : `−${numero(n)} de ${nome}`) + `. Agora tem ${numero(res.saldo)} coins.`, 'success');
     });
   }
   mais.addEventListener('click', () => ajustar(1));
@@ -81,7 +81,7 @@ export function configurarFichasAdmin({ socket, appState, showToast }) {
   quanto.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); if (!mais.disabled) ajustar(1); } });
 
   todos.addEventListener('click', () => {
-    resetar({ todos: true }, 'Recarregar as fichas de TODO MUNDO pra 1.000? O ranking recomeça do zero.',
+    resetar({ todos: true }, 'Recarregar os coins de TODO MUNDO pra 5.000? O ranking recomeça do zero.',
       n => `Fichas recarregadas pra ${n} ${n === 1 ? 'pessoa' : 'pessoas'}.`);
   });
 

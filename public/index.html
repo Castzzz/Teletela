@@ -14,6 +14,9 @@
   <link rel="stylesheet" href="apostas.css" />
   <link rel="stylesheet" href="poker.css" />
   <link rel="stylesheet" href="salao.css" />
+  <link rel="stylesheet" href="cassino.css" />
+  <link rel="stylesheet" href="roleta.css" />
+  <link rel="stylesheet" href="comilanca.css" />
   <link rel="stylesheet" href="mesa-pixel.css" />
   <link rel="stylesheet" href="dice.css" />
   <link rel="stylesheet" href="watch-together.css" />
@@ -437,7 +440,6 @@
           <div class="salao-miolo">
           <header class="salao-chamada">
             <span class="salao-letreiro">Cassino Colheita</span>
-            <p>Escolha uma mesa. Dá pra jogar um enquanto a call joga outro.</p>
           </header>
           <ul class="salao-cartoes">
             <li><button type="button" class="salao-cartao" data-jogo="21">
@@ -452,14 +454,32 @@
               <span class="salao-descricao">Texas Hold'em com blinds de 5 e 10. Senta com quanto quiser, levanta quando quiser.</span>
               <span class="salao-status"></span>
             </button></li>
+            <li><button type="button" class="salao-cartao" data-jogo="roleta">
+              <span class="salao-arte salao-arte-roleta" aria-hidden="true"><img class="salao-roda" src="roleta/roda.svg" alt=""><img class="salao-pilha" src="fichas/vermelha-5.png" alt=""><img class="salao-pilha" src="fichas/preta-3.png" alt=""></span>
+              <strong>Roleta</strong>
+              <span class="salao-descricao">Ponha fichas nos números ou nas cores. A roda gira e o número certo paga 35 pra 1.</span>
+              <span class="salao-status"></span>
+            </button></li>
+            <li><button type="button" class="salao-cartao" data-jogo="comilanca">
+              <span class="salao-arte salao-arte-comilanca" aria-hidden="true"></span>
+              <strong>Comilança</strong>
+              <span class="salao-descricao">A turma anda pela grade comendo as pedras da própria cor. Avalanche, níveis e giros grátis.</span>
+              <span class="salao-status"></span>
+            </button></li>
             <li><button type="button" class="salao-cartao" data-jogo="apostas">
               <span class="salao-arte" aria-hidden="true"><img class="salao-pilha" src="fichas/azul-4.png" alt=""><img class="salao-pilha" src="fichas/verde-9.png" alt=""><img class="salao-pilha" src="fichas/vermelha-6.png" alt=""></span>
               <strong>Apostas</strong>
-              <span class="salao-descricao">Alguém faz uma pergunta, a call aposta fichas na resposta e quem acertar leva o pote.</span>
+              <span class="salao-descricao">Faça apostas com seus Colheita Coins e quem acertar leva o pote.</span>
+              <span class="salao-status"></span>
+            </button></li>
+            <li><button type="button" class="salao-cartao" data-jogo="cassino">
+              <span class="salao-arte salao-arte-cassino" aria-hidden="true"><img class="salao-maquina" src="cassino-local/slot.png" alt=""><span class="salao-milho"></span><span class="salao-milho"></span><span class="salao-galinha"></span><img class="salao-celeiro" src="cassino/celeiro.png" alt=""></span>
+              <strong>Seu cassino</strong>
+              <span class="salao-descricao">Monte seu cassino e sua fazenda. Ele rende coins até com o app fechado.</span>
               <span class="salao-status"></span>
             </button></li>
           </ul>
-          <p class="salao-nota">Entre na sua conta pra apostar. A carteira vale em todas as atividades e ganha mais 1.000 fichas toda segunda.</p>
+          <p class="salao-nota">Entre na sua conta pra apostar. A carteira vale em todas as atividades.</p>
           </div>
         </div>
         <div id="jogo-21" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
@@ -478,7 +498,7 @@
           </div>
           <fieldset id="entrada-21" hidden>
             <legend>Valendo</legend>
-            <label><input type="radio" name="fichas-21" value="1" checked><span>Fichas</span></label>
+            <label><input type="radio" name="fichas-21" value="1" checked><span>Valendo coins</span></label>
             <label><input type="radio" name="fichas-21" value="0"><span>Só diversão</span></label>
           </fieldset>
           <div id="montar-21" hidden role="group" aria-label="Montar a aposta">
@@ -492,6 +512,113 @@
           </div>
           <footer id="acoes-21"></footer>
         </div>
+        </div>
+        <!-- Roleta (roleta.js): roda europeia da call. A primeira ficha abre o tempo de apostas -->
+        <div id="jogo-roleta" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
+          <div class="trilho-21"><div class="feltro-21 feltro-roleta">
+            <div class="roda-roleta">
+              <img class="roda-img" src="roleta/roda.svg" alt="" draggable="false">
+              <div class="bola-orbita" aria-hidden="true"><span class="bola-roleta"></span></div>
+            </div>
+            <div class="lado-roleta">
+              <ol class="historico-roleta" aria-label="Últimos números"></ol>
+              <div class="pano-roleta" role="group" aria-label="Onde apostar"></div>
+              <div id="placar-roleta" hidden><strong></strong><span></span></div>
+            </div>
+          </div></div>
+          <div class="painel-21 painel-roleta">
+            <div class="estado-21"><p id="aviso-roleta" role="status"></p><p id="apostadores-roleta"></p></div>
+            <div id="fichas-roleta" role="group" aria-label="Valor da ficha">
+              <button type="button" class="ficha-botao-21 vermelha" data-valor="5" aria-pressed="false" aria-label="Ficha de 5">5</button>
+              <button type="button" class="ficha-botao-21 azul" data-valor="10" aria-pressed="true" aria-label="Ficha de 10">10</button>
+              <button type="button" class="ficha-botao-21 roxa" data-valor="25" aria-pressed="false" aria-label="Ficha de 25">25</button>
+              <button type="button" class="ficha-botao-21 verde" data-valor="50" aria-pressed="false" aria-label="Ficha de 50">50</button>
+              <button type="button" class="ficha-botao-21 preta" data-valor="100" aria-pressed="false" aria-label="Ficha de 100">100</button>
+            </div>
+            <footer id="acoes-roleta">
+              <button type="button" class="atalho-mesa" data-acao="desfazer">Desfazer</button>
+              <button type="button" class="atalho-mesa" data-acao="limpar">Limpar</button>
+              <button type="button" class="jogada-mesa" data-acao="pronto">Pronto<small>gira quando todos estiverem</small></button>
+            </footer>
+          </div>
+        </div>
+        <!-- Comilança (comilanca.js): slot de coleta solo; o servidor sorteia, aqui só anima -->
+        <div id="jogo-comilanca" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
+          <div class="comilanca">
+            <section class="comilanca-centro" aria-label="Grade">
+              <ul class="comilanca-turma" aria-label="A turma"></ul>
+              <div class="comilanca-caixa"><div class="comilanca-veludo">
+                <div class="comilanca-placa">
+                  <p class="comilanca-placar"><span>Ganho</span> <strong class="comilanca-ganho">0</strong></p>
+                  <span class="comilanca-giros" hidden></span>
+                </div>
+                <div class="comilanca-grade"></div>
+                <div class="comilanca-aviso" hidden><div><strong></strong><span></span></div></div>
+                <div class="comilanca-vitoria" hidden><div class="comilanca-raios" aria-hidden="true"></div><div class="comilanca-vitoria-miolo" role="status"><strong class="comilanca-faixa"></strong><span class="comilanca-contador"></span><small>Toque pra pular</small></div></div>
+              </div></div>
+              <div class="comilanca-controles">
+                <div class="comilanca-aposta" role="group" aria-label="Aposta">
+                  <button type="button" data-aposta="-1" aria-label="Diminuir aposta">−</button>
+                  <output><small>Aposta</small><b>10</b></output>
+                  <button type="button" data-aposta="1" aria-label="Aumentar aposta">+</button>
+                </div>
+                <button type="button" class="comilanca-girar">Girar</button>
+                <div class="comilanca-auto">
+                  <button type="button" class="comilanca-auto-botao" aria-expanded="false" aria-controls="comilanca-auto-menu">Auto</button>
+                  <div class="comilanca-auto-menu" id="comilanca-auto-menu" role="group" aria-label="Quantos giros automáticos" hidden>
+                    <button type="button" data-auto="10">10</button><button type="button" data-auto="25">25</button><button type="button" data-auto="50">50</button><button type="button" data-auto="100">100</button>
+                  </div>
+                </div>
+                <button type="button" class="comilanca-turbo" aria-pressed="false">Turbo</button>
+              </div>
+              <p class="comilanca-aviso-conta" role="status"></p>
+            </section>
+            <aside class="comilanca-lado">
+              <section><h3>Últimos giros</h3><p class="comilanca-historico">Nenhum ainda.</p></section>
+              <details class="comilanca-regras" open><summary>Como funciona</summary>
+                <p>Cada amigo come as pedras da cor dele que estiverem encostadas (em cima, embaixo ou do lado) e vai andando. Quando ninguém tem mais o que comer, o resto cai e entram pedras novas.</p>
+                <ul class="comilanca-legenda"></ul>
+              </details>
+            </aside>
+          </div>
+        </div>
+        <!-- Seu cassino (cassino.js): cassino e fazenda de cada conta, rende fichas parado -->
+        <div id="jogo-cassino" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
+          <div class="cassino-sem-conta" hidden><p></p></div>
+          <div class="cassino cassino-jogo" hidden>
+            <section class="cassino-palco" aria-label="Seu cassino e sua fazenda">
+              <div class="cassino-abas" role="tablist">
+                <button type="button" role="tab" data-cena-aba="cassino" aria-selected="true">Cassino</button>
+                <button type="button" role="tab" data-cena-aba="roca" aria-selected="false">Fazenda</button>
+                <button type="button" role="tab" data-cena-aba="amigos" aria-selected="false">Amigos</button>
+                <button type="button" class="cassino-botao pequeno cassino-editar">Editar salão</button>
+                <span class="cassino-acoes-fazenda" hidden><button type="button" class="cassino-botao pequeno verde" data-roca="colher">Colher tudo</button><button type="button" class="cassino-botao pequeno" data-roca="plantar">Plantar nos vazios</button></span>
+              </div>
+              <div class="cassino-visitando" hidden><span></span><button type="button" class="cassino-botao ouro cassino-ajudar">Ajudar</button><button type="button" class="cassino-botao cassino-voltar">Voltar pro meu</button></div>
+              <div class="cassino-cena" data-cena="cassino"><p class="cassino-dica-edicao" hidden>Arraste as peças (ou foque e use as setas). Verde cabe, vermelho não. A porta fica livre.</p><div class="cassino-sala"><div class="cassino-pecas"></div></div></div>
+              <div class="cassino-cena" data-cena="roca" hidden><div class="cassino-fazenda"><div class="cassino-fazenda-fundo"></div><div class="cassino-fazenda-canteiros"></div><div class="cassino-fazenda-bichos" aria-hidden="true"></div></div></div>
+              <div class="cassino-cena" data-cena="amigos" hidden></div>
+            </section>
+            <aside class="cassino-lado">
+              <div class="cassino-numeros"><span><b class="cassino-taxa">0</b> coins/h</span><span class="cassino-dia"></span><span class="cassino-estrelas"></span></div>
+              <div class="cassino-cartao">
+                <div class="cassino-cartao-topo"><h3>Cofre</h3><span class="cassino-cofre-horas"></span></div>
+                <div class="cassino-barra"><div></div></div>
+                <div class="cassino-cofre-linha"><b class="cassino-cofre-valor">0</b><button type="button" class="cassino-botao ouro cassino-coletar">Coletar</button></div>
+                <p class="cassino-cofre-dica"></p>
+              </div>
+              <div class="cassino-cartao cassino-celeiro" hidden></div>
+              <div class="cassino-cartao cassino-loja">
+                <h3 class="cassino-loja-titulo">Loja do cassino</h3>
+                <ul class="cassino-loja-lista"></ul>
+              </div>
+              <div class="cassino-cartao cassino-teste" hidden>
+                <h3>Servidor de teste</h3>
+                <div class="cassino-fileira"><button type="button" class="cassino-botao" data-pular="3600000">+1 hora</button><button type="button" class="cassino-botao" data-pular="86400000">+1 dia</button><button type="button" class="cassino-botao cassino-encerrar">Encerrar temporada</button></div>
+              </div>
+            </aside>
+            <div class="cassino-sementes" hidden></div>
+          </div>
         </div>
         <!-- Poker (poker.js): Texas Hold'em, blinds 5/10 -->
         <div id="jogo-poker" class="jogo-mesa" aria-labelledby="titulo-21" hidden>
@@ -513,13 +640,13 @@
             </div>
             <fieldset id="entrada-poker" hidden>
               <legend>Valendo</legend>
-              <label><input type="radio" name="fichas-poker" value="1" checked><span>Fichas</span></label>
+              <label><input type="radio" name="fichas-poker" value="1" checked><span>Valendo coins</span></label>
               <label><input type="radio" name="fichas-poker" value="0"><span>Só diversão</span></label>
             </fieldset>
             <form id="valor-poker" hidden>
               <div class="valor-poker-topo">
                 <label for="valor-poker-numero" class="valor-poker-rotulo"></label>
-                <span class="valor-poker-campo"><input type="number" id="valor-poker-numero" inputmode="numeric" step="5"><span aria-hidden="true">fichas</span></span>
+                <span class="valor-poker-campo"><input type="number" id="valor-poker-numero" inputmode="numeric" step="5"><span aria-hidden="true">coins</span></span>
               </div>
               <div class="valor-poker-ajuste">
                 <button type="button" class="valor-poker-passo" data-passo="-1"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
@@ -543,7 +670,7 @@
         <aside id="ranking-21" hidden aria-labelledby="titulo-ranking-21">
           <header><h3 id="titulo-ranking-21">Ranking da sala</h3><button type="button" class="btn-secondary" id="fechar-ranking-21" aria-label="Fechar ranking"><svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></header>
           <ol></ol>
-          <p>Entre na sua conta pra apostar. A carteira vale em todas as atividades e ganha mais 1.000 fichas toda segunda.</p>
+          <p>Entre na sua conta pra apostar. A carteira vale em todas as atividades.</p>
           <!-- A licença das cartas e fichas (CC BY 4.0) pede o crédito: ver public/baralho/LICENCA.txt -->
           <p class="creditos-21">Cartas e fichas: <a href="https://ivoryred.itch.io/pixel-poker-cards" target="_blank" rel="noopener">(Pixel) Poker Cards</a>, de <a href="https://ivoryred.itch.io" target="_blank" rel="noopener">IvoryRed</a> (<a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>), recortadas em pilhas. Sons: Casino Audio, de <a href="https://www.kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0).</p>
         </aside>
@@ -1017,12 +1144,20 @@
 
       <div class="modal-body">
         <ul class="whats-new-list">
+          <li><strong>Seu cassino.</strong> Monte seu cassino e sua fazenda nas Atividades. Compre máquinas, contrate a equipe, plante e abasteça o bar, e ele rende Colheita Coins até com o app fechado. As temporadas duram 60 dias: no fim, o cassino de todo mundo recomeça, as carteiras voltam pra 5.000 e você ganha estrelas pra gastar em bônus que ficam pra sempre.</li>
+          <li><strong>Roleta.</strong> Roda europeia de 0 a 36 pra toda a call. Ponha fichas nos números, nas cores, em par ou ímpar, nas metades, dúzias e colunas, e veja a bola cair. Número certo paga 35 pra 1.</li>
+          <li><strong>5.000 coins pra começar.</strong> Quem tem menos de 5.000 sobe pra 5.000 agora, e conta nova já começa com isso. Não tem mais os 1.000 de toda segunda: os coins novos vêm do Seu cassino.</li>
+        </ul>
+        <div id="whats-new-5-0-1" class="whats-new-older hidden">
+          <h4>E o que chegou na 5.0.1</h4>
+        <ul class="whats-new-list">
           <li><strong>Cartas maiores.</strong> No poker e no 21 as cartas ficaram maiores e dá pra ler o número de longe. No poker, as cartas de cada um ficam do lado do nome.</li>
           <li><strong>Sua vez com cor e som.</strong> Na sua vez aparecem botões grandes, sempre na mesma ordem: vermelho pra largar ou parar, verde pra pagar ou pedir carta, amarelo pra aumentar ou dobrar. No poker toca um sino quando é a sua vez, mesmo com a mesa fechada.</li>
           <li><strong>Apostar ficou mais fácil.</strong> No poker, escolha o valor no número, na barra, no − e + ou nos atalhos ½ pote, Pote e All-in, que mostram quanto põem. Toda aposta anda de 5 em 5.</li>
           <li><strong>21 mais justo.</strong> 21 de cara paga 3 por 2 e ganha de qualquer outro 21, e contra a banca dá pra Dobrar nas duas primeiras cartas.</li>
           <li><strong>Aceleração por hardware.</strong> Se a transmissão ficar ruim ou o app fechar sozinho, desligue em Configurações → Transmissão. Se o Teletela fechar por problema na placa de vídeo, ele avisa ao abrir de novo.</li>
         </ul>
+        </div>
         <div id="whats-new-5-0-0" class="whats-new-older hidden">
           <h4>E o que chegou na 5.0.0</h4>
         <ul class="whats-new-list">
@@ -1030,7 +1165,7 @@
           <li><strong>21.</strong> Jogue contra a banca ou entre amigos, com até oito na mesa, cartas em pixel art e sons de cassino.</li>
           <li><strong>Poker.</strong> Texas Hold'em com blinds de 5 e 10. Sente com quanto quiser, veja o nome da sua mão enquanto as cartas saem e consulte as mãos no botão Mãos.</li>
           <li><strong>Apostas.</strong> Faça uma pergunta pela moeda no chat da call. Quem acertar divide o pote.</li>
-          <li><strong>Fichas.</strong> As fichas e o ranking ficam na sua conta, com 1.000 fichas para começar e mais 1.000 toda segunda. Veja quem está na frente em Ranking.</li>
+          <li><strong>Colheita Coins.</strong> Os coins e o ranking ficam na sua conta, com 1.000 coins para começar e mais 1.000 toda segunda. Veja quem está na frente em Ranking.</li>
           <li><strong>Ligações entre amigos.</strong> A chamada toca até alguém atender, dá para ligar estando numa call e a ligação abre em tela cheia com a conversa ao lado e transmissão de tela.</li>
           <li><strong>Visual novo.</strong> Fonte e cores próprias, quem fala em destaque na call e configurações do canal repaginadas. Roda e Aconchego viraram o Clássico; o Terminal ganhou atalhos de teclado.</li>
           <li><strong>Transmissão pela placa de vídeo.</strong> Quando o PC consegue, a tela é codificada pela placa de vídeo, como no Discord, e sobra processador pro jogo. O Diagnóstico da transmissão mostra se está usando a placa ou o processador.</li>
@@ -1349,7 +1484,7 @@
         <div class="whats-new-older whats-new-creditos">
           <h4>Créditos</h4>
           <ul class="whats-new-list">
-            <li><strong>Cartas e fichas das atividades:</strong> <a href="https://ivoryred.itch.io/pixel-poker-cards" target="_blank" rel="noopener">(Pixel) Poker Cards</a>, de <a href="https://ivoryred.itch.io" target="_blank" rel="noopener">IvoryRed</a>, licença <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>. As fichas foram recortadas e montadas em pilhas.</li>
+            <li><strong>Cartas e fichas das atividades:</strong> <a href="https://ivoryred.itch.io/pixel-poker-cards" target="_blank" rel="noopener">(Pixel) Poker Cards</a>, de <a href="https://ivoryred.itch.io" target="_blank" rel="noopener">IvoryRed</a>, licença <a href="https://creativecommons.org/licenses/by/4.0/deed.pt-br" target="_blank" rel="noopener">CC BY 4.0</a>. Os coins foram recortadas e montadas em pilhas.</li>
             <li><strong>Sons da mesa:</strong> Casino Audio, de <a href="https://www.kenney.nl" target="_blank" rel="noopener">Kenney</a> (CC0).</li>
           </ul>
         </div>
@@ -1861,11 +1996,11 @@
               <p id="server-icon-status" class="form-help" role="status"></p>
             </div>
             <div id="fichas-admin" class="form-group permission-block hidden">
-              <h4>Fichas das atividades</h4>
-              <p class="form-help">Cada pessoa tem uma carteira que vale pra todas as atividades. Escolha a pessoa, digite quantas fichas e adicione ou remova. Recarregar todo mundo devolve todos os saldos pra 1.000.</p>
+              <h4>Colheita Coins</h4>
+              <p class="form-help">Cada pessoa tem uma carteira que vale pra todas as atividades. Escolha a pessoa, digite quantos coins e adicione ou remova. Recarregar todo mundo devolve todos os saldos pra 5.000.</p>
               <label for="fichas-admin-pessoa">Pessoa</label>
               <select id="fichas-admin-pessoa" class="form-input"></select>
-              <label for="fichas-admin-quanto">Quantas fichas</label>
+              <label for="fichas-admin-quanto">Quantos coins</label>
               <div class="admin-row">
                 <input type="number" id="fichas-admin-quanto" class="form-input" min="1" step="1" inputmode="numeric" placeholder="Ex.: 500">
                 <button type="button" id="fichas-admin-mais" class="btn-primary" disabled>Adicionar</button>
@@ -2123,7 +2258,7 @@
   <dialog id="dialogo-aposta" class="aposta-dialogo" aria-labelledby="titulo-dialogo-aposta">
     <form method="dialog" novalidate>
       <h2 id="titulo-dialogo-aposta">Criar aposta</h2>
-      <p class="form-help">Quem está no canal põe fichas numa opção. Você marca o que aconteceu e o pote vai pra quem acertou.</p>
+      <p class="form-help">Quem está no canal põe coins numa opção. Você marca o que aconteceu e o pote vai pra quem acertou.</p>
       <label for="aposta-titulo">Pergunta</label>
       <input id="aposta-titulo" name="titulo" class="form-input" maxlength="90" required placeholder="Quem morre primeiro na partida?" autocomplete="off">
       <fieldset>

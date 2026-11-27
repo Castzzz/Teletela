@@ -62,20 +62,20 @@ export function configurarApostas({ socket, appState, showToast }) {
   function status() {
     if (aposta.fase === 'aberta') return 'Aposta de ' + aposta.criador + ' · fecha em ' + tempo(restante());
     if (aposta.fase === 'fechada') return 'Apostas fechadas · ' + aposta.criador + ' vai marcar o resultado';
-    if (aposta.fase === 'cancelada') return 'Aposta cancelada · as fichas voltaram';
-    return aposta.devolvida ? 'Ninguém acertou · as fichas voltaram' : 'Resultado';
+    if (aposta.fase === 'cancelada') return 'Aposta cancelada · os coins voltaram';
+    return aposta.devolvida ? 'Ninguém acertou · os coins voltaram' : 'Resultado';
   }
 
   function resumoMeu() {
     const meu = aposta.meu;
-    const saldo = carteira ? ' · você tem ' + numero(carteira.saldo) + ' fichas' : '';
+    const saldo = carteira ? ' · você tem ' + numero(carteira.saldo) + ' coins' : '';
     if (!appState.myUser.accountId && aposta.fase === 'aberta') return 'Entre na sua conta pra apostar.';
-    if (!meu) return aposta.fase === 'aberta' ? 'Escolha uma opção e quantas fichas.' + saldo : 'Você ficou de fora dessa.';
+    if (!meu) return aposta.fase === 'aberta' ? 'Escolha uma opção e quantos coins.' + saldo : 'Você ficou de fora dessa.';
     const nome = aposta.opcoes.find(o => o.id === meu.opcao)?.texto;
     if (aposta.fase === 'resolvida' && !aposta.devolvida) {
-      return meu.ganho ? 'Você ganhou ' + numero(meu.ganho) + ' fichas (lucro de ' + numero(meu.ganho - meu.valor) + ').' : 'Você perdeu ' + numero(meu.valor) + ' fichas em ' + nome + '.';
+      return meu.ganho ? 'Você ganhou ' + numero(meu.ganho) + ' coins (lucro de ' + numero(meu.ganho - meu.valor) + ').' : 'Você perdeu ' + numero(meu.valor) + ' coins em ' + nome + '.';
     }
-    if (['cancelada', 'resolvida'].includes(aposta.fase)) return 'Suas ' + numero(meu.valor) + ' fichas voltaram.';
+    if (['cancelada', 'resolvida'].includes(aposta.fase)) return 'Seus ' + numero(meu.valor) + ' coins voltaram.';
     return 'Você pôs ' + numero(meu.valor) + ' em ' + nome + saldo + '.';
   }
 
@@ -124,7 +124,7 @@ export function configurarApostas({ socket, appState, showToast }) {
       const pct = aposta.total ? Math.round(o.total / aposta.total * 100) : 0;
       const num = el('span', 'aposta-num', pct + '%');
       const detalhes = el('span', 'aposta-detalhe',
-        numero(o.total) + ' fichas · ' + o.pessoas + (o.pessoas === 1 ? ' pessoa' : ' pessoas') + (o.paga ? ' · paga ' + o.paga.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '×' : ''));
+        numero(o.total) + ' coins · ' + o.pessoas + (o.pessoas === 1 ? ' pessoa' : ' pessoas') + (o.paga ? ' · paga ' + o.paga.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) + '×' : ''));
       if (o.maiores.length) detalhes.title = o.maiores.map(m => m.nome + ': ' + numero(m.valor)).join('\n');
       linha.append(nome, num, detalhes);
       linha.onclick = () => { escolhida = o.id; desenhar(); hostDe(noChat).querySelector('.aposta-valor input')?.focus(); };
@@ -147,7 +147,7 @@ export function configurarApostas({ socket, appState, showToast }) {
     if (aberta && canal && appState.myUser.accountId) {
       const opcao = travada || escolhida;
       const form = el('form', 'aposta-valor');
-      const rotulo = el('label', 'sr-only', 'Quantas fichas');
+      const rotulo = el('label', 'sr-only', 'Quantos coins');
       const id = 'aposta-valor-' + (noChat ? 'chat' : 'atividades');
       rotulo.htmlFor = id;
       const input = el('input', 'form-input');
@@ -194,7 +194,7 @@ export function configurarApostas({ socket, appState, showToast }) {
       }
       const cancelar = botao('Cancelar e devolver');
       cancelar.onclick = async () => {
-        if (await confirmar('Cancelar a aposta? Todo mundo recebe as fichas de volta.', { confirmar: 'Cancelar aposta', perigo: true })) aviso(await pedir('cancelar'));
+        if (await confirmar('Cancelar a aposta? Todo mundo recebe os coins de volta.', { confirmar: 'Cancelar aposta', perigo: true })) aviso(await pedir('cancelar'));
       };
       rodape.append(cancelar);
       raiz.append(rodape);
@@ -205,7 +205,7 @@ export function configurarApostas({ socket, appState, showToast }) {
 
   function vazio() {
     const raiz = el('div', 'aposta-vazia');
-    raiz.append(el('p', '', canal && !appState.myUser.accountId ? 'Nenhuma aposta rolando neste canal. Entre na sua conta pra criar uma.' : canal ? 'Nenhuma aposta rolando neste canal. Pergunte algo que vai acontecer na call ou no jogo e a turma aposta fichas.' : 'Entre num canal de voz pra ver e criar apostas.'));
+    raiz.append(el('p', '', canal && !appState.myUser.accountId ? 'Nenhuma aposta rolando neste canal. Entre na sua conta pra criar uma.' : canal ? 'Nenhuma aposta rolando neste canal. Pergunte algo que vai acontecer na call ou no jogo e a turma aposta coins.' : 'Entre num canal de voz pra ver e criar apostas.'));
     if (canal && appState.myUser.accountId) {
       const criar = botao('Criar aposta', 'btn-primary');
       criar.onclick = abrirDialogo;

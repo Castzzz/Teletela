@@ -81,7 +81,7 @@ app.whenReady().then(async () => {
   await until(c, 'document.querySelectorAll(".lugar-poker .carta-21.coberta").length === 4');
   if (await js(c, 'document.querySelectorAll(".lugar-poker img").length')) throw Error('Quem assiste viu as cartas');
   // As fichas dos blinds saíram da carteira na hora.
-  await until(a, 'document.querySelector("#carteira-21").textContent.replace(/\\D/g,"") === "995"');
+  await until(a, 'document.querySelector("#carteira-21").textContent.replace(/\\D/g,"") === "4995"');
   await print(a, '2-preflop-lia');
 
   // Quem tem a vez: Lia é dealer e small blind, fala primeiro.
@@ -129,7 +129,7 @@ app.whenReady().then(async () => {
   await until(b, 'document.querySelector("#placar-poker").textContent.includes("Você levou")');
   await print(b, '5-resultado-davi');
   if (PRINTS) { await js(b, "document.documentElement.dataset.theme='claro';void 0"); await print(b, '6-resultado-claro'); await js(b, "document.documentElement.dataset.theme='escuro';void 0"); }
-  await until(b, 'document.querySelector("#carteira-21").textContent.replace(/\\D/g,"") === "1010"');
+  await until(b, 'document.querySelector("#carteira-21").textContent.replace(/\\D/g,"") === "5010"');
   // Antes da próxima mão as cartas voltam pro monte e ele embaralha.
   await until(a, 'document.querySelector("#jogo-poker").classList.contains("mesa-limpa")', 120);
   await print(a, '5b-embaralhando');

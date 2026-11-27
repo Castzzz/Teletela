@@ -17,3 +17,6 @@ android/**/*.keystore
 
 # Referências e relatórios das revisões de design (imagens de terceiros; repositório público)
 .impeccable/
+
+# Cassino idle: tileset sem redistribuição confirmada e fotos dos amigos (repositório público)
+public/cassino-local/

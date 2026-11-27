@@ -238,7 +238,7 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
     } else if (acao === 'aumentar') {
       if (!podeAumentar) return 'Agora só dá pra pagar ou largar.';
       if (!Number.isSafeInteger(valor) || valor < minimo || valor > j.naRua + j.pilha) return 'Aposte de ' + minimo + ' a ' + (j.naRua + j.pilha) + '.';
-      if (!deCinco(valor, minimo, j.naRua + j.pilha)) return 'Aposte de 5 em 5 fichas.';
+      if (!deCinco(valor, minimo, j.naRua + j.pilha)) return 'Aposte de 5 em 5 coins.';
       const antes = mesa.apostaAtual;
       por(mesa, j, valor - j.naRua);
       // Aumento completo reabre a vez de quem já tinha falado; all-in curto só obriga a pagar.
@@ -358,10 +358,10 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
         if (mesa && sentados(mesa).length >= LUGARES) return cb({ erro: 'A mesa está cheia.' });
         let pilha = FICHAS_DIVERSAO;
         if (comFichas) {
-          if (!chave) return cb({ erro: 'Entre na sua conta pra jogar valendo fichas.' });
+          if (!chave) return cb({ erro: 'Entre na sua conta pra jogar valendo coins.' });
           const tem = fichas.pegar(chave, user.name).saldo;
-          if (tem < BIG) return cb({ erro: 'Precisa de pelo menos ' + BIG + ' fichas pra sentar.' });
-          if (!Number.isSafeInteger(valor) || valor < BIG || valor > tem) return cb({ erro: 'Escolha de ' + BIG + ' até ' + tem.toLocaleString('pt-BR') + ' fichas.' });
+          if (tem < BIG) return cb({ erro: 'Precisa de pelo menos ' + BIG + ' coins pra sentar.' });
+          if (!Number.isSafeInteger(valor) || valor < BIG || valor > tem) return cb({ erro: 'Escolha de ' + BIG + ' até ' + tem.toLocaleString('pt-BR') + ' coins.' });
           if (!deCinco(valor, tem)) return cb({ erro: 'Escolha um valor de 5 em 5.' });
           pilha = valor;
         }
@@ -383,13 +383,13 @@ export function criarMesasPoker({ io, channels, fichas = new FichasStore(), novo
         return cb({});
       } else if (acao === 'comecar') {
         if (mesa.fase !== 'espera') return cb({ erro: 'A mão já começou.' });
-        if (sentados(mesa).filter(podeJogar).length < 2) return cb({ erro: 'Precisa de pelo menos duas pessoas com fichas.' });
+        if (sentados(mesa).filter(podeJogar).length < 2) return cb({ erro: 'Precisa de pelo menos duas pessoas com coins.' });
         novaMao(mesa);
       } else if (acao === 'repor') {
-        if (mesa.fase === 'jogando' && eu.cartas.length && !eu.foldou) return cb({ erro: 'Espere a mão acabar pra pôr mais fichas.' });
+        if (mesa.fase === 'jogando' && eu.cartas.length && !eu.foldou) return cb({ erro: 'Espere a mão acabar pra pôr mais coins.' });
         const teto = mesa.fichas ? saldo(eu) : FICHAS_DIVERSAO;
         if (!Number.isSafeInteger(valor) || valor < 1 || eu.pilha + valor > teto) {
-          return cb({ erro: mesa.fichas ? 'Sua carteira tem ' + teto.toLocaleString('pt-BR') + ' fichas.' : 'Só diversão vai até ' + FICHAS_DIVERSAO + '.' });
+          return cb({ erro: mesa.fichas ? 'Sua carteira tem ' + teto.toLocaleString('pt-BR') + ' coins.' : 'Só diversão vai até ' + FICHAS_DIVERSAO + '.' });
         }
         if (!deCinco(valor, teto - eu.pilha)) return cb({ erro: 'Escolha um valor de 5 em 5.' });
         eu.pilha += valor;

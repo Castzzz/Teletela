@@ -137,11 +137,11 @@ export function criarApostas({ io, channels, fichas, isOwner = () => false, dire
         const opcao = aposta.opcoes.find(o => o.id === pedido.opcao);
         if (aposta.fase !== 'aberta' || agora() >= aposta.fechaEm) return cb({ erro: 'As apostas já fecharam.' });
         if (!opcao) return cb({ erro: 'Escolha uma opção.' });
-        if (!Number.isSafeInteger(valor) || valor < 1) return cb({ erro: 'Escolha quantas fichas.' });
+        if (!Number.isSafeInteger(valor) || valor < 1) return cb({ erro: 'Escolha quantos coins.' });
         const tem = fichas.pegar(chave, user.name).saldo;
-        if (valor > tem) return cb({ erro: 'Você não tem essas fichas.' });
+        if (valor > tem) return cb({ erro: 'Você não tem esses coins.' });
         // De 5 em 5, como o resto do app; só o all-in vale o que sobrou.
-        if (valor % 5 && valor !== tem) return cb({ erro: 'Aposte de 5 em 5 fichas.' });
+        if (valor % 5 && valor !== tem) return cb({ erro: 'Aposte de 5 em 5 coins.' });
         let meu = aposta.palpites.find(p => p.chave === chave);
         if (meu && meu.opcao !== opcao.id) return cb({ erro: 'Você já apostou em outra opção.' });
         if (!meu) { meu = { chave, nome: user.name, opcao: opcao.id, valor: 0 }; aposta.palpites.push(meu); }

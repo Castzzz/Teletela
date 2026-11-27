@@ -64,7 +64,7 @@ export function pilha(valor, rotulo, ordem) {
   const el = document.createElement('span');
   el.className = 'pilhas-21';
   el.setAttribute('role', 'img');
-  el.setAttribute('aria-label', rotulo || numero(valor) + ' fichas');
+  el.setAttribute('aria-label', rotulo || numero(valor) + ' coins');
   const fichas = ordem?.length ? ordem : decompor(valor);
   const colunas = [];
   for (const [quanto, cor] of FICHAS) {

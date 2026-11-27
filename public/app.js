@@ -52,7 +52,11 @@ import { configurarMesa21 } from './vinte-e-um.js';
 import { configurarFichasAdmin } from './fichas-admin.js';
 import { configurarApostas } from './apostas.js';
 import { configurarPoker } from './poker.js';
+import { configurarRoleta } from './roleta.js';
+import { configurarComilanca } from './comilanca.js';
+const COMILANCA_LIGADA = false;
 import { configurarSalao } from './salao.js';
+import { configurarCassino } from './cassino.js';
 import { setupDice } from './dice.js';
 import { setupStageSocial } from './stage-social.js';
 import { setupStageControls } from './stage-controls.js';
@@ -5720,14 +5724,14 @@ function setupPerformanceSelect() {
 }
 
 // Novidades da versão: mostra uma vez só (quem abre o app pela primeira vez vê o perfil, não isso)
-const WHATS_NEW_VERSION = '5.0.1';
+const WHATS_NEW_VERSION = '5.1.0';
 let whatsNewReturnFocus = null;
 
 function openWhatsNew(seen = 0, returnFocus = document.activeElement) {
   closeUserPopover();
   whatsNewReturnFocus = returnFocus;
   const seenParts = String(seen).split('.').map(Number);
-  for (const version of ['5-0-0', '4-9-0', '4-8-0', '4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
+  for (const version of ['5-0-1', '5-0-0', '4-9-0', '4-8-0', '4-7-0', '4-6-0', '4-5-1', '4-5-0', '4-4-0', '4-3-3', '4-3-2', '4-3-1', '4-3-0', '4-2-1', '4-2-0', '4-1-0', '4-0-0', '3-9-0', '3-8-0', '3-7-0', '3-6-2', '3-6-0', '3-5-0', '3-4-1', '3-4', '3-3', '3-2', '3-1', '3-0', '2-2', '2-1', '2-0']) {
     const parts = version.split('-').map(Number);
     // Compara também a correção: quem viu 3.4.0 ainda precisa das novidades de 3.4.1.
     const difference = parts.findIndex((part, index) => part !== (seenParts[index] || 0));
@@ -8780,6 +8784,12 @@ function initApp() {
     }
   }, pessoaDaCall);
   configurarPoker({ socket, appState, showToast, pessoaDaCall });
+  configurarRoleta({ socket, appState, showToast });
+  // Comilança: pronta no código, mas fora das versões até o dono aprovar o polimento.
+  // Pra testar, ligue aqui e rode o servidor com TELINHA_COMILANCA=1.
+  if (COMILANCA_LIGADA) configurarComilanca({ socket, appState, showToast });
+  else document.querySelector('.salao-cartao[data-jogo="comilanca"]')?.closest('li')?.remove();
+  configurarCassino({ socket, appState, showToast });
   diceUI = setupDice({ socket, appState, showToast, escapeHtml, mountStageOverlay });
   watchTogetherUI = setupWatchTogether({ socket, appState, serverUrl: SERVER_URL, mountStageOverlay, showToast });
   stageSocialUI = setupStageSocial({ appState, prefs, savePrefs, music: musicUI,
