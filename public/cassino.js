@@ -137,7 +137,7 @@ export function configurarCassino({ socket, appState, showToast }) {
     if (!status) return;
     if (!e) { status.textContent = 'Rende coins até com o app fechado'; return; }
     R.avancar(e, agora());
-    const taxa = R.taxaHora(e), cheio = taxa > 0 && e.cofre >= taxa * R.cofreHoras(e) - 0.01;
+    const taxa = R.taxaHora(e, agora()), cheio = taxa > 0 && e.cofre >= taxa * R.cofreHoras(e) - 0.01;
     status.textContent = !taxa ? 'Compre a primeira máquina' : cheio ? 'Cofre cheio! Venha coletar' : `${fmt(e.cofre)} no cofre · ${fmt(taxa)}/h`;
     cartao.dataset.vivo = taxa ? '1' : '';
     cartao.classList.toggle('chamando', cheio);
@@ -164,11 +164,20 @@ export function configurarCassino({ socket, appState, showToast }) {
   }
 
   function desenharTopo() {
-    const taxa = R.taxaHora(e), horas = R.cofreHoras(e), limite = taxa * horas;
+    const t = agora(), taxa = R.taxaHora(e, t), horas = R.cofreHoras(e), limite = taxa * horas;
     const pct = limite ? Math.min(100, e.cofre / limite * 100) : 0;
     $('.cassino-taxa').textContent = fmt(taxa);
-    $('.cassino-dia').textContent = temporada ? `Temporada ${temporada.numero} · ${quantoFalta(temporada.fim - agora())}`
-      : `Dia ${Math.min(R.DIAS_TEMPORADA, R.diaTemporada(e, agora()))} de ${R.DIAS_TEMPORADA}`;
+    // Selo da inauguração do lado da taxa (criado aqui pra não mexer no HTML da tela)
+    let selo = $('.cassino-inaug');
+    if (!selo) { selo = document.createElement('span'); selo.className = 'cassino-inaug'; $('.cassino-taxa').parentElement.append(selo); }
+    selo.hidden = !R.emInauguracao(e, t);
+    if (!selo.hidden) {
+      const falta = Math.ceil((e.inauguracao.ate - t) / HORA);
+      selo.textContent = `×${R.INAUGURACAO_FATOR}`;
+      selo.title = `Inauguração: o cassino rende em dobro por mais ${falta} h`;
+    }
+    $('.cassino-dia').textContent = temporada ? `Temporada ${temporada.numero} · ${quantoFalta(temporada.fim - t)}`
+      : `Dia ${Math.min(R.DIAS_TEMPORADA, R.diaTemporada(e, t))} de ${R.DIAS_TEMPORADA}`;
     $('.cassino-estrelas').textContent = `★ ${e.estrelas}`;
     $('.cassino-cofre-valor').textContent = fmt(e.cofre);
     $('.cassino-barra > div').style.width = `${pct}%`;
@@ -612,9 +621,6 @@ export function configurarCassino({ socket, appState, showToast }) {
       if (antes != null && antes !== (c?.plantado ?? null) && !filaColheita.includes(i) && filaColheita.length < 5) filaColheita.push(i);
       plantios.de[i] = c?.plantado ?? null;
     });
-    // irrigação parada: pronto, mas o celeiro não tem lugar pras porções
-    const livre = R.capacidadeCeleiro(x) - R.totalEstoque(x);
-    const travado = c => x.niveis.irrigacao && livre < R.CULTURAS[c.cultura].porcoes;
     let h = '';
     for (let i = 0; i < R.MELHORIAS.canteiros.valores.at(-1); i++) {
       const { x: px, y: py } = CANT(i), pos = `style="--fx:${px};--fy:${py}"`;
@@ -624,8 +630,8 @@ export function configurarCassino({ socket, appState, showToast }) {
       const dur = R.tempoCultura(x, c.cultura), falta = c.plantado + dur - t, p = Math.min(1, (t - c.plantado) / dur);
       const col = falta <= 0 ? 1 : p < 0.15 ? 5 : p < 0.4 ? 4 : p < 0.7 ? 3 : 2; // 5 = semente, 1 = pronta
       const [lin, lado] = R.CULTURAS[c.cultura].folha;
-      h += `<button type="button" class="faz-canteiro${falta <= 0 ? ' pronto' : ''}${falta <= 0 && travado(c) ? ' cheio' : ''}" data-canteiro="${i}" ${pos} aria-label="${R.CULTURAS[c.cultura].nome}${falta <= 0 ? ', pronto' : ', falta ' + fmtTempo(falta)}${c.proxima ? ', depois ' + R.CULTURAS[c.proxima].nome : ''}">`
-        + `<span class="planta" style="--tx:${lado * 6 + col};--ty:${lin}"></span><span class="tempo">${falta > 0 ? fmtTempo(falta) : travado(c) ? 'cheio' : 'colher'}</span>`
+      h += `<button type="button" class="faz-canteiro${falta <= 0 ? ' pronto' : ''}" data-canteiro="${i}" ${pos} aria-label="${R.CULTURAS[c.cultura].nome}${falta <= 0 ? ', pronto' : ', falta ' + fmtTempo(falta)}${c.proxima ? ', depois ' + R.CULTURAS[c.proxima].nome : ''}">`
+        + `<span class="planta" style="--tx:${lado * 6 + col};--ty:${lin}"></span><span class="tempo">${falta > 0 ? fmtTempo(falta) : 'colher'}</span>`
         + (c.proxima ? `<span class="proxima" title="Depois: ${R.CULTURAS[c.proxima].nome}" style="${iconePlanta(c.proxima, 1.25)}"></span>` : '') + '</button>';
     }
     por($('.cassino-fazenda-canteiros'), h);
@@ -646,8 +652,8 @@ export function configurarCassino({ socket, appState, showToast }) {
       h += `<li><span class="mini" style="${iconePlanta(c, 1.5)}"></span><span>${cu.nome}</span><b>${fmt(q)}</b>`
         + (visitando ? '<span></span>' : `<button type="button" class="cassino-botao pequeno" data-vender="${c}" ${valor >= 1 ? '' : 'disabled'}>Vender ${fmt(valor)}</button>`) + '</li>';
     }
-    if (x.niveis.irrigacao && x.canteiros.some(c => c && c.plantado + R.tempoCultura(x, c.cultura) <= agora() && cap - total < R.CULTURAS[c.cultura].porcoes))
-      h = h.replace('<ul>', '<p class="cassino-aviso">Celeiro cheio: a irrigação parou de colher. Venda alguma coisa ou espere o bar gastar.</p><ul>');
+    if (x.niveis.irrigacao && total >= cap - 0.01)
+      h = h.replace('<ul>', '<p class="cassino-aviso">Celeiro cheio: a irrigação vende o que não cabe e manda pro cofre.</p><ul>');
     por($('.cassino-celeiro'), h + '</ul>');
   }
 

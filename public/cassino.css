@@ -240,8 +240,6 @@
 .faz-canteiro.vazio .tempo { background: rgb(0 0 0 / 45%); }
 .faz-canteiro.pronto { animation: faz-pronto 1s ease-in-out infinite alternate; }
 .faz-canteiro.pronto .tempo { background: var(--px-ouro); color: #2a1d00; }
-.faz-canteiro.pronto.cheio { animation: none; }
-.faz-canteiro.pronto.cheio .tempo { background: #ed4245; color: #fff; }
 @keyframes faz-pronto { to { box-shadow: inset 0 0 0 calc(var(--k) * 1px) var(--px-ouro), 0 0 calc(var(--k) * 4px) var(--px-ouro); } }
 
 /* próxima cultura escolhida (irrigação): iconezinho no canto */
@@ -298,6 +296,8 @@
 .cassino-item strong { display: block; color: var(--text-header); font-size: .9rem; }
 .cassino-item strong small { color: var(--text-muted); font-weight: 600; }
 .cassino-item span { color: var(--text-muted); font-size: .76rem; line-height: 1.3; }
+.cassino-inaug { margin-left: .35rem; padding: 0 .35rem; border-radius: var(--radius-pill); background: var(--accent-yellow); color: #1e1f22; font-size: .72rem; font-weight: 700; cursor: help; }
+.cassino-inaug[hidden] { display: none; }
 .cassino-vender { display: block; margin-top: .15rem; padding: 0; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: .72rem; text-decoration: underline; cursor: pointer; }
 .cassino-vender:hover { color: var(--text-normal); }
 .cassino-vender.confirmando { color: var(--text-danger); font-weight: 600; text-decoration: none; }

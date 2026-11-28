@@ -28,6 +28,9 @@ export function criarCassino({ io, fichas, diretorio = '', agora = Date.now, tes
     const dados = JSON.parse(fs.readFileSync(arquivo, 'utf8'));
     if (dados.version !== 1 || !dados.jogadores) throw new Error('cassino.json inválido. Restaure o backup.');
     for (const [chave, j] of Object.entries(dados.jogadores)) if (j?.estado?.versao === 1) jogadores.set(chave, j);
+    // Cassino de antes da inauguração existir (5.1.2) ganha as 72 h a partir de agora.
+    const desde = agora();
+    for (const j of jogadores.values()) if (!j.estado.inauguracao) j.estado.inauguracao = R.novaInauguracao(desde);
     const t = dados.temporada;
     if (Number.isSafeInteger(t?.numero) && Number.isFinite(t.inicio) && Number.isFinite(t.fim)) temporada = t;
   }
@@ -151,7 +154,7 @@ export function criarCassino({ io, fichas, diretorio = '', agora = Date.now, tes
     return [...jogadores].filter(([k]) => k !== chave).map(([k, j]) => {
       R.avancar(j.estado, t);
       const e = j.estado;
-      return { chave: k, nome: j.nome || 'Alguém', taxa: Math.floor(R.taxaHora(e)), dia: R.diaTemporada(e, t), maquinas: R.usados(e),
+      return { chave: k, nome: j.nome || 'Alguém', taxa: Math.floor(R.taxaHora(e, t)), dia: R.diaTemporada(e, t), maquinas: R.usados(e),
         canteiros: e.canteiros.length, equipe: Object.keys(e.funcionarios).length, ganho: Math.floor(e.ganhoTemporada), ajudouHoje: Boolean(eu.estado.ajudasHoje[k]) };
     }).sort((a, b) => b.ganho - a.ganho);
   }

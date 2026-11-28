@@ -30,7 +30,7 @@ export const DEVOLVE = 0.7;  // vender devolve 70% do que a última custou
 export const MELHORIAS = {
   salao:     { nome: 'Ampliar o salão',   valores: [6, 10, 14, 19, 24],        custo: [800, 3000, 8000, 20000],    unidade: 'lugares' },
   cofre:     { nome: 'Cofre maior',       valores: [6, 8, 10, 12],             custo: [800, 4000, 15000],           unidade: 'h' },
-  canteiros: { nome: 'Mais canteiros',    valores: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], custo: [200, 400, 800, 1500, 2500, 4000, 6000, 9000, 13000, 18000, 24000, 32000, 42000, 55000, 70000, 90000, 115000], unidade: 'canteiros' },
+  canteiros: { nome: 'Mais canteiros',    valores: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], custo: [200, 250, 315, 390, 490, 610, 765, 955, 1200, 1500, 1850, 2350, 2900, 3650, 4550, 5700, 7100], unidade: 'canteiros' }, // +25% por canteiro
   adubo:     { nome: 'Adubo',             valores: [0, 10, 20, 30, 40],        custo: [1500, 5000, 12000, 30000],   unidade: '% mais rápido' },
   celeiro:   { nome: 'Celeiro',           valores: [60, 200, 600, 1500],       custo: [1200, 6000, 20000],          unidade: 'porções' },
   bar:       { nome: 'Abrir o bar',       valores: [0, 1],                     custo: [1500],                       unidade: '' },
@@ -68,6 +68,12 @@ function aplicarLegado(e) {
   return e;
 }
 
+// Inauguração: o cassino rende em dobro nas primeiras 72 h (de cada um, então quem
+// chega no meio da temporada também ganha). e.inauguracao = { de, ate } em ms.
+export const INAUGURACAO = 72 * HORA, INAUGURACAO_FATOR = 2;
+export const novaInauguracao = agora => ({ de: agora, ate: agora + INAUGURACAO });
+export const emInauguracao = (e, t) => t != null && e.inauguracao != null && t >= e.inauguracao.de && t < e.inauguracao.ate;
+
 export const FICHAS_TEMPORADA = 5000;
 export const DIAS_TEMPORADA = 60;
 export const CLIQUES_DIA = 300;
@@ -80,7 +86,7 @@ export function diaDe(ms) { return Math.floor((ms + BRASILIA) / DIA); }
 // legado: o que foi comprado na lojinha das estrelas; culturas só passam com o Banco de sementes.
 export function novoEstado(agora, estrelas = 0, temporada = 1, legado = {}, culturas = { milho: true }) {
   return garantirLayout(aplicarLegado({
-    versao: 1, temporada, estrelas, legado: { ...legado }, inicio: agora, ultimo: agora,
+    versao: 1, temporada, estrelas, legado: { ...legado }, inicio: agora, ultimo: agora, inauguracao: novaInauguracao(agora),
     fichas: FICHAS_TEMPORADA, cofre: 0, ganhoTemporada: 0,
     maquinas: { caca: 0, roleta: 0, vinte: 0, poker: 0 },
     niveis: { salao: 0, cofre: 0, canteiros: 0, adubo: 0, celeiro: 0, bar: 0, irrigacao: 0 },
@@ -202,8 +208,12 @@ export function rendaBar(e) {
   const pedido = consumoBar(e);
   return produtosNoBar(e).reduce((t, c) => t + pedido * CULTURAS[c].preco, 0) * multiplicadorGeral(e);
 }
-// Fichas por hora agora: cassino com o bônus do bar, mais as vendas do bar.
-export function taxaHora(e) { return taxaBase(e) * (1 + bonusBar(e)) * multiplicadorGeral(e) + rendaBar(e); }
+// Fichas por hora: cassino com o bônus do bar, mais as vendas do bar. Com "agora",
+// conta também a inauguração (×2 nas primeiras 72 h).
+export function taxaHora(e, agora) {
+  const t = taxaBase(e) * (1 + bonusBar(e)) * multiplicadorGeral(e) + rendaBar(e);
+  return emInauguracao(e, agora) ? t * INAUGURACAO_FATOR : t;
+}
 
 function virarDia(e, agora) {
   const d = diaDe(agora);
@@ -241,7 +251,7 @@ export function avancar(e, agora) {
     const passo = Math.min(MIN, fim - t);
     const h = passo / HORA;
     // Cassino: produção vai pro cofre até o limite de horas.
-    const taxa = taxaHora(e);
+    const taxa = taxaHora(e, t);
     const limite = taxa * cofreHoras(e);
     const cheio = e.cofre >= limite;
     if (!cheio) e.cofre = Math.min(limite, e.cofre + taxa * h);
@@ -251,13 +261,14 @@ export function avancar(e, agora) {
       for (const c of produtosNoBar(e)) e.estoque[c] = Math.max(0, e.estoque[c] - gasto);
     }
     t += passo;
-    // Irrigação: o que ficou pronto é colhido e replantado sozinho.
+    // Irrigação: o que ficou pronto é colhido e replantado sozinho. O que não cabe no
+    // celeiro é vendido a preço de venda direta e vai pro cofre (com o cofre cheio, perde).
     if (e.niveis.irrigacao) {
-      e.canteiros.forEach((cant, i) => {
+      e.canteiros.forEach(cant => {
         if (!cant) return;
         while (cant.plantado + tempoCultura(e, cant.cultura) <= t) {
-          if (capacidadeCeleiro(e) - totalEstoque(e) < CULTURAS[cant.cultura].porcoes) break; // celeiro cheio: espera
-          guardarColheita(e, cant.cultura, CULTURAS[cant.cultura].porcoes);
+          const sobra = guardarColheita(e, cant.cultura, CULTURAS[cant.cultura].porcoes);
+          if (sobra) e.cofre = Math.min(Math.max(e.cofre, limite), e.cofre + sobra * precoVenda(cant.cultura));
           cant.plantado += tempoCultura(e, cant.cultura);
           replantar(cant);
         }
@@ -385,7 +396,7 @@ export const acoes = {
     if (e.cliquesRecentes.length >= CLIQUES_POR_SEGUNDO) return { ok: false, erro: 'Calma!' };
     if (e.cliquesHoje >= CLIQUES_DIA) return { ok: false, erro: 'A alavanca esfriou. Volta amanhã.' };
     e.cliquesRecentes.push(agora); e.cliquesHoje++;
-    const v = Math.max(1, Math.floor(taxaHora(e) / 120 * (e.funcionarios.cast ? 2 : 1)));
+    const v = Math.max(1, Math.floor(taxaHora(e, agora) / 120 * (e.funcionarios.cast ? 2 : 1)));
     ganhar(e, v);
     return { ok: true, valor: v };
   },
@@ -394,7 +405,7 @@ export const acoes = {
     virarDia(e, agora);
     if (e.visitasHoje >= VISITAS_DIA) return { ok: false, erro: 'Chega de visita hoje.' };
     e.visitasHoje++;
-    const v = Math.max(10, Math.floor(taxaHora(e) / 3));
+    const v = Math.max(10, Math.floor(taxaHora(e, agora) / 3));
     ganhar(e, v);
     return { ok: true, valor: v };
   },
@@ -403,7 +414,7 @@ export const acoes = {
     virarDia(e, agora);
     if (e.ajudasHoje[amigo]) return { ok: false, erro: 'Você já ajudou hoje.' };
     e.ajudasHoje[amigo] = true;
-    const v = Math.max(15, Math.floor(taxaHora(e) / 2));
+    const v = Math.max(15, Math.floor(taxaHora(e, agora) / 2));
     ganhar(e, v);
     return { ok: true, valor: v };
   },

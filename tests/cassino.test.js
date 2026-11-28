@@ -43,12 +43,44 @@ test('comprar desconta da carteira e o cofre só vira ficha ao coletar, até o l
   passar(2 * R.HORA);
   assert.equal(a.saldo, inicial - 150, 'produção fica no cofre');
   const c = a.pedir('coletar');
-  assert.equal(c.resultado.valor, 10);
-  assert.equal(a.saldo, inicial - 150 + 10);
-  // Uma semana fora: o cofre para nas 6 h.
+  assert.equal(c.resultado.valor, 20, 'inauguração: 2 h a 5/h em dobro');
+  assert.equal(a.saldo, inicial - 150 + 20);
+  // Uma semana fora: o cofre para nas 6 h (de produção em dobro, enquanto durou a inauguração).
   passar(7 * R.DIA);
-  assert.equal(a.pedir('coletar').resultado.valor, 30);
+  assert.equal(a.pedir('coletar').resultado.valor, 60);
   assert.equal(a.pedir('coletar').erro, 'O cofre está vazio.');
+  // Passada a inauguração, volta pro normal.
+  passar(2 * R.HORA);
+  assert.equal(a.pedir('coletar').resultado.valor, 10);
+});
+
+test('inauguração: ×2 só nas 72 h, e save antigo ganha as 72 h a partir de quando o servidor sobe', () => {
+  const e = R.novoEstado(0);
+  e.maquinas.caca = 1;
+  assert.equal(R.taxaHora(e, 0), 10);
+  assert.equal(R.taxaHora(e, R.INAUGURACAO - 1), 10);
+  assert.equal(R.taxaHora(e, R.INAUGURACAO), 5);
+  assert.equal(R.taxaHora(e), 5, 'sem horário não conta');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cassino-inaug-'));
+  const antigo = R.novoEstado(0); delete antigo.inauguracao;
+  fs.writeFileSync(path.join(dir, 'cassino.json'), JSON.stringify({ version: 1, temporada: { numero: 1, inicio: 0, fim: Date.UTC(2027, 0, 1) }, jogadores: { Ana: { nome: 'Ana', estado: antigo } } }));
+  const { conectar } = montar({ diretorio: dir });
+  const ini = conectar('Ana').pedir('ver').estado.inauguracao;
+  assert.equal(ini.de, Date.UTC(2026, 10, 25, 15));
+  assert.equal(ini.ate - ini.de, R.INAUGURACAO);
+  fs.rmSync(dir, { recursive: true });
+});
+
+test('irrigação com o celeiro cheio vende a sobra pro cofre', () => {
+  const e = R.novoEstado(0);
+  e.maquinas.caca = 1; e.niveis.irrigacao = 1; delete e.inauguracao;
+  e.estoque.milho = R.capacidadeCeleiro(e); // celeiro cheio
+  e.canteiros[0] = { cultura: 'milho', plantado: 0 };
+  R.avancar(e, R.HORA);
+  assert.equal(e.estoque.milho, R.capacidadeCeleiro(e));
+  // 1 h: 5 do caça-níquel + 12 pipocas × 0,3
+  assert.ok(Math.abs(e.cofre - (5 + 12 * 0.3)) < 1e-6, String(e.cofre));
+  assert.equal(e.canteiros[0].plantado, R.HORA);
 });
 
 test('vender máquina devolve 70% da última comprada, sem contar como ganho', () => {
