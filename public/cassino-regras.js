@@ -4,17 +4,18 @@
 // e.fichas é o saldo da carteira, posto pelo servidor antes de cada ação.
 export const MIN = 60e3, HORA = 3600e3, DIA = 86400e3;
 
-// Cada plantio rende porções proporcionais ao tempo (1 porção a cada 5 min),
-// então planta longa não é pior: só pede menos cliques.
+// Cada plantio rende porções proporcionais ao tempo (1 porção a cada 5 min).
+// preco = quanto o bar cobra por porção: semente cara vale mais por canteiro.
 export const CULTURAS = {
-  milho:   { nome: 'Milho',   tempo: 5 * MIN,  porcoes: 1,  produto: 'Pipoca',            icone: 'snack_popcorn',     desbloqueio: 0,      folha: [9, 0] },
-  morango: { nome: 'Morango', tempo: 20 * MIN, porcoes: 4,  produto: 'Bolo de morango',   icone: 'cake_strawberry',    desbloqueio: 300,    folha: [6, 0] },
-  laranja: { nome: 'Laranja', tempo: 1 * HORA, porcoes: 12, produto: 'Suco de laranja',   icone: 'fruit_orange_slice', desbloqueio: 1500,   folha: [8, 0] },
-  cafe:    { nome: 'Café',    tempo: 2 * HORA, porcoes: 24, produto: 'Expresso',          icone: 'coffee_espresso',    desbloqueio: 5000,  folha: [7, 1] },
-  uva:     { nome: 'Uva',     tempo: 4 * HORA, porcoes: 48, produto: 'Vinho',             icone: 'drink_wine',          desbloqueio: 15000,  folha: [5, 1] },
-  abacaxi: { nome: 'Abacaxi', tempo: 8 * HORA, porcoes: 96, produto: 'Piña colada',       icone: 'drink_pinacolada',    desbloqueio: 35000, folha: [4, 0] },
+  milho:   { nome: 'Milho',   tempo: 5 * MIN,  porcoes: 1,  preco: 1, produto: 'Pipoca',            icone: 'snack_popcorn',     desbloqueio: 0,      folha: [9, 0] },
+  morango: { nome: 'Morango', tempo: 20 * MIN, porcoes: 4,  preco: 1.5, produto: 'Bolo de morango',   icone: 'cake_strawberry',    desbloqueio: 300,    folha: [6, 0] },
+  laranja: { nome: 'Laranja', tempo: 1 * HORA, porcoes: 12, preco: 2, produto: 'Suco de laranja',   icone: 'fruit_orange_slice', desbloqueio: 1500,   folha: [8, 0] },
+  cafe:    { nome: 'Café',    tempo: 2 * HORA, porcoes: 24, preco: 3, produto: 'Expresso',          icone: 'coffee_espresso',    desbloqueio: 5000,  folha: [7, 1] },
+  uva:     { nome: 'Uva',     tempo: 4 * HORA, porcoes: 48, preco: 4, produto: 'Vinho',             icone: 'drink_wine',          desbloqueio: 15000,  folha: [5, 1] },
+  abacaxi: { nome: 'Abacaxi', tempo: 8 * HORA, porcoes: 96, preco: 5, produto: 'Piña colada',       icone: 'drink_pinacolada',    desbloqueio: 35000, folha: [4, 0] },
 };
-export const PRECO_PORCAO = 0.3; // vender direto rende pouco: o bar vale mais
+export const VENDA_DIRETA = 0.3; // vender direto paga 30% do preço do bar
+export const precoVenda = c => CULTURAS[c].preco * VENDA_DIRETA;
 
 export const MAQUINAS = {
   caca:   { nome: 'Caça-níquel',   taxa: 5,  custo: 150,   max: 10, mesa: false },
@@ -23,6 +24,7 @@ export const MAQUINAS = {
   poker:  { nome: 'Mesa de poker', taxa: 95, custo: 12000, max: 2,  mesa: true },
 };
 export const CRESCE = 1.15; // cada máquina igual custa 15% a mais que a anterior
+export const DEVOLVE = 0.7;  // vender devolve 70% do que a última custou
 
 // Melhorias com níveis: custo[n] é o preço pra ir do nível n pro n+1.
 export const MELHORIAS = {
@@ -165,6 +167,8 @@ export const usados = e => Object.values(e.maquinas).reduce((a, b) => a + b, 0);
 // Preço redondo: de 5 em 5 até 1.000, de 50 em 50 até 10.000, depois de 100 em 100.
 const redondo = v => { const p = v < 1000 ? 5 : v < 10000 ? 50 : 100; return Math.round(v / p) * p; };
 export const custoMaquina = (e, id) => redondo(MAQUINAS[id].custo * CRESCE ** e.maquinas[id]);
+// Quanto volta ao vender a última máquina desse tipo (null se não tem nenhuma).
+export const valorVendaMaquina = (e, id) => e.maquinas[id] ? redondo(MAQUINAS[id].custo * CRESCE ** (e.maquinas[id] - 1) * DEVOLVE) : null;
 export const custoMelhoria = (e, id) => MELHORIAS[id].custo[e.niveis[id]] ?? null;
 export const cofreHoras = e => nivel(e, 'cofre') + (e.funcionarios.gg ? 4 : 0) + legado(e, 'cofre') * 2;
 export const capacidadeCeleiro = e => nivel(e, 'celeiro');
@@ -190,10 +194,16 @@ export function taxaBase(e) {
   }
   return t;
 }
-// Fichas por hora do cassino agora.
-export function taxaHora(e) { return taxaBase(e) * (1 + bonusBar(e)) * multiplicadorGeral(e); }
-// Quantas porções de cada produto o bar gasta por hora.
-export function consumoBar(e) { return 1 + taxaBase(e) / 60; }
+// Quantas porções de cada produto os clientes do bar pedem por hora. A parte fixa
+// faz o bar valer a pena já no começo; o resto cresce com o movimento do cassino.
+export function consumoBar(e) { return 3 + taxaBase(e) / 60; }
+// Fichas por hora que o bar fatura vendendo o que tem no celeiro.
+export function rendaBar(e) {
+  const pedido = consumoBar(e);
+  return produtosNoBar(e).reduce((t, c) => t + pedido * CULTURAS[c].preco, 0) * multiplicadorGeral(e);
+}
+// Fichas por hora agora: cassino com o bônus do bar, mais as vendas do bar.
+export function taxaHora(e) { return taxaBase(e) * (1 + bonusBar(e)) * multiplicadorGeral(e) + rendaBar(e); }
 
 function virarDia(e, agora) {
   const d = diaDe(agora);
@@ -204,6 +214,14 @@ function virarDia(e, agora) {
 function replantar(cant) {
   if (cant.proxima) { cant.cultura = cant.proxima; delete cant.proxima; }
   return cant;
+}
+// Venda direta: a fração de coin que sobra fica guardada pra próxima venda.
+function venderPorcoes(e, c, n) {
+  const total = n * precoVenda(c) + (e.troco || 0);
+  const v = Math.floor(total + 1e-6);
+  e.troco = total - v;
+  if (v) ganhar(e, v);
+  return v;
 }
 function guardarColheita(e, c, porcoes) {
   const livre = Math.max(0, capacidadeCeleiro(e) - totalEstoque(e));
@@ -225,9 +243,10 @@ export function avancar(e, agora) {
     // Cassino: produção vai pro cofre até o limite de horas.
     const taxa = taxaHora(e);
     const limite = taxa * cofreHoras(e);
-    if (e.cofre < limite) e.cofre = Math.min(limite, e.cofre + taxa * h);
-    // Bar gasta um pouco de cada produto.
-    if (e.niveis.bar) {
+    const cheio = e.cofre >= limite;
+    if (!cheio) e.cofre = Math.min(limite, e.cofre + taxa * h);
+    // Bar vende um pouco de cada produto (com o cofre cheio ele fecha e não gasta).
+    if (e.niveis.bar && !cheio) {
       const gasto = consumoBar(e) * h;
       for (const c of produtosNoBar(e)) e.estoque[c] = Math.max(0, e.estoque[c] - gasto);
     }
@@ -275,8 +294,7 @@ export const acoes = {
     if (cant.plantado + tempoCultura(e, cant.cultura) > agora) return { ok: false, erro: 'Ainda não está pronto.' };
     const sobra = guardarColheita(e, cant.cultura, CULTURAS[cant.cultura].porcoes);
     // O que não coube no celeiro é vendido na hora, barato.
-    const venda = Math.floor(sobra * PRECO_PORCAO);
-    if (venda) ganhar(e, venda);
+    const venda = sobra ? venderPorcoes(e, cant.cultura, sobra) : 0;
     e.canteiros[i] = e.niveis.irrigacao ? replantar({ ...cant, plantado: agora }) : null;
     return { ok: true, porcoes: CULTURAS[cant.cultura].porcoes - sobra, venda };
   },
@@ -298,9 +316,7 @@ export const acoes = {
     const n = Math.floor(e.estoque[cultura] || 0);
     if (!n) return { ok: false, erro: 'Nada pra vender.' };
     e.estoque[cultura] -= n;
-    const v = Math.max(1, Math.floor(n * PRECO_PORCAO));
-    ganhar(e, v);
-    return { ok: true, valor: v };
+    return { ok: true, valor: venderPorcoes(e, cultura, n) };
   },
   liberar(e, cultura) {
     const c = CULTURAS[cultura];
@@ -319,6 +335,15 @@ export const acoes = {
     e.fichas -= c; e.maquinas[id]++;
     garantirLayout(e);
     return { ok: true };
+  },
+  // Volta pra carteira sem contar como ganho da temporada (não é renda).
+  venderMaquina(e, id) {
+    if (!MAQUINAS[id]) return { ok: false, erro: '?' };
+    const v = valorVendaMaquina(e, id);
+    if (v == null) return { ok: false, erro: 'Você não tem essa máquina.' };
+    e.maquinas[id]--; e.fichas += v;
+    garantirLayout(e);
+    return { ok: true, valor: v };
   },
   melhorar(e, id) {
     const c = custoMelhoria(e, id);

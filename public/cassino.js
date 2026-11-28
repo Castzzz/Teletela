@@ -60,7 +60,7 @@ export function configurarCassino({ socket, appState, showToast }) {
     colher: () => tocar.tom([[523, 0], [784, .06]], { dura: .2 }),
     arrancar: () => tocar.tom([[262, 0], [175, .05]], { onda: 'sine', dura: .14, volume: .2 }),
     proxima: () => tocar.tom([[659, 0]], { onda: 'sine', dura: .1, volume: .1 }),
-    vender: () => tocar(somDeFicha(), 0, .5), ajudar: () => tocar('fichas', 0, .5),
+    vender: () => tocar(somDeFicha(), 0, .5), venderMaquina: () => tocar(somDeFicha(), 0, .5), ajudar: () => tocar('fichas', 0, .5),
   };
   Object.assign(SOM, { plantarVazios: SOM.plantar, colherTudo: SOM.colher, proximaTodos: SOM.proxima });
 
@@ -181,12 +181,14 @@ export function configurarCassino({ socket, appState, showToast }) {
   }
 
   // ---------- Loja ----------
-  function item({ icone, nome, texto, preco, tipo, id, feito, rotulo }) {
+  function item({ icone, nome, texto, preco, tipo, id, feito, rotulo, venda }) {
     const pode = preco != null && saldo != null && saldo >= preco;
     const botao = feito
       ? `<button type="button" class="cassino-preco" disabled>${feito}</button>`
       : `<button type="button" class="cassino-preco${pode ? ' pode' : ''}" data-tipo="${tipo}" data-id="${id}" aria-label="${rotulo || 'Comprar'} por ${fmt(preco)} coins" ${pode ? '' : 'aria-disabled="true"'}>${fmt(preco)}</button>`;
-    return `<li class="cassino-item"><span class="cassino-icone" style="${icone}"></span><div><strong>${nome}</strong><span>${texto}</span></div>${botao}</li>`;
+    // venda: máquina que dá pra devolver (2 cliques: o primeiro só pede confirmação)
+    const vender = venda == null ? '' : `<button type="button" class="cassino-vender" data-vender-maq="${id}" data-valor="${venda}">Vender por ${fmt(venda)}</button>`;
+    return `<li class="cassino-item"><span class="cassino-icone" style="${icone}"></span><div><strong>${nome}</strong><span>${texto}</span>${vender}</div>${botao}</li>`;
   }
   function melhoria(id, icone, texto, rotulo) {
     const m = R.MELHORIAS[id], n = e.niveis[id], preco = R.custoMelhoria(e, id);
@@ -222,12 +224,12 @@ export function configurarCassino({ socket, appState, showToast }) {
       for (const [id, m] of Object.entries(R.MAQUINAS)) {
         const n = e.maquinas[id];
         h += item({ icone: ICONE_MAQ[id], nome: `${m.nome} <small>${n}/${m.max}</small>`, texto: `+${m.taxa} coins/h${m.mesa && e.funcionarios.ll ? ' (+20% com o crupiê)' : ''}`,
-          preco: R.custoMaquina(e, id), tipo: 'maquina', id, feito: n >= m.max ? 'Máximo' : cheio ? 'Sem lugar' : null });
+          preco: R.custoMaquina(e, id), tipo: 'maquina', id, feito: n >= m.max ? 'Máximo' : cheio ? 'Sem lugar' : null, venda: R.valorVendaMaquina(e, id) });
       }
       h += '<li class="cassino-secao">Prédio</li>';
       h += melhoria('salao', img('cassino-local/mesinha.png'), v => `${v} lugares`);
       h += melhoria('cofre', img('cassino-local/saco.png'), v => `Guarda ${v} h de produção`);
-      h += melhoria('bar', img('cassino-local/balcao.png'), () => `Serve o que a fazenda colhe: +${e.funcionarios.neves ? 8 : 5}% por produto`, 'Abrir');
+      h += melhoria('bar', img('cassino-local/balcao.png'), () => `Vende o que a fazenda colhe e dá +${e.funcionarios.neves ? 8 : 5}% por produto`, 'Abrir');
       h += '<li class="cassino-secao">Equipe</li>';
       for (const [id, f] of Object.entries(R.FUNCIONARIOS)) {
         h += item({ icone: iconeCorpo(f.corpo), nome: f.cargo, texto: f.efeito,
@@ -241,7 +243,7 @@ export function configurarCassino({ socket, appState, showToast }) {
       h += '<li class="cassino-secao">Sementes</li>';
       for (const [id, c] of Object.entries(R.CULTURAS)) {
         if (!c.desbloqueio) continue;
-        h += item({ icone: iconePlanta(id, 2.5), nome: c.nome, texto: `${fmtTempo(c.tempo)} · ${c.porcoes} porções · vira ${c.produto}`,
+        h += item({ icone: iconePlanta(id, 2.5), nome: c.nome, texto: `${fmtTempo(c.tempo)} · ${c.porcoes} porções · ${c.produto} a ${String(c.preco).replace('.', ',')} no bar`,
           preco: c.desbloqueio, tipo: 'cultura', id, feito: e.culturas[id] ? 'Liberada' : null, rotulo: 'Liberar' });
       }
       h += '<li class="cassino-secao">Fazenda</li>';
@@ -310,7 +312,7 @@ export function configurarCassino({ socket, appState, showToast }) {
     const info = $('.cassino-bar-info');
     if (info) por(info, '<span class="cassino-produtos">' + Object.entries(R.CULTURAS).filter(([c]) => x.culturas[c]).map(([c, cu]) =>
       `<img src="cassino/${cu.icone}.png" class="${(x.estoque[c] || 0) >= 0.01 ? '' : 'vazio'}" title="${cu.produto}: ${fmt(x.estoque[c] || 0)} porções" alt="${cu.produto}">`).join('')
-      + `</span><span class="cassino-aviso">+${Math.round(R.bonusBar(x) * 100)}%</span>`);
+      + `</span><span class="cassino-aviso">+${Math.round(R.bonusBar(x) * 100)}% · ${fmt(R.rendaBar(x))}/h</span>`);
     atualizarGente(x);
   }
 
@@ -637,12 +639,12 @@ export function configurarCassino({ socket, appState, showToast }) {
     const cap = R.capacidadeCeleiro(x), total = R.totalEstoque(x);
     let h = `<div class="cassino-cartao-topo"><h3>Celeiro</h3><span>${fmt(total)} de ${fmt(cap)} porções</span></div>`
       + `<div class="cassino-barra"><div style="width:${Math.min(100, total / cap * 100)}%"></div></div>`
-      + `<p>${x.niveis.bar ? `O bar gasta ${R.consumoBar(x).toFixed(1).replace('.', ',')} porções/h de cada produto.` : 'Sem bar, a colheita só serve pra vender barato.'}</p><ul>`;
+      + `<p>${x.niveis.bar ? `O bar vende ${R.consumoBar(x).toFixed(1).replace('.', ',')} porções/h de cada produto (${fmt(R.rendaBar(x))} coins/h).` : 'Sem bar, a colheita só serve pra vender barato.'}</p><ul>`;
     for (const [c, cu] of Object.entries(R.CULTURAS)) {
       if (!x.culturas[c]) continue;
-      const q = x.estoque[c] || 0;
+      const q = x.estoque[c] || 0, valor = Math.floor(Math.floor(q) * R.precoVenda(c) + (x.troco || 0) + 1e-6);
       h += `<li><span class="mini" style="${iconePlanta(c, 1.5)}"></span><span>${cu.nome}</span><b>${fmt(q)}</b>`
-        + (visitando ? '<span></span>' : `<button type="button" class="cassino-botao pequeno" data-vender="${c}" ${q >= 1 ? '' : 'disabled'}>Vender ${fmt(Math.max(1, Math.floor(q) * R.PRECO_PORCAO))}</button>`) + '</li>';
+        + (visitando ? '<span></span>' : `<button type="button" class="cassino-botao pequeno" data-vender="${c}" ${valor >= 1 ? '' : 'disabled'}>Vender ${fmt(valor)}</button>`) + '</li>';
     }
     if (x.niveis.irrigacao && x.canteiros.some(c => c && c.plantado + R.tempoCultura(x, c.cultura) <= agora() && cap - total < R.CULTURAS[c.cultura].porcoes))
       h = h.replace('<ul>', '<p class="cassino-aviso">Celeiro cheio: a irrigação parou de colher. Venda alguma coisa ou espere o bar gastar.</p><ul>');
@@ -869,6 +871,16 @@ export function configurarCassino({ socket, appState, showToast }) {
     if (d.legado) {
       if (b.getAttribute('aria-disabled') === 'true') return showToast('Estrelas insuficientes.', 'error');
       if (await acao('legado', { id: d.legado })) showToast(`${R.LEGADO[d.legado].nome}: fica pra sempre!`, 'success', 2200);
+      return;
+    }
+    if (d.venderMaq) {
+      if (!b.classList.contains('confirmando')) {
+        b.classList.add('confirmando'); b.textContent = `Confirmar: +${fmt(Number(d.valor))}?`;
+        setTimeout(() => { if (b.isConnected) { b.classList.remove('confirmando'); b.textContent = `Vender por ${fmt(Number(d.valor))}`; } }, 3000);
+        return;
+      }
+      const r = await acao('venderMaquina', { id: d.venderMaq }, ev, x => `+${fmt(x.valor)}`);
+      if (r) showToast(`${R.MAQUINAS[d.venderMaq].nome} vendido por ${fmt(r.valor)}.`, 'success', 1800);
       return;
     }
     if (d.tipo) {

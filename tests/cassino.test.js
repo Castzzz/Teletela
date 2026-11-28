@@ -51,6 +51,24 @@ test('comprar desconta da carteira e o cofre só vira ficha ao coletar, até o l
   assert.equal(a.pedir('coletar').erro, 'O cofre está vazio.');
 });
 
+test('vender máquina devolve 70% da última comprada, sem contar como ganho', () => {
+  const { conectar } = montar();
+  const a = conectar('Ana');
+  const inicial = a.saldo;
+  a.pedir('maquina', { id: 'caca' });
+  a.pedir('maquina', { id: 'caca' }); // a 2ª custa 172,5 → 175
+  assert.equal(a.saldo, inicial - 150 - 175);
+  const r = a.pedir('venderMaquina', { id: 'caca' });
+  assert.equal(r.resultado.valor, 120); // 70% de 175 = 122,5 → 120
+  assert.equal(r.estado.maquinas.caca, 1);
+  assert.equal(r.estado.layout.caca.length, 1);
+  assert.equal(r.estado.ganhoTemporada, 0);
+  assert.equal(a.saldo, inicial - 150 - 175 + 120);
+  assert.equal(a.pedir('venderMaquina', { id: 'caca' }).resultado.valor, 105);
+  assert.equal(a.pedir('venderMaquina', { id: 'caca' }).erro, 'Você não tem essa máquina.');
+  assert.ok(a.pedir('venderMaquina', { id: 'constructor' }).erro);
+});
+
 test('roça: planta, espera, colhe pro celeiro e vende barato', () => {
   const { conectar, passar } = montar();
   const a = conectar('Ana');
@@ -60,6 +78,11 @@ test('roça: planta, espera, colhe pro celeiro e vende barato', () => {
   passar(5 * R.MIN);
   assert.equal(a.pedir('colherTudo').resultado.porcoes, 3);
   const antes = a.saldo;
+  // 3 pipocas valem 0,9: não paga agora, mas a fração fica guardada pra próxima venda
+  assert.equal(a.pedir('vender', { cultura: 'milho' }).resultado.valor, 0);
+  a.pedir('plantarVazios', { cultura: 'milho' });
+  passar(5 * R.MIN);
+  a.pedir('colherTudo');
   assert.equal(a.pedir('vender', { cultura: 'milho' }).resultado.valor, 1);
   assert.equal(a.saldo, antes + 1);
 });

@@ -227,6 +227,9 @@ export function criarCassino({ io, fichas, diretorio = '', agora = Date.now, tes
         case 'maquina':
           if (!de(R.MAQUINAS, p.id)) return cb({ erro: 'Escolha a máquina.' });
           r = rodar(e => R.acoes.comprarMaquina(e, p.id)); break;
+        case 'venderMaquina':
+          if (!de(R.MAQUINAS, p.id)) return cb({ erro: 'Escolha a máquina.' });
+          r = rodar(e => R.acoes.venderMaquina(e, p.id)); break;
         case 'melhorar':
           if (!de(R.MELHORIAS, p.id)) return cb({ erro: 'Escolha a melhoria.' });
           r = rodar(e => R.acoes.melhorar(e, p.id)); break;

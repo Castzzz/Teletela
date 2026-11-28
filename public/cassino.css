@@ -298,6 +298,9 @@
 .cassino-item strong { display: block; color: var(--text-header); font-size: .9rem; }
 .cassino-item strong small { color: var(--text-muted); font-weight: 600; }
 .cassino-item span { color: var(--text-muted); font-size: .76rem; line-height: 1.3; }
+.cassino-vender { display: block; margin-top: .15rem; padding: 0; border: 0; background: none; color: var(--text-muted); font: inherit; font-size: .72rem; text-decoration: underline; cursor: pointer; }
+.cassino-vender:hover { color: var(--text-normal); }
+.cassino-vender.confirmando { color: var(--text-danger); font-weight: 600; text-decoration: none; }
 
 /* Botões */
 .cassino-botao, .cassino-preco {
